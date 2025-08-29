@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "remate_2-app",
-    "slug": "remate_2-app",
+    "name": "Remate Ganadero",
+    "slug": "remate-ganadero",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,20 +10,37 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#2C3E50"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Esta app necesita acceso a la cámara para funcionalidades del remate ganadero",
+        "NSMicrophoneUsageDescription": "Esta app necesita acceso al micrófono para funcionalidades del remate ganadero"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#2C3E50"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.INTERNET"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Esta app necesita acceso al micrófono para funcionalidades del remate ganadero"
+        }
+      ]
+    ]
   }
 }
