@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Dimensions } from "react-native";
+import React, { useRef, useState, useEffect } from "react";
+import { View, Text, StyleSheet, ScrollView, Dimensions, Image } from "react-native";
 import { Video } from "expo-av";
 import { Button, Card, Title, Paragraph, Chip, IconButton } from "react-native-paper";
 import { CattleColors, CattleShadows } from "../styles/colors";
@@ -8,8 +8,28 @@ import { cattleLots } from "../data/cattleLots";
 const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }) {
-    const videoRef = React.useRef(null);
+    const videoRef = useRef(null);
     const [counter, setCounter] = useState(0);
+
+    const [source, setSource] = useState({
+        uri: "https://master.tucableip.com/fercogan/index.m3u8",
+    });
+    const [isError, setIsError] = useState(false);
+
+    useEffect(() => {
+        let interval;
+        if (isError) {
+            // intentar reconectar cada 5 segundos
+            interval = setInterval(() => {
+                console.log("Intentando reconectar...");
+                setSource({ uri: "https://master.tucableip.com/fercogan/index.m3u8", key: Date.now() });
+
+                setIsError(false);
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [isError]);
+
 
     const incrementCounter = () => {
         setCounter(counter + 1000);
@@ -31,25 +51,32 @@ export default function HomeScreen({ navigation }) {
             {/* Header profesional */}
             <View style={styles.header}>
                 <View style={styles.headerContent}>
+                    {/* Columna izquierda vacía para balancear */}
+                    <View style={styles.sidePlaceholder} />
+
+                    {/* Logo centrado */}
                     <View style={styles.logoContainer}>
-                        <View style={styles.logoCircle}>
-                            <Text style={styles.logoIcon}>🐄</Text>
-                        </View>
-                        <Title style={styles.headerTitle}>REMATE GANADERO</Title>
+                        <Image
+                            source={require("../assets/PerfilELITE.png")}
+                            style={styles.logoImage}
+                        />
                     </View>
-                    <IconButton 
-                        icon="logout" 
+
+                    {/* Botón logout a la derecha */}
+                    <IconButton
+                        icon="logout"
                         size={28}
                         iconColor={CattleColors.white}
                         onPress={logout}
                         style={styles.logoutButton}
                     />
                 </View>
+
                 <View style={styles.headerLine} />
             </View>
 
-            <ScrollView 
-                style={styles.scrollContainer} 
+            <ScrollView
+                style={styles.scrollContainer}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
@@ -58,61 +85,27 @@ export default function HomeScreen({ navigation }) {
                     <View style={styles.videoFrame}>
                         <Video
                             ref={videoRef}
-                            source={{ uri: "https://www.w3schools.com/html/mov_bbb.mp4" }}
-                            useNativeControls
+                            source={{ uri: source.uri }}
+                            useNativeControls={false}   // ✅ booleano
                             resizeMode="contain"
-                            isLooping
-                            shouldPlay={false}
+                            isLooping={true}             // ✅ booleano
+                            shouldPlay={true}            // ✅ booleano
                             style={styles.video}
-                            onError={(error) => console.log('Video error:', error)}
-                            onLoad={() => console.log('Video loaded successfully')}
+                            onError={(error) => {
+                                console.log("Error en la transmisión:", error);
+                                setIsError(true); // activar reconexión
+                            }}
+                            onLoad={() => console.log("Video cargado correctamente")}
                         />
+                        {isError && (
+                            <Text style={{ color: "red", textAlign: "center" }}>Reconectando...</Text>
+                        )}
+
                     </View>
                     <Text style={styles.videoLabel}>Presentación del Remate Ganadero</Text>
                 </View>
 
                 {/* Información Adicional de Lotes */}
-                <Card style={styles.infoCard}>
-                    <Card.Content>
-                        <View style={styles.infoHeader}>
-                            <Text style={styles.infoTitle}>ℹ️ INFORMACIÓN IMPORTANTE PARA COMPRADORES</Text>
-                        </View>
-                        
-                        <View style={styles.infoGrid}>
-                            <View style={styles.infoItem}>
-                                <Text style={styles.infoIcon}>🐄</Text>
-                                <Text style={styles.infoLabel}>Raza</Text>
-                                <Text style={styles.infoValue}>Brahman, Angus, Hereford</Text>
-                            </View>
-                            
-                            <View style={styles.infoItem}>
-                                <Text style={styles.infoIcon}>⚖️</Text>
-                                <Text style={styles.infoLabel}>Peso Promedio</Text>
-                                <Text style={styles.infoValue}>400-500 kg</Text>
-                            </View>
-                            
-                            <View style={styles.infoItem}>
-                                <Text style={styles.infoIcon}>🧬</Text>
-                                <Text style={styles.infoLabel}>Genética</Text>
-                                <Text style={styles.infoValue}>Certificada y Verificada</Text>
-                            </View>
-                            
-                            <View style={styles.infoItem}>
-                                <Text style={styles.infoIcon}>💉</Text>
-                                <Text style={styles.infoLabel}>Vacunas</Text>
-                                <Text style={styles.infoValue}>Al día y Documentadas</Text>
-                            </View>
-                        </View>
-                        
-                        <View style={styles.warningBox}>
-                            <Text style={styles.warningText}>
-                                ⚠️ Todos los animales han sido inspeccionados por veterinarios certificados. 
-                                Se recomienda revisar videos completos antes de hacer ofertas.
-                            </Text>
-                        </View>
-                    </Card.Content>
-                </Card>
-
                 {/* Sección de Monto con Contador */}
                 <Card style={styles.counterCard}>
                     <Card.Content>
@@ -122,8 +115,8 @@ export default function HomeScreen({ navigation }) {
                                 <Text style={styles.montoSubtitle}>Presiona para incrementar</Text>
                             </View>
                             <View style={styles.buttonContainer}>
-                                <Button 
-                                    mode="contained" 
+                                <Button
+                                    mode="contained"
                                     onPress={incrementCounter}
                                     style={styles.counterButton}
                                     labelStyle={styles.counterButtonText}
@@ -136,52 +129,51 @@ export default function HomeScreen({ navigation }) {
                         </View>
                     </Card.Content>
                 </Card>
-
-                {/* Información Adicional de Lotes */}
                 <Card style={styles.infoCard}>
                     <Card.Content>
                         <View style={styles.infoHeader}>
-                            <Text style={styles.infoTitle}>ℹ️ INFORMACIÓN IMPORTANTE PARA COMPRADORES</Text>
+                            <Text style={styles.infoTitle}> INFORMACIÓN IMPORTANTE PARA COMPRADORES</Text>
                         </View>
-                        
+
                         <View style={styles.infoGrid}>
                             <View style={styles.infoItem}>
                                 <Text style={styles.infoIcon}>🐄</Text>
                                 <Text style={styles.infoLabel}>Raza</Text>
                                 <Text style={styles.infoValue}>Brahman, Angus, Hereford</Text>
                             </View>
-                            
+
                             <View style={styles.infoItem}>
                                 <Text style={styles.infoIcon}>⚖️</Text>
                                 <Text style={styles.infoLabel}>Peso Promedio</Text>
                                 <Text style={styles.infoValue}>400-500 kg</Text>
                             </View>
-                            
+
                             <View style={styles.infoItem}>
                                 <Text style={styles.infoIcon}>🧬</Text>
                                 <Text style={styles.infoLabel}>Genética</Text>
                                 <Text style={styles.infoValue}>Certificada y Verificada</Text>
                             </View>
-                            
+
                             <View style={styles.infoItem}>
                                 <Text style={styles.infoIcon}>💉</Text>
                                 <Text style={styles.infoLabel}>Vacunas</Text>
                                 <Text style={styles.infoValue}>Al día y Documentadas</Text>
                             </View>
                         </View>
-                        
+
                         <View style={styles.warningBox}>
                             <Text style={styles.warningText}>
-                                ⚠️ Todos los animales han sido inspeccionados por veterinarios certificados. 
+                                ⚠️ Todos los animales han sido inspeccionados por veterinarios certificados.
                                 Se recomienda revisar videos completos antes de hacer ofertas.
                             </Text>
                         </View>
                     </Card.Content>
                 </Card>
 
+
                 {/* Botón para ver catálogo completo */}
-                <Button 
-                    mode="contained" 
+                <Button
+                    mode="contained"
                     onPress={goToListView}
                     style={styles.navigationButton}
                     labelStyle={styles.navigationButtonText}
@@ -203,21 +195,32 @@ const styles = StyleSheet.create({
     },
     header: {
         backgroundColor: CattleColors.primary,
-        paddingTop: 50,
-        paddingBottom: 20,
+        paddingTop: 20,
         borderBottomWidth: 1,
         borderBottomColor: CattleColors.accent,
     },
     headerContent: {
         flexDirection: "row",
+        alignItems: "center",
         justifyContent: "space-between",
-        alignItems: "center",
         paddingHorizontal: 20,
-        marginBottom: 15,
     },
+
+    sidePlaceholder: {
+        width: 40, // 👈 igual al ancho aproximado del botón para balancear
+    },
+
     logoContainer: {
-        flexDirection: "row",
+        flex: 1,
+        height: 80,
         alignItems: "center",
+        justifyContent: "center",
+    },
+
+    logoImage: {
+        height: 150,
+        aspectRatio: 1,
+        resizeMode: "contain",
     },
     logoCircle: {
         width: 40,

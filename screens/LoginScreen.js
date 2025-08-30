@@ -18,26 +18,26 @@ export default function LoginScreen({ navigation }) {
     };
 
     return (
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
             style={styles.container}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
             {/* Fondo con gradiente sutil */}
             <View style={styles.backgroundGradient} />
-            
-            <ScrollView 
+
+            <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Logo y título principal */}
                 <View style={styles.logoContainer}>
-                    <View style={styles.logoCircle}>
-                        <Text style={styles.logoIcon}>🐄</Text>
-                    </View>
-                    <Title style={styles.logoTitle}>REMATE GANADERO</Title>
-                    <Text style={styles.logoSubtitle}>Sistema Profesional de Gestión de Remates</Text>
+                    <Image
+                        source={require("../assets/PerfilELITE.png")}
+                        style={styles.logoImage}
+                    />
+
                     <View style={styles.accentLine} />
                 </View>
 
@@ -46,7 +46,7 @@ export default function LoginScreen({ navigation }) {
                     <Card.Content>
                         <Title style={styles.loginTitle}>Acceso al Sistema</Title>
                         <Text style={styles.loginSubtitle}>Ingresa tus credenciales</Text>
-                        
+
                         <TextInput
                             label="Email"
                             value={email}
@@ -78,8 +78,8 @@ export default function LoginScreen({ navigation }) {
                             secureTextEntry={!showPassword}
                             left={<TextInput.Icon icon="lock" color={CattleColors.accent} />}
                             right={
-                                <TextInput.Icon 
-                                    icon={showPassword ? "eye-off" : "eye"} 
+                                <TextInput.Icon
+                                    icon={showPassword ? "eye-off" : "eye"}
                                     color={CattleColors.accent}
                                     onPress={() => setShowPassword(!showPassword)}
                                 />
@@ -149,6 +149,12 @@ const styles = StyleSheet.create({
     logoContainer: {
         alignItems: "center",
         marginBottom: 50,
+        height:170,
+    },
+    logoImage: {
+        height: 300,
+        aspectRatio: 1,
+        resizeMode: "contain",
     },
     logoCircle: {
         width: 80,
