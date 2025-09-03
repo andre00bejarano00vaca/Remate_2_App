@@ -12,22 +12,23 @@ export default function HomeScreen({ navigation }) {
     const [counter, setCounter] = useState(0);
 
     const [source, setSource] = useState({
-        uri: "https://master.tucableip.com/fercogan/index.m3u8",
-    });
+  uri: "https://master.tucableip.com/fercogan/video.m3u8",
+  key: Date.now(),
+});
+
     const [isError, setIsError] = useState(false);
 
     useEffect(() => {
-        let interval;
-        if (isError) {
-            // intentar reconectar cada 5 segundos
-            interval = setInterval(() => {
-                console.log("Intentando reconectar...");
-                setSource({ uri: "https://master.tucableip.com/fercogan/index.m3u8", key: Date.now() });
+        if (!isError) return;
 
-                setIsError(false);
-            }, 1000);
-        }
-        return () => clearInterval(interval);
+        console.log("Intentando reconectar...");
+
+        const timeout = setTimeout(() => {
+            setSource({ uri: "https://master.tucableip.com/fercogan/video.m3u8", key: Date.now() });
+            // no ponemos setIsError(false aquí, dejemos que onLoad lo haga
+        }, 1000); // espera 5s antes de reconectar
+
+        return () => clearTimeout(timeout);
     }, [isError]);
 
 
@@ -84,19 +85,24 @@ export default function HomeScreen({ navigation }) {
                 <View style={styles.videoContainer}>
                     <View style={styles.videoFrame}>
                         <Video
+                            key={source.key}  // 🔑 fuerza a que se remonte
                             ref={videoRef}
                             source={{ uri: source.uri }}
-                            useNativeControls={false}   // ✅ booleano
+                            useNativeControls={false}
                             resizeMode="contain"
-                            isLooping={true}             // ✅ booleano
-                            shouldPlay={true}            // ✅ booleano
+                            isLooping={true}
+                            shouldPlay={true}
                             style={styles.video}
                             onError={(error) => {
                                 console.log("Error en la transmisión:", error);
-                                setIsError(true); // activar reconexión
+                                setIsError(true);
                             }}
-                            onLoad={() => console.log("Video cargado correctamente")}
+                            onLoad={() => {
+                                console.log("Video cargado correctamente");
+                                setIsError(false);
+                            }}
                         />
+
                         {isError && (
                             <Text style={{ color: "red", textAlign: "center" }}>Reconectando...</Text>
                         )}
