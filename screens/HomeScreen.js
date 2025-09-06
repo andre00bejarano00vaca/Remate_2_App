@@ -1,34 +1,15 @@
 import React, { useRef, useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, Dimensions, Image } from "react-native";
-import { Video } from "expo-av";
 import { Button, Card, Title, Paragraph, Chip, IconButton } from "react-native-paper";
 import { CattleColors, CattleShadows } from "../styles/colors";
 import { cattleLots } from "../data/cattleLots";
+import LiveStreamPlayer from "../components/LiveStreamPlayer";
 
 const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }) {
-    const videoRef = useRef(null);
     const [counter, setCounter] = useState(0);
-
-    const [source, setSource] = useState({
-        uri: "https://master.tucableip.com/fercogan/index.m3u8",
-    });
-    const [isError, setIsError] = useState(false);
-
-    useEffect(() => {
-        let interval;
-        if (isError) {
-            // intentar reconectar cada 5 segundos
-            interval = setInterval(() => {
-                console.log("Intentando reconectar...");
-                setSource({ uri: "https://master.tucableip.com/fercogan/index.m3u8", key: Date.now() });
-
-                setIsError(false);
-            }, 1000);
-        }
-        return () => clearInterval(interval);
-    }, [isError]);
+    const [streamUrl] = useState("https://master.tucableip.com/fercogan/video.m3u8");
 
 
     const incrementCounter = () => {
@@ -37,6 +18,10 @@ export default function HomeScreen({ navigation }) {
 
     const goToListView = () => {
         navigation.navigate('ListView');
+    };
+
+    const goToLiveStream = () => {
+        navigation.navigate('LiveStream');
     };
 
     const logout = () => {
@@ -83,26 +68,23 @@ export default function HomeScreen({ navigation }) {
                 {/* Video promocional */}
                 <View style={styles.videoContainer}>
                     <View style={styles.videoFrame}>
-                        <Video
-                            ref={videoRef}
-                            source={{ uri: source.uri }}
-                            useNativeControls={false}   // ✅ booleano
-                            resizeMode="contain"
-                            isLooping={true}             // ✅ booleano
-                            shouldPlay={true}            // ✅ booleano
-                            style={styles.video}
+                        <LiveStreamPlayer
+                            streamUrl={streamUrl}
+                            title="Transmisión en Vivo - Remate Ganadero"
+                            autoPlay={true}
+                            showControls={true}
                             onError={(error) => {
                                 console.log("Error en la transmisión:", error);
-                                setIsError(true); // activar reconexión
                             }}
-                            onLoad={() => console.log("Video cargado correctamente")}
+                            onLoad={(data) => {
+                                console.log("Stream cargado correctamente:", data);
+                            }}
+                            onBuffer={(isBuffering) => {
+                                console.log("Buffering:", isBuffering);
+                            }}
                         />
-                        {isError && (
-                            <Text style={{ color: "red", textAlign: "center" }}>Reconectando...</Text>
-                        )}
-
                     </View>
-                    <Text style={styles.videoLabel}>Presentación del Remate Ganadero</Text>
+                    <Text style={styles.videoLabel}>Transmisión en Vivo del Remate Ganadero</Text>
                 </View>
 
                 {/* Información Adicional de Lotes */}
@@ -171,18 +153,32 @@ export default function HomeScreen({ navigation }) {
                 </Card>
 
 
-                {/* Botón para ver catálogo completo */}
-                <Button
-                    mode="contained"
-                    onPress={goToListView}
-                    style={styles.navigationButton}
-                    labelStyle={styles.navigationButtonText}
-                    buttonColor={CattleColors.primary}
-                    textColor={CattleColors.white}
-                    icon="format-list-bulleted"
-                >
-                    VER CATÁLOGO COMPLETO CON VIDEOS
-                </Button>
+                {/* Botones de navegación */}
+                <View style={styles.navigationButtons}>
+                    <Button
+                        mode="contained"
+                        onPress={goToListView}
+                        style={[styles.navigationButton, styles.halfButton]}
+                        labelStyle={styles.navigationButtonText}
+                        buttonColor={CattleColors.primary}
+                        textColor={CattleColors.white}
+                        icon="format-list-bulleted"
+                    >
+                        VER CATÁLOGO
+                    </Button>
+                    
+                    <Button
+                        mode="contained"
+                        onPress={goToLiveStream}
+                        style={[styles.navigationButton, styles.halfButton]}
+                        labelStyle={styles.navigationButtonText}
+                        buttonColor={CattleColors.accent}
+                        textColor={CattleColors.white}
+                        icon="video"
+                    >
+                        TRANSMISIONES
+                    </Button>
+                </View>
             </ScrollView>
         </View>
     );
@@ -483,14 +479,22 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "600",
     },
+    navigationButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 10,
+        marginBottom: 20,
+    },
     navigationButton: {
         borderRadius: 8,
         paddingVertical: 12,
-        marginBottom: 20,
         ...CattleShadows.button,
     },
+    halfButton: {
+        flex: 1,
+    },
     navigationButtonText: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: "600",
     },
 });
