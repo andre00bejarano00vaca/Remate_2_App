@@ -1,0 +1,61 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+  ext {
+    // ---- ExoPlayer Features for react-native-video ----
+    // Enable IMA (Interactive Media Ads) integration with ExoPlayer
+    useExoplayerIMA = false
+
+    // Enable support for RTSP (Real-Time Streaming Protocol) with ExoPlayer
+    useExoplayerRtsp = true
+
+    // Enable support for Smooth Streaming with ExoPlayer
+    useExoplayerSmoothStreaming = true
+
+    // Enable support for DASH (Dynamic Adaptive Streaming over HTTP)
+    useExoplayerDash = true
+
+    // Enable support for HLS (HTTP Live Streaming) with ExoPlayer
+    useExoplayerHls = true
+  }
+
+  repositories {
+    google()
+    mavenCentral()
+  }
+  dependencies {
+    classpath('com.android.tools.build:gradle')
+    classpath('com.facebook.react:react-native-gradle-plugin')
+    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+  }
+}
+
+def reactNativeAndroidDir = new File(
+  providers.exec {
+    workingDir(rootDir)
+    commandLine("node", "--print", "require.resolve('react-native/package.json')")
+  }.standardOutput.asText.get().trim(),
+  "../android"
+)
+
+allprojects {
+  repositories {
+    // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+    maven {
+      url(reactNativeAndroidDir)
+    }
+
+    google()
+    mavenCentral()
+    mavenLocal()
+    maven { url 'https://www.jitpack.io' }
+
+    // Extra repo for react-native-video cache libs
+    maven {
+      url "$rootDir/../node_modules/react-native-video-cache/android/libs"
+    }
+  }
+}
+
+apply plugin: "expo-root-project"
+apply plugin: "com.facebook.react.rootproject"

@@ -4,6 +4,7 @@ import { Video } from "expo-av";
 import { Button, Card, Title, Paragraph, Chip, IconButton } from "react-native-paper";
 import { CattleColors, CattleShadows } from "../styles/colors";
 import { cattleLots } from "../data/cattleLots";
+import CustomVideoPlayer from "../components/CustomVideoPlayer";
 
 const { width, height } = Dimensions.get('window');
 
@@ -72,6 +73,8 @@ export default function HomeScreen({ navigation }) {
                         style={styles.logoutButton}
                     />
                 </View>
+
+                <CustomVideoPlayer/>
 
                 <View style={styles.headerLine} />
             </View>
