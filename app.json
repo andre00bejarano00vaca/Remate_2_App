@@ -28,8 +28,10 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
-        "android.permission.INTERNET"
-      ]
+        "android.permission.INTERNET",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
+      "package": "com.andre_bejarano.remateganadero"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -41,6 +43,11 @@
           "microphonePermission": "Esta app necesita acceso al micrófono para funcionalidades del remate ganadero"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6a959546-9ae1-4f01-9133-6c355f837964"
+      }
+    }
   }
 }

@@ -6,6 +6,9 @@ import LoginScreen from "./screens/LoginScreen";
 import HomeScreen from "./screens/HomeScreen";
 import ListView from "./screens/ListView";
 import { CattleColors } from "./styles/colors";
+import VerifyUserScreen from "./screens/VerifyUserScreen";
+import PendingApprovalScreen from "./screens/PendingApprovalScreen";
+
 
 const Stack = createStackNavigator();
 
@@ -39,32 +42,17 @@ export default function App() {
           },
         }}
       >
-        <Stack.Navigator 
-          initialRouteName="Login"
-          screenOptions={{
-            headerShown: false,
-            cardStyle: { backgroundColor: CattleColors.lightGray },
-            gestureEnabled: false,
-            cardStyleInterpolator: ({ current, layouts }) => {
-              return {
-                cardStyle: {
-                  transform: [
-                    {
-                      translateX: current.progress.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [layouts.screen.width, 0],
-                      }),
-                    },
-                  ],
-                },
-              };
-            },
-          }}
-        >
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="ListView" component={ListView} />
-        </Stack.Navigator>
+        
+        <Stack.Navigator
+  initialRouteName="VerifyUser"
+  screenOptions={{ headerShown: false }}
+>
+  <Stack.Screen name="VerifyUser" component={VerifyUserScreen} />
+  <Stack.Screen name="Login" component={LoginScreen} />
+  <Stack.Screen name="Home" component={HomeScreen} />
+  <Stack.Screen name="ListView" component={ListView} />
+  <Stack.Screen name="PendingApproval" component={PendingApprovalScreen} />
+</Stack.Navigator>
       </NavigationContainer>
     </PaperProvider>
   );

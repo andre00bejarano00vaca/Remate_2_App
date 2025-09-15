@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, Dimensions, Image } from "react-native";
 import { Video } from "expo-av";
+import { Linking, Alert } from "react-native";
 import { Button, Card, Title, Paragraph, Chip, IconButton } from "react-native-paper";
 import { CattleColors, CattleShadows } from "../styles/colors";
 import { cattleLots } from "../data/cattleLots";
@@ -45,6 +46,15 @@ export default function HomeScreen({ navigation }) {
 
     // Datos de ejemplo para los lotes de ganado (primeros 4 lotes)
     const lotesData = cattleLots.slice(0, 4);
+
+    const openYouTube  = async () => {
+  const url = "https://www.youtube.com/playlist?list=PL7dEzhx7AQdakwerQflhAhPYT9y-i_T2M";
+  try {
+    await Linking.openURL(url);
+  } catch (error) {
+    Alert.alert("No se pudo abrir el enlace:", error.message);
+  }
+};
 
     return (
         <View style={styles.container}>
@@ -174,7 +184,7 @@ export default function HomeScreen({ navigation }) {
                 {/* Botón para ver catálogo completo */}
                 <Button
                     mode="contained"
-                    onPress={goToListView}
+                    onPress={openYouTube}
                     style={styles.navigationButton}
                     labelStyle={styles.navigationButtonText}
                     buttonColor={CattleColors.primary}
