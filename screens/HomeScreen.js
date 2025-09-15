@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, Dimensions, Image } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Dimensions, Image, TouchableOpacity, Modal } from "react-native";
 import { Video } from "expo-av";
 import { Linking, Alert } from "react-native";
-import { Button, Card, Title, Paragraph, Chip, IconButton } from "react-native-paper";
+import { Button, Card, Title, Paragraph, Chip, IconButton, Portal, Menu, Divider } from "react-native-paper";
 import { CattleColors, CattleShadows } from "../styles/colors";
 import { cattleLots } from "../data/cattleLots";
 
@@ -11,6 +11,7 @@ const { width, height } = Dimensions.get('window');
 export default function HomeScreen({ navigation }) {
     const videoRef = useRef(null);
     const [counter, setCounter] = useState(0);
+    const [menuVisible, setMenuVisible] = useState(false);
 
     const [source, setSource] = useState({
         uri: "https://master.tucableip.com/fercogan/index.m3u8",
@@ -44,6 +45,21 @@ export default function HomeScreen({ navigation }) {
         navigation.replace('Login');
     };
 
+    const goToAdminPanel = () => {
+        setMenuVisible(false);
+        navigation.navigate('AdminPanel');
+    };
+
+    const goToHome = () => {
+        setMenuVisible(false);
+        // Ya estamos en Home, solo cerramos el menú
+    };
+
+    const goToCatalog = () => {
+        setMenuVisible(false);
+        navigation.navigate('ListView');
+    };
+
     // Datos de ejemplo para los lotes de ganado (primeros 4 lotes)
     const lotesData = cattleLots.slice(0, 4);
 
@@ -72,14 +88,23 @@ export default function HomeScreen({ navigation }) {
                         />
                     </View>
 
-                    {/* Botón logout a la derecha */}
-                    <IconButton
-                        icon="logout"
-                        size={28}
-                        iconColor={CattleColors.white}
-                        onPress={logout}
-                        style={styles.logoutButton}
-                    />
+                    {/* Botón menú a la derecha */}
+                    <View style={styles.headerButtons}>
+                        <IconButton
+                            icon="menu"
+                            size={28}
+                            iconColor={CattleColors.white}
+                            onPress={() => setMenuVisible(true)}
+                            style={styles.menuButton}
+                        />
+                        <IconButton
+                            icon="logout"
+                            size={28}
+                            iconColor={CattleColors.white}
+                            onPress={logout}
+                            style={styles.logoutButton}
+                        />
+                    </View>
                 </View>
 
                 <View style={styles.headerLine} />
@@ -194,6 +219,88 @@ export default function HomeScreen({ navigation }) {
                     VER CATÁLOGO COMPLETO CON VIDEOS
                 </Button>
             </ScrollView>
+
+            {/* Menú Responsivo */}
+            <Portal>
+                <Modal
+                    visible={menuVisible}
+                    onDismiss={() => setMenuVisible(false)}
+                    contentContainerStyle={styles.menuContainer}
+                    animationType="slide"
+                    transparent={true}
+                >
+                    <View style={styles.menuOverlay}>
+                        <View style={styles.menuContent}>
+                            <View style={styles.menuHeader}>
+                                <Text style={styles.menuTitle}>Menú Principal</Text>
+                                <IconButton
+                                    icon="close"
+                                    size={24}
+                                    iconColor={CattleColors.primary}
+                                    onPress={() => setMenuVisible(false)}
+                                    style={styles.closeButton}
+                                />
+                            </View>
+                            
+                            <Divider style={styles.menuDivider} />
+                            
+                            <View style={styles.menuItems}>
+                                <TouchableOpacity 
+                                    style={styles.menuItem}
+                                    onPress={goToHome}
+                                >
+                                    <IconButton
+                                        icon="home"
+                                        size={24}
+                                        iconColor={CattleColors.primary}
+                                        style={styles.menuItemIcon}
+                                    />
+                                    <Text style={styles.menuItemText}>Inicio</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity 
+                                    style={styles.menuItem}
+                                    onPress={goToCatalog}
+                                >
+                                    <IconButton
+                                        icon="format-list-bulleted"
+                                        size={24}
+                                        iconColor={CattleColors.primary}
+                                        style={styles.menuItemIcon}
+                                    />
+                                    <Text style={styles.menuItemText}>Catálogo</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity 
+                                    style={styles.menuItem}
+                                    onPress={goToAdminPanel}
+                                >
+                                    <IconButton
+                                        icon="cog"
+                                        size={24}
+                                        iconColor={CattleColors.primary}
+                                        style={styles.menuItemIcon}
+                                    />
+                                    <Text style={styles.menuItemText}>Panel Admin</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity 
+                                    style={styles.menuItem}
+                                    onPress={logout}
+                                >
+                                    <IconButton
+                                        icon="logout"
+                                        size={24}
+                                        iconColor={CattleColors.error}
+                                        style={styles.menuItemIcon}
+                                    />
+                                    <Text style={[styles.menuItemText, { color: CattleColors.error }]}>Cerrar Sesión</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+            </Portal>
         </View>
     );
 }
@@ -502,6 +609,73 @@ const styles = StyleSheet.create({
     navigationButtonText: {
         fontSize: 16,
         fontWeight: "600",
+    },
+    // Estilos del menú responsivo
+    headerButtons: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    menuButton: {
+        backgroundColor: CattleColors.secondary,
+        borderRadius: 8,
+        marginRight: 8,
+    },
+    menuContainer: {
+        flex: 1,
+    },
+    menuOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    menuContent: {
+        backgroundColor: CattleColors.white,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        paddingTop: 20,
+        paddingBottom: 40,
+        paddingHorizontal: 20,
+        maxHeight: height * 0.6,
+        ...CattleShadows.card,
+    },
+    menuHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    menuTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: CattleColors.primary,
+    },
+    closeButton: {
+        margin: 0,
+    },
+    menuDivider: {
+        marginVertical: 10,
+        backgroundColor: CattleColors.mediumLightGray,
+    },
+    menuItems: {
+        paddingVertical: 10,
+    },
+    menuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 15,
+        paddingHorizontal: 10,
+        borderRadius: 8,
+        marginVertical: 2,
+    },
+    menuItemIcon: {
+        margin: 0,
+        marginRight: 15,
+    },
+    menuItemText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: CattleColors.primary,
+        flex: 1,
     },
 });
 
