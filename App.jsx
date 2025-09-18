@@ -44,11 +44,9 @@ export default function App() {
       >
         
         <Stack.Navigator
-  initialRouteName="VerifyUser"
+  initialRouteName="Home"
   screenOptions={{ headerShown: false }}
 >
-  <Stack.Screen name="VerifyUser" component={VerifyUserScreen} />
-  <Stack.Screen name="Login" component={LoginScreen} />
   <Stack.Screen name="Home" component={HomeScreen} />
   <Stack.Screen name="ListView" component={ListView} />
   <Stack.Screen name="PendingApproval" component={PendingApprovalScreen} />

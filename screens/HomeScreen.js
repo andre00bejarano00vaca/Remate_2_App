@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, Dimensions, Image, TouchableOpacity, Modal } from "react-native";
-import { Video } from "expo-av";
+import { VideoView, useVideoPlayer } from "expo-video";
 import { Linking, Alert } from "react-native";
 import { Button, Card, Title, Paragraph, Chip, IconButton, Portal, Menu, Divider } from "react-native-paper";
 import { CattleColors, CattleShadows } from "../styles/colors";
@@ -14,7 +14,7 @@ export default function HomeScreen({ navigation }) {
     const [menuVisible, setMenuVisible] = useState(false);
 
     const [source, setSource] = useState({
-        uri: "https://master.tucableip.com/fercogan/index.m3u8",
+        uri: "https://master.tucableip.com/tvlatina/index.ll.m3u8",
     });
     const [isError, setIsError] = useState(false);
 
@@ -24,7 +24,7 @@ export default function HomeScreen({ navigation }) {
             // intentar reconectar cada 5 segundos
             interval = setInterval(() => {
                 console.log("Intentando reconectar...");
-                setSource({ uri: "https://master.tucableip.com/fercogan/index.m3u8", key: Date.now() });
+                setSource({ uri: "https://master.tucableip.com/tvlatina/index.ll.m3u8", key: Date.now() });
 
                 setIsError(false);
             }, 1000);
@@ -32,6 +32,13 @@ export default function HomeScreen({ navigation }) {
         return () => clearInterval(interval);
     }, [isError]);
 
+     const player = useVideoPlayer(
+    { uri: "https://master.tucableip.com/tvlatina/index.ll.m3u8" },
+    (player) => {
+      player.loop = true;
+      player.play();
+    }
+  );
 
     const incrementCounter = () => {
         setCounter(counter + 1000);
@@ -117,28 +124,19 @@ export default function HomeScreen({ navigation }) {
             >
                 {/* Video promocional */}
                 <View style={styles.videoContainer}>
-                    <View style={styles.videoFrame}>
-                        <Video
-                            ref={videoRef}
-                            source={{ uri: source.uri }}
-                            useNativeControls={false}   // ✅ booleano
-                            resizeMode="contain"
-                            isLooping={true}             // ✅ booleano
-                            shouldPlay={true}            // ✅ booleano
-                            style={styles.video}
-                            onError={(error) => {
-                                console.log("Error en la transmisión:", error);
-                                setIsError(true); // activar reconexión
-                            }}
-                            onLoad={() => console.log("Video cargado correctamente")}
-                        />
-                        {isError && (
-                            <Text style={{ color: "red", textAlign: "center" }}>Reconectando...</Text>
-                        )}
-
-                    </View>
-                    <Text style={styles.videoLabel}>Presentación del Remate Ganadero</Text>
-                </View>
+      <VideoView
+        player={player}
+        style={styles.video}
+        allowsFullscreen
+        allowsPictureInPicture
+        onError={(e) => {
+          console.log("Error en la transmisión:", e);
+        }}
+      />
+      <Text style={styles.videoLabel}>
+        Presentación del Remate Ganadero
+      </Text>
+    </View>
 
                 {/* Información Adicional de Lotes */}
                 {/* Sección de Monto con Contador */}

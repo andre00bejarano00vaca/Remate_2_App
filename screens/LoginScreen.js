@@ -16,8 +16,8 @@ export default function LoginScreen({ navigation }) {
     try {
       setLoading(true);
       setError("");
-
-      const response = await fetch("https://testapp.digitaltelecom.net/auth/login", {
+      //https://testapp.digitaltelecom.net/
+      const response = await fetch("http://localhost:8080/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
@@ -59,7 +59,7 @@ export default function LoginScreen({ navigation }) {
       setError("");
 
       // Verificar si el usuario ya existe
-      const checkResponse = await fetch("https://testapp.digitaltelecom.net/auth/check-user", {
+      const checkResponse = await fetch("http://localhost:8080/auth/check-user", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
@@ -75,7 +75,7 @@ export default function LoginScreen({ navigation }) {
         }
       }
 
-      const response = await fetch("https://testapp.digitaltelecom.net/auth/registrar", {
+      const response = await fetch("http://localhost:8080/auth/registrar", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({

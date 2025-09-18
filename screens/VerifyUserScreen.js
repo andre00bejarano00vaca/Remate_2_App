@@ -15,7 +15,7 @@ export default function VerifyUserScreen({ navigation }) {
           return;
         }
 
-        const response = await fetch(`http://190.181.59.134:8080/auth/verificar/${usuario}`);
+        const response = await fetch(`http:localhost:8080/auth/verificar/${usuario}`);
         if (!response.ok) {
           navigation.replace("Login");
           return;
