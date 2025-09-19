@@ -14,24 +14,11 @@ export default function LoginScreen({ navigation }) {
 
   const handleSignIn = async () => {
     try {
-      setLoading(true);
-      setError("");
-      //https://testapp.digitaltelecom.net/
-      const response = await fetch("http://localhost:8080/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          username: email,
-          password: password,
-        }).toString(),
-      });
-
-      const text = await response.text();
-      console.log("Backend Login:", text);
+      const response = await fetch(`http://192.168.0.119:8080/auth/existe/${email}`);
 
       if (!response.ok) {
         if (response.status === 401) {
-          setError("Credenciales incorrectas ❌");
+          setError("Usuario no aprobado ❌");
         } else if (response.status === 404) {
           setError("Usuario no encontrado. Regístrate primero.");
         } else {
@@ -40,7 +27,7 @@ export default function LoginScreen({ navigation }) {
         return;
       }
 
-      // Si llega aquí, el login fue exitoso
+      // Login exitoso
       await AsyncStorage.setItem("usuario", email);
       await AsyncStorage.setItem("isLoggedIn", "true");
       navigation.replace("Home");
@@ -59,7 +46,7 @@ export default function LoginScreen({ navigation }) {
       setError("");
 
       // Verificar si el usuario ya existe
-      const checkResponse = await fetch("http://localhost:8080/auth/check-user", {
+      const checkResponse = await fetch("http://192.168.0.119:8080/auth/check-user", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
@@ -75,7 +62,7 @@ export default function LoginScreen({ navigation }) {
         }
       }
 
-      const response = await fetch("http://localhost:8080/auth/registrar", {
+      const response = await fetch("http://192.168.0.119:8080/auth/registrar", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
@@ -244,11 +231,11 @@ const styles = StyleSheet.create({
   segmentedButtons: { marginBottom: 20 },
   input: { marginBottom: 20, backgroundColor: CattleColors.lightGray },
   loginButton: { marginTop: 10, paddingVertical: 12, borderRadius: 8, ...CattleShadows.button },
-  helpText: { 
-    fontSize: 12, 
-    textAlign: "center", 
-    marginTop: 15, 
+  helpText: {
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 15,
     color: CattleColors.mediumGray,
-    fontStyle: "italic" 
+    fontStyle: "italic"
   },
 });

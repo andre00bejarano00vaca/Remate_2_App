@@ -8,6 +8,7 @@ import ListView from "./screens/ListView";
 import { CattleColors } from "./styles/colors";
 import VerifyUserScreen from "./screens/VerifyUserScreen";
 import PendingApprovalScreen from "./screens/PendingApprovalScreen";
+import AdminPanelScreen from "./screens/AdminPanelScreen";
 
 
 const Stack = createStackNavigator();
@@ -44,12 +45,15 @@ export default function App() {
       >
         
         <Stack.Navigator
-  initialRouteName="Home"
+  initialRouteName="VerifyUser"
   screenOptions={{ headerShown: false }}
 >
+  <Stack.Screen name="VerifyUser" component={VerifyUserScreen}/>
+  <Stack.Screen name="Login" component={LoginScreen}/>
   <Stack.Screen name="Home" component={HomeScreen} />
   <Stack.Screen name="ListView" component={ListView} />
   <Stack.Screen name="PendingApproval" component={PendingApprovalScreen} />
+  <Stack.Screen name="AdminPanel" component={AdminPanelScreen}/>
 </Stack.Navigator>
       </NavigationContainer>
     </PaperProvider>

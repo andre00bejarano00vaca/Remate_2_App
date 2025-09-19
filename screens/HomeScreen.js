@@ -17,6 +17,38 @@ export default function HomeScreen({ navigation }) {
         uri: "https://master.tucableip.com/tvlatina/index.ll.m3u8",
     });
     const [isError, setIsError] = useState(false);
+     const ws = useRef(null);
+
+     //web socket-----------------------------------------
+  useEffect(() => {
+    ws.current = new WebSocket("ws://192.168.0.119:8080/ws/contador");
+
+    ws.current.onopen = () => {
+      console.log("Conectado al WebSocket");
+    };
+
+    ws.current.onmessage = (event) => {
+      console.log("Mensaje recibido:", event.data);
+      setCounter(parseInt(event.data, 10)); // tu backend envía el número en texto
+    };
+
+    ws.current.onerror = (error) => {
+      console.error("Error WebSocket:", error);
+    };
+
+    fetch("http://192.168.0.119:8080/contador")
+   .then((res) => res.json())
+   .then((data) => setCounter(data));
+
+    ws.current.onclose = () => {
+      console.log("Conexión cerrada");
+    };
+
+
+    return () => {
+      if (ws.current) ws.current.close();
+    };
+  }, []);
 
     useEffect(() => {
         let interval;
@@ -40,8 +72,10 @@ export default function HomeScreen({ navigation }) {
     }
   );
 
-    const incrementCounter = () => {
-        setCounter(counter + 1000);
+    const incrementCounter = async () => {
+        await fetch("http://192.168.0.119:8080/contador/incrementar", {
+      method: "POST",
+    });
     };
 
     const goToListView = () => {
@@ -144,8 +178,8 @@ export default function HomeScreen({ navigation }) {
                     <Card.Content>
                         <View style={styles.counterSection}>
                             <View style={styles.textContainer}>
-                                <Text style={styles.montoLabel}>💰 MONTO ACTUAL</Text>
-                                <Text style={styles.montoSubtitle}>Presiona para incrementar</Text>
+                                <Text style={styles.montoLabel}>MONTO ACTUAL</Text>
+                                <Text style={styles.montoSubtitle}>Presiona para pujar</Text>
                             </View>
                             <View style={styles.buttonContainer}>
                                 <Button
@@ -258,7 +292,7 @@ export default function HomeScreen({ navigation }) {
 
                                 <TouchableOpacity 
                                     style={styles.menuItem}
-                                    onPress={goToCatalog}
+                                    onPress={openYouTube}
                                 >
                                     <IconButton
                                         icon="format-list-bulleted"
