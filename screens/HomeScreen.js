@@ -21,7 +21,7 @@ export default function HomeScreen({ navigation }) {
 
      //web socket-----------------------------------------
   useEffect(() => {
-    ws.current = new WebSocket("ws://192.168.0.119:8080/ws/contador");
+    ws.current = new WebSocket("wss://testapp.digitaltelecom.net/ws/contador");
 
     ws.current.onopen = () => {
       console.log("Conectado al WebSocket");
@@ -36,7 +36,7 @@ export default function HomeScreen({ navigation }) {
       console.error("Error WebSocket:", error);
     };
 
-    fetch("http://192.168.0.119:8080/contador")
+    fetch("https://testapp.digitaltelecom.net/contador")
    .then((res) => res.json())
    .then((data) => setCounter(data));
 
@@ -73,7 +73,7 @@ export default function HomeScreen({ navigation }) {
   );
 
     const incrementCounter = async () => {
-        await fetch("http://192.168.0.119:8080/contador/incrementar", {
+        await fetch("https://testapp.digitaltelecom.net/contador/incrementar", {
       method: "POST",
     });
     };

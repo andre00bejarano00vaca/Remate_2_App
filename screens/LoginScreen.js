@@ -14,7 +14,7 @@ export default function LoginScreen({ navigation }) {
 
   const handleSignIn = async () => {
     try {
-      const response = await fetch(`http://192.168.0.119:8080/auth/existe/${email}`);
+      const response = await fetch(`https://testapp.digitaltelecom.net/auth/existe/${email}`);
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -29,6 +29,7 @@ export default function LoginScreen({ navigation }) {
 
       // Login exitoso
       await AsyncStorage.setItem("usuario", email);
+      await AsyncStorage.setItem("password", password)
       await AsyncStorage.setItem("isLoggedIn", "true");
       navigation.replace("Home");
 
@@ -46,7 +47,7 @@ export default function LoginScreen({ navigation }) {
       setError("");
 
       // Verificar si el usuario ya existe
-      const checkResponse = await fetch("http://192.168.0.119:8080/auth/check-user", {
+      const checkResponse = await fetch("https://testapp.digitaltelecom.net/auth/check-user", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
@@ -62,7 +63,7 @@ export default function LoginScreen({ navigation }) {
         }
       }
 
-      const response = await fetch("http://192.168.0.119:8080/auth/registrar", {
+      const response = await fetch("https://testapp.digitaltelecom.net/auth/registrar", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
