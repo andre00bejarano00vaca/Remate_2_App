@@ -10,6 +10,12 @@ export const createLot = async (payload) => {
   return response.data;
 };
 
+export const updateLot= async (id, payload) => {
+  console.log(payload)
+  const response = await apiClient.put(`/lotes/${id}`, payload);
+  return response.data;
+};
+
 export const deleteLot = async (id) => {
   await apiClient.delete(`/lotes/${id}`);
 };

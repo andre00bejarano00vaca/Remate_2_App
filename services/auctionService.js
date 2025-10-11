@@ -10,6 +10,12 @@ export const createAuction = async (payload) => {
   return response.data;
 };
 
+export const updateAuction = async (id, payload) => {
+  console.log(payload)
+  const response = await apiClient.put(`/remates/${id}`, payload);
+  return response.data;
+};
+
 export const deleteAuction = async (id) => {
   await apiClient.delete(`/remates/${id}`);
 };
