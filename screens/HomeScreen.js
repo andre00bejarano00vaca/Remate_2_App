@@ -5,10 +5,12 @@ import { Linking, Alert } from "react-native";
 import { Button, Card, Title, Paragraph, Chip, IconButton, Portal, Menu, Divider } from "react-native-paper";
 import { CattleColors, CattleShadows } from "../styles/colors";
 import { cattleLots } from "../data/cattleLots";
+import LoteInfoScreen from "../components/LoteInfoScreen";
+import Popup from "../components/Popup";
 
 const { width, height } = Dimensions.get('window');
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({ navigation,route }) {
     const videoRef = useRef(null);
     const [counter, setCounter] = useState(0);
     const [menuVisible, setMenuVisible] = useState(false);
@@ -171,7 +173,8 @@ export default function HomeScreen({ navigation }) {
         Presentación del Remate Ganadero
       </Text>
     </View>
-
+    <LoteInfoScreen/>
+    <Popup/>
                 {/* Información Adicional de Lotes */}
                 {/* Sección de Monto con Contador */}
                 <Card style={styles.counterCard}>

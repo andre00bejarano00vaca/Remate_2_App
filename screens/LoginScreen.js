@@ -31,7 +31,7 @@ export default function LoginScreen({ navigation }) {
       await AsyncStorage.setItem("usuario", email);
       await AsyncStorage.setItem("password", password)
       await AsyncStorage.setItem("isLoggedIn", "true");
-      navigation.replace("Home");
+      navigation.replace("RematesList");
 
     } catch (err) {
       console.error("Error en login:", err);

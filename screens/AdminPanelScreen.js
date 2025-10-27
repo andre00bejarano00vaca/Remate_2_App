@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, ScrollView, StyleSheet, Alert } from "react-native";
+import { View, ScrollView, StyleSheet, Alert, RefreshControl } from "react-native";
 import {
   TextInput,
   Button,
@@ -24,10 +24,13 @@ import { getLots, createLot, updateLot } from "../services/lotService";
 import { getBids } from "../services/bidService";
 
 import { updateUser, deleteUser } from "../services/userService";
-import { getCabanas } from "../services/cabanaService";
+import { getCabanas, createCabana,updateCabana } from "../services/cabanaService";
 
 
 export default function AdminPanelScreen() {
+
+const [refreshing, setRefreshing] = useState(false);
+
   const [activeTab, setActiveTab] = useState('remates');
   const [loading, setLoading] = useState(false);
 
@@ -85,6 +88,10 @@ export default function AdminPanelScreen() {
       setBids(bidsData.data);
       setCabanas(cabana);
 
+
+     
+
+
       // Si tus reportes no vienen del backend aún:
       setReports({
         totalSales: lotsData.reduce((sum, l) => sum + (l.puja || 0), 0),
@@ -108,6 +115,21 @@ export default function AdminPanelScreen() {
       Alert.alert("Error", "No se pudieron cargar los remates");
     }
   };
+
+   const onRefresh = async () => {
+  setRefreshing(true);
+  try {
+    if (activeTab === "usuarios") await loadUser();
+    else if (activeTab === "remates") await loadAuctions();
+    else if (activeTab === "lotes") await loadLots();
+    else if (activeTab === "cabanas") await loadCabanas();
+    else await loadInitialData();
+  } catch (e) {
+    console.error(e);
+  } finally {
+    setRefreshing(false);
+  }
+};
 
   // Funciones de acción
   const handleUserAction = async (userId, action, data = null, newRole = null) => {
@@ -249,7 +271,10 @@ export default function AdminPanelScreen() {
 
   // Render Users Tabs
   const renderUsersTab = () => (
-    <ScrollView contentContainerStyle={{ paddingVertical: 10 }}>
+    <ScrollView contentContainerStyle={{ paddingVertical: 10 }} 
+    refreshControl={
+      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+    }>
       <Searchbar
         placeholder="Buscar usuarios..."
         onChangeText={setUserSearchQuery}
@@ -341,7 +366,10 @@ export default function AdminPanelScreen() {
 
   //-------------remates---------------
   const renderAuctionsTab = () => (
-    <ScrollView contentContainerStyle={{ paddingVertical: 10 }}>
+    <ScrollView contentContainerStyle={{ paddingVertical: 10 }}
+    refreshControl={
+      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+    }>
       <Searchbar
         placeholder="Buscar remates..."
         onChangeText={setAuctionSearchQuery}
@@ -423,7 +451,10 @@ export default function AdminPanelScreen() {
   );
   //---------------------Lotes ----------------------------------
   const renderLotsTab = () => (
-    <ScrollView contentContainerStyle={{ paddingVertical: 10 }}>
+    <ScrollView contentContainerStyle={{ paddingVertical: 10 }} 
+    refreshControl={
+      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+    }>
       <Searchbar
         placeholder="Buscar lotes..."
         onChangeText={setLotSearchQuery}
@@ -488,7 +519,10 @@ export default function AdminPanelScreen() {
 
   //--------------------cabanas -------------------------
   const renderCabanasTab = () => (
-    <ScrollView contentContainerStyle={{ paddingVertical: 10 }}>
+    <ScrollView contentContainerStyle={{ paddingVertical: 10 }} 
+    refreshControl={
+      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+    }>
       <Searchbar
         placeholder="Buscar cabañas..."
         onChangeText={setCabanaSearchQuery}

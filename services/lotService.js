@@ -5,6 +5,11 @@ export const getLots = async () => {
   return response.data;
 };
 
+export const getLotsByRemate = async (id) => {
+  const response = await apiClient.get(`/lotes/${id}`);
+  return response.data;
+};
+
 export const createLot = async (payload) => {
   const response = await apiClient.post("/lotes", payload);
   return response.data;

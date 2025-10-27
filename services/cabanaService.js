@@ -11,7 +11,13 @@ export const createCabana = async (payload) => {
 };
 
 export const updateCabana = async (id, payload) => {
+  console.log("🟢 Enviando actualización de usuario:");
+  console.log("ID:", id);
+  console.log("Payload:", payload);
+  
   const response = await apiClient.put(`/cabanas/${id}`, payload);
+
+  console.log("✅ Respuesta del servidor:", response.data);
   return response.data;
 };
 

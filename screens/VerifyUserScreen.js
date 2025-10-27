@@ -28,7 +28,7 @@ export default function VerifyUserScreen({ navigation }) {
         if (!data.authenticated) {
           navigation.replace("Login");
         } else if (data.confirmed) {
-          navigation.replace("Home");
+          navigation.replace("RematesList");
         } else {
           navigation.replace("PendingApproval");
         }
