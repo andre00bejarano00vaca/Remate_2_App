@@ -7,50 +7,79 @@ import { CattleColors, CattleShadows } from "../styles/colors";
 import { cattleLots } from "../data/cattleLots";
 import LoteInfoScreen from "../components/LoteInfoScreen";
 import Popup from "../components/Popup";
+import VideoScreen from "../components/VideoScreen";
+import EventSource from 'react-native-event-source';
+import useEventosWS from "../services/useEventosWS";
+import { procesarEvento } from "../services/procesarEvento";
+
 
 const { width, height } = Dimensions.get('window');
 
-export default function HomeScreen({ navigation,route }) {
+function cerrarPantallaRemate() {
+    navigation.navigate("RematesList"); // va a la lista de remates
+}
+
+
+export default function HomeScreen({ navigation, route }) {
+    console.log("route.params.lote.video")
+    const videoLote = route?.params?.lote?.video;
+    const loteid = route?.params?.lote?.id;
+    const numeroLote = route?.params?.lote?.numLote;
+    const remateid = route?.params?.lote?.remate.id;
+    console.log("loteId: " + loteid + "   ||  " + "remateId: " + remateid)
     const videoRef = useRef(null);
     const [counter, setCounter] = useState(0);
     const [menuVisible, setMenuVisible] = useState(false);
 
     const [source, setSource] = useState({
-        uri: "https://master.tucableip.com/tvlatina/index.ll.m3u8",
+        uri: videoLote,
     });
     const [isError, setIsError] = useState(false);
-     const ws = useRef(null);
+    const ws = useRef(null);
+    // 🔥 Consumir WebSocket correctamente
+    console.log("Remata id: ",remateid)
+    useEventosWS(remateid, (mensaje) => {
+        procesarEvento(mensaje, navigation);
+    });
 
-     //web socket-----------------------------------------
-  useEffect(() => {
-    ws.current = new WebSocket("wss://testapp.digitaltelecom.net/ws/contador");
+    //web socket-----------------------------------------
+    useEffect(() => {
+        if (!loteid || !remateid) return; // asegurarse que los IDs existen
 
-    ws.current.onopen = () => {
-      console.log("Conectado al WebSocket");
-    };
+        const remateId = remateid; // según tu código, remate.id parece ser remateId
+        const wsUrl = `wss://testapp.digitaltelecom.net/ws/${remateId}/${loteid}`;
 
-    ws.current.onmessage = (event) => {
-      console.log("Mensaje recibido:", event.data);
-      setCounter(parseInt(event.data, 10)); // tu backend envía el número en texto
-    };
+        ws.current = new WebSocket(wsUrl);
 
-    ws.current.onerror = (error) => {
-      console.error("Error WebSocket:", error);
-    };
+        ws.current.onopen = () => {
+            console.log("Conectado al WebSocket:", wsUrl);
+        };
 
-    fetch("https://testapp.digitaltelecom.net/contador")
-   .then((res) => res.json())
-   .then((data) => setCounter(data));
+        ws.current.onmessage = (event) => {
+            console.log("Mensaje recibido:", event.data);
+            const valor = parseInt(event.data, 10);
+            if (!isNaN(valor)) setCounter(valor);
+        };
 
-    ws.current.onclose = () => {
-      console.log("Conexión cerrada");
-    };
+        ws.current.onerror = (error) => {
+            console.error("Error WebSocket:", error.message || error);
+        };
 
+        ws.current.onclose = (event) => {
+            console.log("Conexión cerrada:", event.code, event.reason);
+        };
 
-    return () => {
-      if (ws.current) ws.current.close();
-    };
-  }, []);
+        // Si quieres inicializar con un fetch igual que antes
+        fetch(`https://testapp.digitaltelecom.net/contador/${remateId}/${loteid}`)
+            .then(res => res.json())
+            .then(data => setCounter(data))
+            .catch(err => console.error("Error fetch inicial:", err));
+
+        return () => {
+            if (ws.current) ws.current.close();
+        };
+    }, [loteid, remateid]); // solo se ejecuta cuando estos cambian
+
 
     useEffect(() => {
         let interval;
@@ -58,7 +87,7 @@ export default function HomeScreen({ navigation,route }) {
             // intentar reconectar cada 5 segundos
             interval = setInterval(() => {
                 console.log("Intentando reconectar...");
-                setSource({ uri: "https://master.tucableip.com/tvlatina/index.ll.m3u8", key: Date.now() });
+                setSource({ uri: videoLote, key: Date.now() });
 
                 setIsError(false);
             }, 1000);
@@ -66,18 +95,18 @@ export default function HomeScreen({ navigation,route }) {
         return () => clearInterval(interval);
     }, [isError]);
 
-     const player = useVideoPlayer(
-    { uri: "https://master.tucableip.com/tvlatina/index.ll.m3u8" },
-    (player) => {
-      player.loop = true;
-      player.play();
-    }
-  );
+    const player = useVideoPlayer(
+        { uri: videoLote },
+        (player) => {
+            player.loop = true;
+            player.play();
+        }
+    );
 
     const incrementCounter = async () => {
-        await fetch("https://testapp.digitaltelecom.net/contador/incrementar", {
-      method: "POST",
-    });
+        await fetch(`https://testapp.digitaltelecom.net/contador/incrementar/${remateid}/${loteid}`, {
+            method: "POST",
+        });
     };
 
     const goToListView = () => {
@@ -106,14 +135,14 @@ export default function HomeScreen({ navigation,route }) {
     // Datos de ejemplo para los lotes de ganado (primeros 4 lotes)
     const lotesData = cattleLots.slice(0, 4);
 
-    const openYouTube  = async () => {
-  const url = "https://www.youtube.com/playlist?list=PL7dEzhx7AQdakwerQflhAhPYT9y-i_T2M";
-  try {
-    await Linking.openURL(url);
-  } catch (error) {
-    Alert.alert("No se pudo abrir el enlace:", error.message);
-  }
-};
+    const openYouTube = async () => {
+        const url = "https://www.youtube.com/playlist?list=PL7dEzhx7AQdakwerQflhAhPYT9y-i_T2M";
+        try {
+            await Linking.openURL(url);
+        } catch (error) {
+            Alert.alert("No se pudo abrir el enlace:", error.message);
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -159,86 +188,30 @@ export default function HomeScreen({ navigation,route }) {
                 contentContainerStyle={styles.scrollContent}
             >
                 {/* Video promocional */}
-                <View style={styles.videoContainer}>
-      <VideoView
-        player={player}
-        style={styles.video}
-        allowsFullscreen
-        allowsPictureInPicture
-        onError={(e) => {
-          console.log("Error en la transmisión:", e);
-        }}
-      />
-      <Text style={styles.videoLabel}>
-        Presentación del Remate Ganadero
-      </Text>
-    </View>
-    <LoteInfoScreen/>
-    <Popup/>
-                {/* Información Adicional de Lotes */}
+                <VideoScreen videoUri={videoLote} />
+                <Text style={styles.tituloLote}>Lote Número: {numeroLote}</Text>
                 {/* Sección de Monto con Contador */}
-                <Card style={styles.counterCard}>
-                    <Card.Content>
-                        <View style={styles.counterSection}>
-                            <View style={styles.textContainer}>
-                                <Text style={styles.montoLabel}>MONTO ACTUAL</Text>
-                                <Text style={styles.montoSubtitle}>Presiona para pujar</Text>
-                            </View>
-                            <View style={styles.buttonContainer}>
-                                <Button
-                                    mode="contained"
-                                    onPress={incrementCounter}
-                                    style={styles.counterButton}
-                                    labelStyle={styles.counterButtonText}
-                                    buttonColor={CattleColors.accent}
-                                    textColor={CattleColors.white}
-                                >
-                                    ${counter.toLocaleString()}
-                                </Button>
-                            </View>
-                        </View>
-                    </Card.Content>
-                </Card>
-                <Card style={styles.infoCard}>
-                    <Card.Content>
-                        <View style={styles.infoHeader}>
-                            <Text style={styles.infoTitle}> INFORMACIÓN IMPORTANTE PARA COMPRADORES</Text>
-                        </View>
 
-                        <View style={styles.infoGrid}>
-                            <View style={styles.infoItem}>
-                                <Text style={styles.infoIcon}>🐄</Text>
-                                <Text style={styles.infoLabel}>Raza</Text>
-                                <Text style={styles.infoValue}>Brahman, Angus, Hereford</Text>
-                            </View>
-
-                            <View style={styles.infoItem}>
-                                <Text style={styles.infoIcon}>⚖️</Text>
-                                <Text style={styles.infoLabel}>Peso Promedio</Text>
-                                <Text style={styles.infoValue}>400-500 kg</Text>
-                            </View>
-
-                            <View style={styles.infoItem}>
-                                <Text style={styles.infoIcon}>🧬</Text>
-                                <Text style={styles.infoLabel}>Genética</Text>
-                                <Text style={styles.infoValue}>Certificada y Verificada</Text>
-                            </View>
-
-                            <View style={styles.infoItem}>
-                                <Text style={styles.infoIcon}>💉</Text>
-                                <Text style={styles.infoLabel}>Vacunas</Text>
-                                <Text style={styles.infoValue}>Al día y Documentadas</Text>
-                            </View>
-                        </View>
-
-                        <View style={styles.warningBox}>
-                            <Text style={styles.warningText}>
-                                ⚠️ Todos los animales han sido inspeccionados por veterinarios certificados.
-                                Se recomienda revisar videos completos antes de hacer ofertas.
-                            </Text>
-                        </View>
-                    </Card.Content>
-                </Card>
+                <Card style={styles.cardPuja}>
+      <Card.Content>
+        <View style={styles.sectionPuja}>
+          <View style={styles.textContainerPuja}>
+            <Text style={styles.labelPuja}>MONTO ACTUAL</Text>
+            <Text style={styles.amountPuja}>${counter.toLocaleString()}</Text>
+            <Text style={styles.nextLabelPuja}>SIGUIENTE PUJA</Text>
+            <Text style={styles.nextAmountPuja}>${2000}</Text>
+          </View>
+          <Button
+            mode="contained"
+            onPress={incrementCounter}
+            style={styles.buttonPuja}
+            labelStyle={styles.buttonText}
+          >
+            PUJAR
+          </Button>
+        </View>
+      </Card.Content>
+    </Card>
 
 
                 {/* Botón para ver catálogo completo */}
@@ -276,11 +249,11 @@ export default function HomeScreen({ navigation,route }) {
                                     style={styles.closeButton}
                                 />
                             </View>
-                            
+
                             <Divider style={styles.menuDivider} />
-                            
+
                             <View style={styles.menuItems}>
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     style={styles.menuItem}
                                     onPress={goToHome}
                                 >
@@ -293,7 +266,7 @@ export default function HomeScreen({ navigation,route }) {
                                     <Text style={styles.menuItemText}>Inicio</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     style={styles.menuItem}
                                     onPress={openYouTube}
                                 >
@@ -306,7 +279,7 @@ export default function HomeScreen({ navigation,route }) {
                                     <Text style={styles.menuItemText}>Catálogo</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     style={styles.menuItem}
                                     onPress={goToAdminPanel}
                                 >
@@ -319,7 +292,7 @@ export default function HomeScreen({ navigation,route }) {
                                     <Text style={styles.menuItemText}>Panel Admin</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     style={styles.menuItem}
                                     onPress={logout}
                                 >
@@ -341,6 +314,55 @@ export default function HomeScreen({ navigation,route }) {
 }
 
 const styles = StyleSheet.create({
+    cardPuja: {
+    margin: 12,
+    borderRadius: 12,
+    backgroundColor: "#ffffff",
+    elevation: 4,
+  },
+  sectionPuja: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  textContainerPuja: {
+    flex: 1,
+  },
+  labelPuja: {
+    fontSize: 14,
+    color: "#666666",
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+  amountPuja: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#222222",
+    marginBottom: 12,
+  },
+  nextLabelPuja: {
+    fontSize: 14,
+    color: "#666666",
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+  nextAmountPuja: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#1a73e8", // Azul empresarial
+  },
+  buttonPuja: {
+    marginLeft: 16,
+    borderRadius: 8,
+    backgroundColor: "#1a73e8",
+    height: 48,
+    justifyContent: "center",
+  },
+  buttonTextPuja: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#ffffff",
+  },
     container: {
         flex: 1,
         backgroundColor: CattleColors.lightGray,
@@ -712,5 +734,15 @@ const styles = StyleSheet.create({
         color: CattleColors.primary,
         flex: 1,
     },
+    tituloLote: {
+        fontSize: 26,
+        fontWeight: "800",
+        textAlign: "center",
+        color: CattleColors.primary,
+        marginVertical: 20,
+        letterSpacing: 1,
+        textTransform: "uppercase",
+    },
+
 });
 

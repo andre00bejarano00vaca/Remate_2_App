@@ -3,6 +3,8 @@ import { View, FlatList, TouchableOpacity, ActivityIndicator, Alert } from "reac
 import { Card, Text, Title, Searchbar } from "react-native-paper";
 import { getLots } from "../services/lotService";
 import { CattleColors } from "../styles/colors";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 
 export default function LotesListScreen({ route, navigation }) {
 const remate = route.params?.remate; 
@@ -27,20 +29,27 @@ if (!remate) {
     loadLotes();
   }, [remate]);
 
-  const loadLotes = async () => {
-    setLoading(true);
-    try {
-      const res = await getLots();
-      // axios devuelve response; los datos reales están en res.data
-      const data = res.data ?? res; 
-      setLotes(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Error cargando lotes:", err);
-      Alert.alert("Error", "No se pudieron cargar los lotes");
-    } finally {
-      setLoading(false);
-    }
-  };
+
+const loadLotes = async () => {
+  setLoading(true);
+  try {
+    const remateId = await AsyncStorage.getItem("remate"); // recupera el ID del remate
+    const res = await getLots();
+    const data = res.data ?? res;
+    // Filtra solo los lotes del remate actual
+    const filtered = Array.isArray(data)
+      ? data.filter(lote => `${lote.remate.id}` === remateId)
+      : [];
+
+    setLotes(filtered);
+  } catch (err) {
+    console.error("Error cargando lotes:", err);
+    Alert.alert("Error", "No se pudieron cargar los lotes");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const filtered = lotes.filter(l =>
     (l.nombre || l.name || "").toString().toLowerCase().includes(query.toLowerCase())
@@ -75,7 +84,9 @@ if (!remate) {
         )}
         renderItem={({ item }) => (
           <TouchableOpacity
-            onPress={() => navigation.navigate("LoteDetail", { lote: item, remate })}
+            onPress={ async () => {
+              await AsyncStorage.setItem("Lote",`${item.id}`)
+              navigation.navigate("LoteDetail", { lote: item, remate })}}
           >
             <Card style={{ marginBottom: 10 }}>
               <Card.Content>
@@ -83,7 +94,7 @@ if (!remate) {
                   {item.nombre || item.name}
                 </Text>
                 <Text style={{ color: CattleColors.mediumGray }}>
-                  Raza: {item.raza || item.breed || "-"}  •  Precio: {item.precio ?? item.price ?? "-"}
+                  Lote número: {item.numLote || item.breed || "-"}  •  Cabaña: {item.cabana.nombre ?? item.price ?? "-"}
                 </Text>
               </Card.Content>
             </Card>

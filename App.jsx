@@ -90,7 +90,7 @@ export default function App() {
   );
 }
 function LoteDetailScreenWrapper(props) {
-  
+
   return (
     <PaperProvider theme={cattleTheme}>
       <HomeScreen {...props} />

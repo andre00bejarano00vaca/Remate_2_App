@@ -5,7 +5,6 @@ import { useRoute } from "@react-navigation/native";
 export default function LoteInfoScreen() {
   const route = useRoute();
   const lote = route?.params?.lote;
-  console.log(lote)
 
   if (!lote) {
     return (

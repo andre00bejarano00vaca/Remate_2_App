@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, FlatList, TouchableOpacity } from 'react-native';
 import { Text, Card } from 'react-native-paper';
 import { getAuctions } from '../services/auctionService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function RematesListScreen({ navigation }) {
   const [remates, setRemates] = useState([]);
@@ -21,7 +22,9 @@ export default function RematesListScreen({ navigation }) {
         data={remates}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => {navigation.navigate("LotesList", { remate: item });
+          <TouchableOpacity onPress={ async () => {
+            await AsyncStorage.setItem("remate",`${item.id}`)
+            navigation.navigate("LotesList", { remate: item });
 }}>
             <Card style={{ marginVertical: 5 }}>
               <Card.Title title={item.nombre} subtitle={`Fecha: ${item.fecha}`} />
