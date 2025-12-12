@@ -11,6 +11,7 @@ import VideoScreen from "../components/VideoScreen";
 import EventSource from 'react-native-event-source';
 import useEventosWS from "../services/useEventosWS";
 import { procesarEvento } from "../services/procesarEvento";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 const { width, height } = Dimensions.get('window');
@@ -26,6 +27,7 @@ export default function HomeScreen({ navigation, route }) {
     const loteid = route?.params?.lote?.id;
     const numeroLote = route?.params?.lote?.numLote;
     const remateid = route?.params?.lote?.remate.id;
+    const cabanaid= route?.params?.lote?.cabana?.id;
     console.log("loteId: " + loteid + "   ||  " + "remateId: " + remateid)
     const videoRef = useRef(null);
     const [counter, setCounter] = useState(0);
@@ -37,7 +39,8 @@ export default function HomeScreen({ navigation, route }) {
     const [isError, setIsError] = useState(false);
     const ws = useRef(null);
     // 🔥 Consumir WebSocket correctamente
-    console.log("Remata id: ",remateid)
+    console.log("Remata id: ", remateid)
+    ///esta funcion es para sacar a las personas del remate
     useEventosWS(remateid, (mensaje) => {
         procesarEvento(mensaje, navigation);
     });
@@ -47,7 +50,7 @@ export default function HomeScreen({ navigation, route }) {
         if (!loteid || !remateid) return; // asegurarse que los IDs existen
 
         const remateId = remateid; // según tu código, remate.id parece ser remateId
-        const wsUrl = `wss://testapp.digitaltelecom.net/ws/${remateId}/${loteid}`;
+        const wsUrl = `wss://testapp.digitaltelecom.net/ws/puja/${remateId}/${loteid}`;
 
         ws.current = new WebSocket(wsUrl);
 
@@ -104,10 +107,53 @@ export default function HomeScreen({ navigation, route }) {
     );
 
     const incrementCounter = async () => {
+    try {
+        // Obtener usuario del almacenamiento local
+        const username = await AsyncStorage.getItem("usuario");
+
+        if (!username) {
+            console.log("No existe usuario en AsyncStorage");
+            return;
+        }
+
+        // Obtener ID del usuario desde backend
+        const userRes = await fetch(`https://testapp.digitaltelecom.net/api/usuarios/id/${username}`);
+        
+        if (!userRes.ok) {
+            console.log(username)
+            console.log("Error obteniendo ID del usuario");
+            return;
+        }
+
+        const userData = await userRes.json();
+        const userId = userData.id ?? userData; // soporta ambas respuestas
+
+        // Incrementar contador
         await fetch(`https://testapp.digitaltelecom.net/contador/incrementar/${remateid}/${loteid}`, {
             method: "POST",
         });
-    };
+        console.log("crear puja en el id: ",remateid,"------------------------------")
+        // Crear puja
+        await fetch("https://testapp.digitaltelecom.net/api/pujas", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                fecha: new Date().toISOString().slice(0, 19),
+                monto: counter,
+                visible: true,
+                usuario: { id: userId },
+                cabana: { id: cabanaid },
+                lote: { id: loteid }
+            })
+        });
+
+    } catch (err) {
+        console.log("Error en incrementCounter:", err);
+    }
+};
+
 
     const goToListView = () => {
         navigation.navigate('ListView');
@@ -193,25 +239,25 @@ export default function HomeScreen({ navigation, route }) {
                 {/* Sección de Monto con Contador */}
 
                 <Card style={styles.cardPuja}>
-      <Card.Content>
-        <View style={styles.sectionPuja}>
-          <View style={styles.textContainerPuja}>
-            <Text style={styles.labelPuja}>MONTO ACTUAL</Text>
-            <Text style={styles.amountPuja}>${counter.toLocaleString()}</Text>
-            <Text style={styles.nextLabelPuja}>SIGUIENTE PUJA</Text>
-            <Text style={styles.nextAmountPuja}>${2000}</Text>
-          </View>
-          <Button
-            mode="contained"
-            onPress={incrementCounter}
-            style={styles.buttonPuja}
-            labelStyle={styles.buttonText}
-          >
-            PUJAR
-          </Button>
-        </View>
-      </Card.Content>
-    </Card>
+                    <Card.Content>
+                        <View style={styles.sectionPuja}>
+                            <View style={styles.textContainerPuja}>
+                                <Text style={styles.labelPuja}>MONTO ACTUAL</Text>
+                                <Text style={styles.amountPuja}>${counter.toLocaleString()}</Text>
+                                <Text style={styles.nextLabelPuja}>SIGUIENTE PUJA</Text>
+                                <Text style={styles.nextAmountPuja}>${2000}</Text>
+                            </View>
+                            <Button
+                                mode="contained"
+                                onPress={incrementCounter}
+                                style={styles.buttonPuja}
+                                labelStyle={styles.buttonText}
+                            >
+                                PUJAR
+                            </Button>
+                        </View>
+                    </Card.Content>
+                </Card>
 
 
                 {/* Botón para ver catálogo completo */}
@@ -315,54 +361,54 @@ export default function HomeScreen({ navigation, route }) {
 
 const styles = StyleSheet.create({
     cardPuja: {
-    margin: 12,
-    borderRadius: 12,
-    backgroundColor: "#ffffff",
-    elevation: 4,
-  },
-  sectionPuja: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  textContainerPuja: {
-    flex: 1,
-  },
-  labelPuja: {
-    fontSize: 14,
-    color: "#666666",
-    fontWeight: "500",
-    marginBottom: 4,
-  },
-  amountPuja: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#222222",
-    marginBottom: 12,
-  },
-  nextLabelPuja: {
-    fontSize: 14,
-    color: "#666666",
-    fontWeight: "500",
-    marginBottom: 4,
-  },
-  nextAmountPuja: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#1a73e8", // Azul empresarial
-  },
-  buttonPuja: {
-    marginLeft: 16,
-    borderRadius: 8,
-    backgroundColor: "#1a73e8",
-    height: 48,
-    justifyContent: "center",
-  },
-  buttonTextPuja: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#ffffff",
-  },
+        margin: 12,
+        borderRadius: 12,
+        backgroundColor: "#ffffff",
+        elevation: 4,
+    },
+    sectionPuja: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+    textContainerPuja: {
+        flex: 1,
+    },
+    labelPuja: {
+        fontSize: 14,
+        color: "#666666",
+        fontWeight: "500",
+        marginBottom: 4,
+    },
+    amountPuja: {
+        fontSize: 24,
+        fontWeight: "700",
+        color: "#222222",
+        marginBottom: 12,
+    },
+    nextLabelPuja: {
+        fontSize: 14,
+        color: "#666666",
+        fontWeight: "500",
+        marginBottom: 4,
+    },
+    nextAmountPuja: {
+        fontSize: 20,
+        fontWeight: "600",
+        color: "#1a73e8", // Azul empresarial
+    },
+    buttonPuja: {
+        marginLeft: 16,
+        borderRadius: 8,
+        backgroundColor: "#1a73e8",
+        height: 48,
+        justifyContent: "center",
+    },
+    buttonTextPuja: {
+        fontSize: 16,
+        fontWeight: "600",
+        color: "#ffffff",
+    },
     container: {
         flex: 1,
         backgroundColor: CattleColors.lightGray,

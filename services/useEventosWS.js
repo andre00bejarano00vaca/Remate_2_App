@@ -3,7 +3,7 @@ export default function useEventosWS(idRemate, onMessage) {
   useEffect(() => {
     if (!idRemate) return;
 
-    const socket = new WebSocket(`ws://192.168.0.116:8080/ws/eventos/${idRemate}`);
+    const socket = new WebSocket(`wss://testapp.digitaltelecom.net/ws/eventos/${idRemate}`);
 
     socket.onopen = () => console.log("WS conectado");
 

@@ -42,7 +42,8 @@
         {
           "microphonePermission": "Esta app necesita acceso al micrófono para funcionalidades del remate ganadero"
         }
-      ]
+      ],
+      "expo-video"
     ],
     "extra": {
       "eas": {

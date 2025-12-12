@@ -12,9 +12,10 @@ export default function ReporteScreen() {
     const fetchData = async () => {
       try {
         const remateId = await AsyncStorage.getItem("remate");
+        console.log("remate id: " , remateId)
 
         const res = await fetch(
-          `http://192.168.0.116:8080/api/pujas/informe/${remateId}`
+          `https://testapp.digitaltelecom.net/api/pujas/informe/${remateId}`
         );
         const data = await res.json();
         setDatos(data)

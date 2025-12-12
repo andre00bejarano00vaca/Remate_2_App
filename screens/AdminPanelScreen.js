@@ -15,7 +15,7 @@ import {
   Searchbar
 } from "react-native-paper";
 import { CattleColors } from "../styles/colors";
-import { List, RadioButton, Switch } from "react-native-paper";
+import { List, RadioButton, Switch, DateTimePicker } from "react-native-paper";
 
 
 import { getUsers } from "../services/userService";
@@ -24,15 +24,17 @@ import { getLots, createLot, updateLot } from "../services/lotService";
 import { getBids } from "../services/bidService";
 
 import { updateUser, deleteUser } from "../services/userService";
-import { getCabanas, createCabana,updateCabana } from "../services/cabanaService";
+import { getCabanas, createCabana, updateCabana } from "../services/cabanaService";
 import PDFGenerator from "../components/PDFGenerator";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ReporteScreen from "../components/Reporte";
+import BidCorrectionModal from "../components/BidCorrectionModal"
+import finalizarLote from "../services/finalizarLote";
 
 
 export default function AdminPanelScreen() {
 
-const [refreshing, setRefreshing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [activeTab, setActiveTab] = useState('remates');
   const [loading, setLoading] = useState(false);
@@ -44,29 +46,32 @@ const [refreshing, setRefreshing] = useState(false);
 
   const [editingUser, setEditingUser] = useState(null);
   const reportes = {
-  remate: "Remate Primavera 2025",
-  fecha: "30/10/2025",
-  lugar: "Centro Ganadero Santa Cruz",
-  lote: {
-    numero: 12,
-    tipo: "Toros Brahman",
-    cantidad: 8,
-    pesoPromedio: 450,
-  },
-  prelances: [
-    { postor: "Ganadera El Sol", monto: 4500 },
-    { postor: "Estancia La Palma", monto: 4700 },
-    { postor: "Agropecuaria San José", monto: 5000 },
-  ],
-  ganador: "Agropecuaria San José",
-  precioFinal: 5000,
-};
+    remate: "Remate Primavera 2025",
+    fecha: "30/10/2025",
+    lugar: "Centro Ganadero Santa Cruz",
+    lote: {
+      numero: 12,
+      tipo: "Toros Brahman",
+      cantidad: 8,
+      pesoPromedio: 450,
+    },
+    prelances: [
+      { postor: "Ganadera El Sol", monto: 4500 },
+      { postor: "Estancia La Palma", monto: 4700 },
+      { postor: "Agropecuaria San José", monto: 5000 },
+    ],
+    ganador: "Agropecuaria San José",
+    precioFinal: 5000,
+  };
 
   // Remates
   const [auctions, setAuctions] = useState([]);
   const [auctionSearchQuery, setAuctionSearchQuery] = useState('');
   const [showAuctionModal, setShowAuctionModal] = useState(false);
   const [editingAuction, setEditingAuction] = useState(null);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+const [showEndPicker, setShowEndPicker] = useState(false);
+
 
   // Lotes
   const [cattleLots, setCattleLots] = useState([]);
@@ -84,6 +89,11 @@ const [refreshing, setRefreshing] = useState(false);
   // Pujas
   const [bids, setBids] = useState([]);
   const [bidSearchQuery, setBidSearchQuery] = useState('');
+  const [correctionVisible, setCorrectionVisible] = useState(false);
+  const [selectedBid, setSelectedBid] = useState(null);
+  const [newBidValue, setNewBidValue] = useState("");
+  const [loteId, setLoteId] = useState()
+
 
   // Reportes
   const [reports, setReports] = useState({});
@@ -93,32 +103,35 @@ const [refreshing, setRefreshing] = useState(false);
     loadInitialData();
   }, []);
   // --- FETCH DE DATOS (IP LOCAL + PUERTO 8080) ---
-    useEffect(() => {
-        const fetchPujas = async () => {
-            try {
-              const remateId = await AsyncStorage.getItem("remate");
-                // Usamos la IP 192.168.0.116 y el puerto 8080
-                const response = await fetch(`http://192.168.0.116:8080/api/pujas/remate/${remateId}`);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    // Ordenamos por ID descendente (opcional, para ver las más nuevas arriba)
-                    const pujasOrdenadas = data.sort((a, b) => b.id - a.id);
-                    setBids(pujasOrdenadas);
-                } else {
-                    console.error("Error status:", response.status);
-                }
-            } catch (error) {
-                console.error("Error fetching pujas:", error);
-            }
-        };
+  useEffect(() => {
+    const fetchPujas = async () => {
+      try {
+        const remateId = await AsyncStorage.getItem("remate");
+        const loteId = await AsyncStorage.getItem("Lote")
+        setLoteId(loteId)
+        // Usamos la IP
+        //  192.168.0.116 y el puerto 8080
+        const response = await fetch(`https://testapp.digitaltelecom.net/api/pujas/remate/${remateId}`);
 
-        fetchPujas();
-        
-        // Actualizar automáticamente cada 5 segundos (Polling)
-        const interval = setInterval(fetchPujas, 5000);
-        return () => clearInterval(interval);
-    }, []);
+        if (response.ok) {
+          const data = await response.json();
+          // Ordenamos por ID descendente (opcional, para ver las más nuevas arriba)
+          const pujasOrdenadas = data.sort((a, b) => b.id - a.id);
+          setBids(pujasOrdenadas);
+        } else {
+          console.error("Error status:", response.status);
+        }
+      } catch (error) {
+        console.error("Error fetching pujas:", error);
+      }
+    };
+
+    fetchPujas();
+
+    // Actualizar automáticamente cada 5 segundos (Polling)
+    const interval = setInterval(fetchPujas, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadInitialData = async () => {
     setLoading(true);
@@ -137,7 +150,7 @@ const [refreshing, setRefreshing] = useState(false);
       setCabanas(cabana);
 
 
-     
+
 
 
       // Si tus reportes no vienen del backend aún:
@@ -164,20 +177,21 @@ const [refreshing, setRefreshing] = useState(false);
     }
   };
 
-   const onRefresh = async () => {
-  setRefreshing(true);
-  try {
-    if (activeTab === "usuarios") await loadUser();
-    else if (activeTab === "remates") await loadAuctions();
-    else if (activeTab === "lotes") await loadLots();
-    else if (activeTab === "cabanas") await loadCabanas();
-    else await loadInitialData();
-  } catch (e) {
-    console.error(e);
-  } finally {
-    setRefreshing(false);
-  }
-};
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      if (activeTab === "usuarios") await loadUser();
+      else if (activeTab === "remates") await loadAuctions();
+      else if (activeTab === "lotes") await loadLots();
+      else if (activeTab === "cabanas") await loadCabanas();
+      else if (activeTab === "puja") await loadPujas();
+      else await loadInitialData();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Funciones de acción
   const handleUserAction = async (userId, action, data = null, newRole = null) => {
@@ -266,7 +280,15 @@ const [refreshing, setRefreshing] = useState(false);
       Alert.alert("Error", "No se pudieron cargar las cabañas");
     }
   };
-
+  const loadPujas = async () => {
+    try {
+      const data = await getBids();
+      setBids(data);
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "No se pudieron cargar las cabañas");
+    }
+  };
 
   //cabanas 
   const handleCabanaAction = async (cabanaId, action, data = null) => {
@@ -285,6 +307,28 @@ const [refreshing, setRefreshing] = useState(false);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCorrectBid = async () => {
+    try {
+      await axios.post(
+        `${BASE_URL}/contador/corregir/${selectedBid.lote.remate.id}/${selectedBid.lote.id}`,
+        { nuevoValor: Number(newBidValue) }
+      );
+
+      alert("Puja corregida correctamente.");
+      getBids();     // Recargar lista
+      setCorrectionVisible(false);
+    } catch (error) {
+      console.error(error);
+      alert("Error al corregir la puja.");
+    }
+  };
+
+  const openCorrectionModal = (bid) => {
+    setSelectedBid(bid);
+    setNewBidValue(String(bid.monto));
+    setCorrectionVisible(true);
   };
 
   const handleBidAction = async (bidId, action, data = null) => {
@@ -319,10 +363,10 @@ const [refreshing, setRefreshing] = useState(false);
 
   // Render Users Tabs
   const renderUsersTab = () => (
-    <ScrollView contentContainerStyle={{ paddingVertical: 10 }} 
-    refreshControl={
-      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-    }>
+    <ScrollView contentContainerStyle={{ paddingVertical: 10 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
       <Searchbar
         placeholder="Buscar usuarios..."
         onChangeText={setUserSearchQuery}
@@ -415,9 +459,9 @@ const [refreshing, setRefreshing] = useState(false);
   //-------------remates---------------
   const renderAuctionsTab = () => (
     <ScrollView contentContainerStyle={{ paddingVertical: 10 }}
-    refreshControl={
-      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-    }>
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
       <Searchbar
         placeholder="Buscar remates..."
         onChangeText={setAuctionSearchQuery}
@@ -430,64 +474,64 @@ const [refreshing, setRefreshing] = useState(false);
         ).filter(a => a.visible)
         .map(a => (
           <Card key={a.id} style={stylesCardRemate.card}>
-  <Card.Content>
+            <Card.Content>
 
-    {/* Header con texto + iconos */}
-    <View style={stylesCardRemate.headerRow}>
-      <Text style={stylesCardRemate.title}>{a.nombre}</Text>
+              {/* Header con texto + iconos */}
+              <View style={stylesCardRemate.headerRow}>
+                <Text style={stylesCardRemate.title}>{a.nombre}</Text>
 
-      <View style={stylesCardRemate.headerActions}>
-        <IconButton
-          icon="pencil"
-          iconColor={CattleColors.info}
-          size={22}
-          onPress={() => {
-            setEditingAuction(a);
-            setShowAuctionModal(true);
-          }}
-        />
-        <IconButton
-          icon="delete"
-          iconColor={CattleColors.error}
-          size={22}
-          onPress={() =>
-            handleAuctionAction(a.id, "update", { ...a, visible: false })
-          }
-        />
-      </View>
-    </View>
+                <View style={stylesCardRemate.headerActions}>
+                  <IconButton
+                    icon="pencil"
+                    iconColor={CattleColors.info}
+                    size={22}
+                    onPress={() => {
+                      setEditingAuction(a);
+                      setShowAuctionModal(true);
+                    }}
+                  />
+                  <IconButton
+                    icon="delete"
+                    iconColor={CattleColors.error}
+                    size={22}
+                    onPress={() =>
+                      handleAuctionAction(a.id, "update", { ...a, visible: false })
+                    }
+                  />
+                </View>
+              </View>
 
-    {/* Info debajo */}
-    <Text style={stylesCardRemate.subtitle}>Fecha: {a.fecha}</Text>
-    <Text style={stylesCardRemate.subtitle}>Cabaña: {a.cabana?.nombre}</Text>
+              {/* Info debajo */}
+              <Text style={stylesCardRemate.subtitle}>Fecha: {a.fecha}</Text>
+              <Text style={stylesCardRemate.subtitle}>Cabaña: {a.cabana?.nombre}</Text>
 
-    {/* Finalizar abajo */}
-    {a.estado != "Finalizado"?
-    <Button
-      mode="contained"
-      icon="play-circle"
-      buttonColor="#0000FF"
-      textColor="white"
-      style={stylesCardRemate.finishButton}
-      contentStyle={stylesCardRemate.finishButtonContent}
-      onPress={() => handleAuctionAction(a.id, "finish")}
-    >
-      comenzar remate
-    </Button>: <Button
-      mode="contained"
-      icon="stop-circle"
-      buttonColor="#C62828"
-      textColor="white"
-      style={stylesCardRemate.finishButton}
-      contentStyle={stylesCardRemate.finishButtonContent}
-      onPress={() => handleAuctionAction(a.id, "finish")}
-    >
-      Finalizar Remate
-    </Button>}
-    
+              {/* Finalizar abajo */}
+              {a.estado != "Finalizado" ?
+                <Button
+                  mode="contained"
+                  icon="play-circle"
+                  buttonColor="#0000FF"
+                  textColor="white"
+                  contentStyle={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}
+                  labelStyle={{ fontSize: 15 }} // ajusta el tamaño de la letra
+                  onPress={() => finalizarLote(a.id, loteId, "finish")}
+                >
+                  Comenzar remate
+                </Button> : <Button
+                  mode="contained"
+                  icon="stop-circle"
+                  buttonColor="#C62828"
+                  textColor="white"
+                  style={stylesCardRemate.finishButton}
+                  contentStyle={stylesCardRemate.finishButtonContent}
+                  onPress={() => finalizarLote(a.id, loteId, "finish")}
+                >
+                  Finalizar Remate
+                </Button>}
 
-  </Card.Content>
-</Card>
+
+            </Card.Content>
+          </Card>
 
 
         ))}
@@ -495,10 +539,10 @@ const [refreshing, setRefreshing] = useState(false);
   );
   //---------------------Lotes ----------------------------------
   const renderLotsTab = () => (
-    <ScrollView contentContainerStyle={{ paddingVertical: 10 }} 
-    refreshControl={
-      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-    }>
+    <ScrollView contentContainerStyle={{ paddingVertical: 10 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
       <Searchbar
         placeholder="Buscar lotes..."
         onChangeText={setLotSearchQuery}
@@ -563,10 +607,10 @@ const [refreshing, setRefreshing] = useState(false);
 
   //--------------------cabanas -------------------------
   const renderCabanasTab = () => (
-    <ScrollView contentContainerStyle={{ paddingVertical: 10 }} 
-    refreshControl={
-      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-    }>
+    <ScrollView contentContainerStyle={{ paddingVertical: 10 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
       <Searchbar
         placeholder="Buscar cabañas..."
         onChangeText={setCabanaSearchQuery}
@@ -585,7 +629,7 @@ const [refreshing, setRefreshing] = useState(false);
                 <View style={{ flex: 1 }}>
                   <Text style={styles.userName}>{c.nombre}</Text>
                   <Text style={styles.userEmail}>Teléfono: {c.telefono}</Text>
-                  
+
                 </View>
 
                 <View style={styles.actionButtons}>
@@ -615,46 +659,53 @@ const [refreshing, setRefreshing] = useState(false);
   // -------------------pujas-----------------------------
   // ------------------- RENDER TAB PUJAS -----------------------------
   const renderBidsTab = () => (
-    <ScrollView contentContainerStyle={{ paddingVertical: 10 }}>
-      <Searchbar 
-        placeholder="Buscar por monto..." 
-        onChangeText={setBidSearchQuery} 
-        value={bidSearchQuery} 
-        style={styles.searchbar} 
+    <ScrollView contentContainerStyle={{ paddingVertical: 10 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
+      <Searchbar
+        placeholder="Buscar por monto..."
+        onChangeText={setBidSearchQuery}
+        value={bidSearchQuery}
+        style={styles.searchbar}
       />
-      
+
       {bids.filter(b => `${b.monto}`.includes(bidSearchQuery)).map(b => (
         <Card key={b.id} style={styles.card}>
           <Card.Content>
             <View style={styles.cardHeader}>
               <View style={{ flex: 1 }}>
-                {/* NÚMERO Y NOMBRE DEL LOTE */}
                 <Text style={styles.userName}>
                   Lote {b.lote?.numlote}: {b.lote?.nombre}
                 </Text>
-                
-                {/* NOMBRE DEL REMATE */}
+
                 <Text style={[styles.userEmail, { fontWeight: 'bold', color: CattleColors.primary }]}>
-                   {b.lote?.remate?.nombre}
+                  {b.lote?.remate?.nombre}
                 </Text>
 
-                {/* MONTO DE LA PUJA */}
                 <Text style={styles.userEmail}>
                   Oferta: ${b.monto?.toLocaleString()}
                 </Text>
               </View>
-              
-              {/* BOTONES DE ACCIÓN (Mantengo los que tenías) */}
+
+              {/* BOTONES DE ACCIÓN */}
               <View style={styles.actionButtons}>
-                <IconButton 
-                    icon="check" 
-                    iconColor={CattleColors.success} 
-                    onPress={() => handleBidAction(b.id, 'confirm')} 
+                <IconButton
+                  icon="check"
+                  iconColor={CattleColors.success}
+                  onPress={() => handleBidAction(b.id, 'confirm')}
                 />
-                <IconButton 
-                    icon="close" 
-                    iconColor={CattleColors.error} 
-                    onPress={() => handleBidAction(b.id, 'forceClose')} 
+                <IconButton
+                  icon="close"
+                  iconColor={CattleColors.error}
+                  onPress={() => handleBidAction(b.id, 'forceClose')}
+                />
+
+                {/* NUEVO BOTÓN: MODIFICAR MONTO */}
+                <IconButton
+                  icon="pencil"
+                  iconColor={CattleColors.warning}
+                  onPress={() => openCorrectionModal(b)}
                 />
               </View>
             </View>
@@ -663,9 +714,10 @@ const [refreshing, setRefreshing] = useState(false);
       ))}
     </ScrollView>
   );
+
   const renderReportsTab = () => (
     <ScrollView contentContainerStyle={{ paddingVertical: 10 }}>
-      <ReporteScreen/>
+      <ReporteScreen />
       <Card style={styles.card}>
         <Card.Content>
           <Text>Total Ventas: {reports.totalSales}</Text>
@@ -816,7 +868,7 @@ const [refreshing, setRefreshing] = useState(false);
             onDismiss={() => setShowAuctionModal(false)}
             contentContainerStyle={styles.modal}
           >
-            <Title>{editingAuction ? 'Editar Remate' : 'Crear Remate'}</Title>
+            <Text>{editingAuction ? 'Editar Remate' : 'Crear Remate'}</Text>
 
             <TextInput
               label="Nombre del remate"
@@ -827,14 +879,54 @@ const [refreshing, setRefreshing] = useState(false);
               }
             />
 
-            <TextInput
-              label="Fecha (YYYY-MM-DD)"
-              style={styles.input}
-              value={editingAuction?.fecha || ''}
-              onChangeText={text =>
-                setEditingAuction(prev => ({ ...prev, fecha: text }))
-              }
-            />
+            // Dentro de tu modal:
+            <Text style={{ marginBottom: 5 }}>Fecha de inicio</Text>
+            <Button
+              mode="outlined"
+              onPress={() => setShowStartPicker(true)}
+            >
+              {editingAuction?.fecha ? editingAuction.fecha : "Seleccionar fecha y hora"}
+            </Button>
+            {showStartPicker && (
+              <DateTimePicker
+                value={editingAuction?.fecha ? new Date(editingAuction.fecha) : new Date()}
+                mode="datetime"
+                display="default"
+                onChange={(event, selectedDate) => {
+                  setShowStartPicker(false);
+                  if (selectedDate) {
+                    setEditingAuction(prev => ({
+                      ...prev,
+                      fecha: selectedDate.toISOString().slice(0, 16) // YYYY-MM-DDTHH:mm
+                    }));
+                  }
+                }}
+              />
+            )}
+
+            <Text style={{ marginBottom: 5 }}>Fecha de fin</Text>
+            <Button
+              mode="outlined"
+              onPress={() => setShowEndPicker(true)}
+            >
+              {editingAuction?.fechaFin ? editingAuction.fechaFin : "Seleccionar fecha y hora"}
+            </Button>
+            {showEndPicker && (
+              <DateTimePicker
+                value={editingAuction?.fechaFin ? new Date(editingAuction.fechaFin) : new Date()}
+                mode="datetime"
+                display="default"
+                onChange={(event, selectedDate) => {
+                  setShowEndPicker(false);
+                  if (selectedDate) {
+                    setEditingAuction(prev => ({
+                      ...prev,
+                      fechaFin: selectedDate.toISOString().slice(0, 16)
+                    }));
+                  }
+                }}
+              />
+            )}
 
             <TextInput
               label="URL de lista de lotes"
@@ -1106,6 +1198,11 @@ const [refreshing, setRefreshing] = useState(false);
               Guardar
             </Button>
           </Modal>
+          <BidCorrectionModal
+            visible={correctionVisible}
+            onDismiss={() => setCorrectionVisible(false)}
+            onCorrect={() => getBids()}
+          />
 
         </Portal>
 
@@ -1190,7 +1287,6 @@ const stylesCardRemate = StyleSheet.create({
 
   finishButton: {
     marginTop: 12,
-    borderRadius: 8,
     height: 40,
     justifyContent: "center",
   },
