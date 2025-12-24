@@ -3,15 +3,14 @@ import { Button, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { generarReporteRemate } from "./generarReporteRemate";
 
-export default function ReporteScreen() {
+export default function ReporteScreen({remateId, remateName}) {
   const [datos, setDatos] = useState(null);
 
-  const remateNombre = "Remate Otoño";
+  const remateNombre = `${remateName}`;
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const remateId = await AsyncStorage.getItem("remate");
         console.log("remate id: " , remateId)
 
         const res = await fetch(

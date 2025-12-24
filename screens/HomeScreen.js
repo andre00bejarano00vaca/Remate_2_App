@@ -12,6 +12,7 @@ import EventSource from 'react-native-event-source';
 import useEventosWS from "../services/useEventosWS";
 import { procesarEvento } from "../services/procesarEvento";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { usePuja } from "../hook/usePuja";
 
 
 const { width, height } = Dimensions.get('window');
@@ -32,6 +33,8 @@ export default function HomeScreen({ navigation, route }) {
     const videoRef = useRef(null);
     const [counter, setCounter] = useState(0);
     const [menuVisible, setMenuVisible] = useState(false);
+    const sw = true;
+    const { siguientePuja } = usePuja(counter, sw);
 
     const [source, setSource] = useState({
         uri: videoLote,
@@ -245,7 +248,7 @@ export default function HomeScreen({ navigation, route }) {
                                 <Text style={styles.labelPuja}>MONTO ACTUAL</Text>
                                 <Text style={styles.amountPuja}>${counter.toLocaleString()}</Text>
                                 <Text style={styles.nextLabelPuja}>SIGUIENTE PUJA</Text>
-                                <Text style={styles.nextAmountPuja}>${2000}</Text>
+                                <Text style={styles.nextAmountPuja}>${siguientePuja.toLocaleString()}</Text>
                             </View>
                             <Button
                                 mode="contained"

@@ -66,7 +66,7 @@ export default function LoteDetailScreen({ route, navigation }) {
             {remate?.nombre || "Desconocido"}
           </Text>
           <Text style={styles.detailText}>
-            <Text style={styles.label}>Fecha: </Text>
+            <Text style={styles.label}>Fecha Inicio: </Text>
             {remate?.fecha || "-"}
           </Text>
           <Text style={styles.detailText}>

@@ -73,40 +73,28 @@ import HomeScreen from "./screens/HomeScreen";
 
 const Stack = createNativeStackNavigator();
 
+
+
 export default function App() {
-  
   return (
-    
-    <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen name="VerifyUser" component={VerifyUserScreen}/>
-        <Stack.Screen name="Login" component={LoginScreen}/>
-        <Stack.Screen name="RematesList" component={RematesListScreen} options={{ title: 'Remates' }} />
+    <PaperProvider >
+      <NavigationContainer>
+        <Stack.Navigator>
+          <Stack.Screen name="VerifyUser" component={VerifyUserScreen}/>
+          <Stack.Screen name="Login" component={LoginScreen}/>
+          <Stack.Screen name="RematesList" component={RematesListScreen} options={{ title: 'Remates' }} />
           <Stack.Screen name="LotesList" component={LoteListScreen} options={{ title: "Lotes" }} />
-        <Stack.Screen name="LoteDetail" component={LoteDetailScreenWrapper} options={{ title: 'Detalle del Lote' }} />
-        <Stack.Screen name="AdminPanel" component={AdminPanelScreen}/>
-      </Stack.Navigator>
-    </NavigationContainer>
+          <Stack.Screen name="LoteDetail" component={LoteDetailScreenWrapper} options={{ title: 'Detalle del Lote' }} />
+          <Stack.Screen name="AdminPanel" component={AdminPanelScreen}/>
+        </Stack.Navigator>
+      </NavigationContainer>
+    </PaperProvider>
   );
 }
 function LoteDetailScreenWrapper(props) {
 
   return (
-    <PaperProvider theme={cattleTheme}>
       <HomeScreen {...props} />
-    </PaperProvider>
   );
-}
-const cattleTheme = {
-  colors: {
-    primary: CattleColors.primary,
-    accent: CattleColors.accent,
-    background: CattleColors.lightGray,
-    surface: CattleColors.white,
-    text: CattleColors.black,
-    onSurface: CattleColors.black,
-    onBackground: CattleColors.black,
-    placeholder: CattleColors.mediumGray,
-    backdrop: CattleColors.overlay,
-  },
+ 
 };
