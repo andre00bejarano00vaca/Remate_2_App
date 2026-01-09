@@ -1,8 +1,12 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView, Alert } from "react-native";
+import { View, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { TextInput, Button, Title, Text, Card, SegmentedButtons } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CattleColors, CattleShadows } from "../styles/colors";
+
+// Validaciones
+const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const validatePassword = (password) => password.length >= 6;
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -10,32 +14,49 @@ export default function LoginScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [mode, setMode] = useState("signin"); // "signin" o "signup"
+  const [mode, setMode] = useState("signin");
 
   const handleSignIn = async () => {
     try {
-      const response = await fetch(`https://testapp.digitaltelecom.net/auth/existe/${email}`);
+      setLoading(true);
+      setError("");
+
+      if (!validateEmail(email)) {
+        setError("Por favor ingresa un email válido");
+        return;
+      }
+
+      // Envía email Y contraseña (típico en auth)
+      const response = await fetch("https://testapp.digitaltelecom.net/auth/existe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
       if (!response.ok) {
         if (response.status === 401) {
-          setError("Usuario no aprobado ❌");
+          setError("Email o contraseña incorrectos");
         } else if (response.status === 404) {
-          setError("Usuario no encontrado. Regístrate primero.");
+          setError("Usuario no registrado. Crea una cuenta.");
         } else {
-          setError("Error al iniciar sesión");
+          setError("Error al iniciar sesión. Intenta más tarde.");
         }
         return;
       }
 
-      // Login exitoso
+      // Guarda solo el email (NUNCA guardes contraseñas)
       await AsyncStorage.setItem("usuario", email);
-      await AsyncStorage.setItem("password", password)
       await AsyncStorage.setItem("isLoggedIn", "true");
+      
+      // Opcional: guardar token JWT si el servidor lo proporciona
+      // const data = await response.json();
+      // if (data.token) await AsyncStorage.setItem("authToken", data.token);
+
       navigation.replace("RematesList");
 
     } catch (err) {
       console.error("Error en login:", err);
-      setError("No se pudo iniciar sesión, intente nuevamente.");
+      setError("Conexión fallida. Verifica tu internet.");
     } finally {
       setLoading(false);
     }
@@ -46,65 +67,57 @@ export default function LoginScreen({ navigation }) {
       setLoading(true);
       setError("");
 
-      // Verificar si el usuario ya existe
-      const checkResponse = await fetch("https://testapp.digitaltelecom.net/auth/check-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          username: email,
-        }).toString(),
-      });
-
-      if (checkResponse.ok) {
-        const checkText = await checkResponse.text();
-        if (checkText.includes("exists") || checkText.includes("ya existe")) {
-          setError("El usuario ya está registrado. Usa 'Iniciar Sesión' en su lugar.");
-          return;
-        }
+      // Validaciones
+      if (!validateEmail(email)) {
+        setError("Email inválido");
+        return;
       }
-
-      const response = await fetch("https://testapp.digitaltelecom.net/auth/registrar", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          username: email,
-          password: password,
-        }).toString(),
-      });
-
-      const text = await response.text();
-      console.log("Backend Register:", text);
-
-      if (!response.ok) {
-        if (response.status === 409) {
-          setError("El usuario ya está registrado ❌");
-        } else {
-          setError("Error al registrar");
-        }
+      if (!validatePassword(password)) {
+        setError("Contraseña debe tener al menos 6 caracteres");
         return;
       }
 
-      // Si llega aquí, el registro fue exitoso
+      // Verificar si existe
+      const checkResponse = await fetch("https://testapp.digitaltelecom.net/auth/check-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      if (checkResponse.status === 409 || (checkResponse.ok && await checkResponse.text().includes("existe"))) {
+        setError("Este email ya está registrado.");
+        return;
+      }
+
+      // Registrar
+      const response = await fetch("https://testapp.digitaltelecom.net/auth/registrar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        setError("Error en registro. Intenta con otro email.");
+        return;
+      }
+
       await AsyncStorage.setItem("usuario", email);
       await AsyncStorage.setItem("isLoggedIn", "true");
       navigation.replace("PendingApproval");
 
     } catch (err) {
-      console.error("Error en registro:", err);
-      setError("No se pudo registrar, intente nuevamente.");
+      console.error("Error en signup:", err);
+      setError("Fallo en la conexión.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleSubmit = () => {
-    if (mode === "signin") {
-      handleSignIn();
-    } else {
-      handleSignUp();
-    }
+    mode === "signin" ? handleSignIn() : handleSignUp();
   };
 
+  const isFormValid = email && password && validateEmail(email) && validatePassword(password);
 
   return (
     <KeyboardAvoidingView
@@ -113,11 +126,7 @@ export default function LoginScreen({ navigation }) {
     >
       <View style={styles.backgroundGradient} />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Logo */}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.logoContainer}>
           <Image
             source={require("../assets/PerfilELITE.png")}
@@ -126,31 +135,21 @@ export default function LoginScreen({ navigation }) {
           <View style={styles.accentLine} />
         </View>
 
-        {/* Tarjeta Login/Registro */}
         <Card style={styles.loginCard}>
           <Card.Content>
             <Title style={styles.loginTitle}>
-              {mode === "signin" ? "Iniciar Sesión" : "Registro de Usuario"}
+              {mode === "signin" ? "Iniciar Sesión" : "Crear Cuenta"}
             </Title>
             <Text style={styles.loginSubtitle}>
-              {mode === "signin" ? "Accede a tu cuenta" : "Crea tu cuenta para acceder"}
+              {mode === "signin" ? "Accede con tu email" : "Regístrate para continuar"}
             </Text>
 
-            {/* Selector de modo */}
             <SegmentedButtons
               value={mode}
               onValueChange={setMode}
               buttons={[
-                {
-                  value: 'signin',
-                  label: 'Iniciar Sesión',
-                  icon: 'login',
-                },
-                {
-                  value: 'signup',
-                  label: 'Registrarse',
-                  icon: 'account-plus',
-                },
+                { value: 'signin', label: 'Iniciar Sesión', icon: 'login' },
+                { value: 'signup', label: 'Registrarse', icon: 'account-plus' },
               ]}
               style={styles.segmentedButtons}
             />
@@ -162,6 +161,7 @@ export default function LoginScreen({ navigation }) {
               mode="outlined"
               style={styles.input}
               autoCapitalize="none"
+              keyboardType="email-address"
               left={<TextInput.Icon icon="email" color={CattleColors.accent} />}
             />
 
@@ -182,13 +182,19 @@ export default function LoginScreen({ navigation }) {
               }
             />
 
-            {error ? <Text style={{ color: "red", textAlign: "center" }}>{error}</Text> : null}
+            {mode === "signup" && (
+              <Text style={styles.helperText}>
+                Mín. 6 caracteres
+              </Text>
+            )}
+
+            {error && <Text style={styles.errorText}>{error}</Text>}
 
             <Button
               mode="contained"
               onPress={handleSubmit}
               style={styles.loginButton}
-              disabled={!email || !password || loading}
+              disabled={!isFormValid || loading}
               buttonColor={CattleColors.primary}
               textColor={CattleColors.white}
               loading={loading}
@@ -196,17 +202,9 @@ export default function LoginScreen({ navigation }) {
               {mode === "signin" ? "INICIAR SESIÓN" : "REGISTRARME"}
             </Button>
 
-            {/* Información adicional */}
-            {mode === "signin" && (
-              <Text style={styles.helpText}>
-                ¿No tienes cuenta? Cambia a "Registrarse" arriba.
-              </Text>
-            )}
-            {mode === "signup" && (
-              <Text style={styles.helpText}>
-                ¿Ya tienes cuenta? Cambia a "Iniciar Sesión" arriba.
-              </Text>
-            )}
+            <Text style={styles.helpText}>
+              {mode === "signin" ? "¿Sin cuenta? Usa 'Registrarse'" : "¿Ya tienes cuenta? Usa 'Iniciar Sesión'"}
+            </Text>
           </Card.Content>
         </Card>
       </ScrollView>
