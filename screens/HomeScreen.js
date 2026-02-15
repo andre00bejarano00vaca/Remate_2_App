@@ -23,6 +23,8 @@ function cerrarPantallaRemate() {
 
 
 export default function HomeScreen({ navigation, route }) {
+    const [isAdmin, setIsAdmin] = useState(false);
+
     console.log("route.params.lote.video")
     const videoLote = route?.params?.lote?.video;
     const loteid = route?.params?.lote?.id;
@@ -86,6 +88,22 @@ export default function HomeScreen({ navigation, route }) {
         };
     }, [loteid, remateid]); // solo se ejecuta cuando estos cambian
 
+    //verificar si es usuario admin para mostrar el boton del panel de admin
+    useEffect(() => {
+       (async () => {
+           try {
+               const stored = await AsyncStorage.getItem("rol");
+               if (!stored) return;
+               const roles = JSON.parse(stored);
+               const hasAdmin = Array.isArray(roles)
+                   ? roles.some(r => r.toString().toUpperCase().includes("ADMIN"))
+                   : roles.toString().toUpperCase().includes("ADMIN");
+               if (hasAdmin) setIsAdmin(true);
+           } catch (e) {
+               console.log("Error leyendo rol:", e);
+           }
+       })();
+   }, []);
 
     useEffect(() => {
         let interval;
@@ -328,18 +346,20 @@ export default function HomeScreen({ navigation, route }) {
                                     <Text style={styles.menuItemText}>Catálogo</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity
-                                    style={styles.menuItem}
-                                    onPress={goToAdminPanel}
-                                >
-                                    <IconButton
-                                        icon="cog"
-                                        size={24}
-                                        iconColor={CattleColors.primary}
-                                        style={styles.menuItemIcon}
-                                    />
-                                    <Text style={styles.menuItemText}>Panel Admin</Text>
-                                </TouchableOpacity>
+                                {isAdmin && (
+                                    <TouchableOpacity
+                                        style={styles.menuItem}
+                                        onPress={goToAdminPanel}
+                                    >
+                                        <IconButton
+                                            icon="cog"
+                                            size={24}
+                                            iconColor={CattleColors.primary}
+                                            style={styles.menuItemIcon}
+                                        />
+                                        <Text style={styles.menuItemText}>Panel Admin</Text>
+                                    </TouchableOpacity>
+                                )}
 
                                 <TouchableOpacity
                                     style={styles.menuItem}
