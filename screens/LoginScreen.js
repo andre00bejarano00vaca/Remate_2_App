@@ -34,14 +34,32 @@ export default function LoginScreen({ navigation }) {
       });
 
       if (!response.ok) {
+        let body = "";
+        try {
+          body = await response.text();
+        } catch (e) {
+          body = "(no se pudo leer el cuerpo de la respuesta)";
+        }
+        console.error("Login failed:", response.status, body);
         if (response.status === 401) {
-          setError("Email o contraseña incorrectos");
+          setError(body || "Email o contraseña incorrectos");
         } else if (response.status === 404) {
-          setError("Usuario no registrado. Crea una cuenta.");
+          setError(body || "Usuario no registrado. Crea una cuenta.");
         } else {
-          setError("Error al iniciar sesión. Intenta más tarde.");
+          setError(body || "Error al iniciar sesión. Intenta más tarde.");
         }
         return;
+      }
+
+      // Si el servidor responde OK, loguear posible payload para depuración
+      try {
+        const data = await response.json();
+        console.log("Login response:", data);
+        if (data.token) {
+          await AsyncStorage.setItem("authToken", data.token);
+        }
+      } catch (e) {
+        console.log("Login: respuesta OK sin JSON:", e);
       }
 
       // Guarda solo el email (NUNCA guardes contraseñas)
@@ -77,31 +95,110 @@ export default function LoginScreen({ navigation }) {
         return;
       }
 
-      // Verificar si existe
-      const checkResponse = await fetch("https://testapp.digitaltelecom.net/auth/check-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+       // ===============================
+// VERIFICAR SI USUARIO EXISTE / ESTÁ APROBADO
+// ===============================
 
-      if (checkResponse.status === 409 || (checkResponse.ok && await checkResponse.text().includes("existe"))) {
-        setError("Este email ya está registrado.");
-        return;
-      }
+try {
+  // Construir URL segura (email puede tener @ + etc.)
+  const verificarUrl =
+    `https://testapp.digitaltelecom.net/auth/verificar/${encodeURIComponent(email)}`;
 
-      // Registrar
-      const response = await fetch("https://testapp.digitaltelecom.net/auth/registrar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+  // Hacer request GET
+  const verifyResponse = await fetch(verificarUrl, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
 
-      if (!response.ok) {
-        setError("Error en registro. Intenta con otro email.");
-        return;
-      }
+  console.log("Verificar status:", verifyResponse.status);
+
+  // ===============================
+  // CASO 1: Usuario NO existe (404)
+  // ===============================
+  if (verifyResponse.status === 404) {
+    console.log("Usuario no existe, continuar registro normal...");
+    // Aquí simplemente sigues el flujo normal del registro
+    return;
+  }
+
+  // ===============================
+  // CASO 2: Otro error inesperado
+  // ===============================
+  if (!verifyResponse.ok) {
+    console.warn("Error verificando usuario:", verifyResponse.status);
+    setError("Error verificando usuario. Intenta nuevamente.");
+    return;
+  }
+
+  // ===============================
+  // CASO 3: Respuesta válida JSON
+  // ===============================
+  const verified = await verifyResponse.json();
+
+  console.log("Usuario verificado:", verified);
+
+  // verified = { authenticated: true/false, confirmed: true/false }
+
+  // ===============================
+  // SI YA EXISTE Y ESTÁ APROBADO
+  // ===============================
+  if (verified.authenticated && verified.confirmed) {
+    setError("Usuario ya registrado y aprobado.");
+    return;
+  }
+
+  // ===============================
+  // SI EXISTE PERO NO ESTÁ APROBADO
+  // ===============================
+  if (verified.authenticated && !verified.confirmed) {
+    await AsyncStorage.setItem("usuario", email);
+    await AsyncStorage.setItem("isLoggedIn", "true");
+
+    navigation.replace("PendingApproval");
+    return;
+  }
+
+  // ===============================
+  // SI NO EXISTE → CONTINUAR REGISTRO NORMAL
+  // ===============================
+  console.log("Usuario no registrado, continuar flujo...");
+
+} catch (error) {
+  console.error("Error en verificación:", error);
+  setError("No se pudo verificar usuario. Revisa tu conexión.");
+}
+
+      try {
+    const response = await fetch("https://testapp.digitaltelecom.net/api/usuarios/registrar", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: email,
+        password: password,
+        rol: {id: 1},
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error("Error al registrar: " + errorText);
+    }
+
+    const data = await response.json();
+    console.log("Usuario registrado:", data);
+    await AsyncStorage.setItem("rol", data.rol || 1); 
+
+  } catch (error) {
+    console.error("Registro falló:", error);
+  }
+
 
       await AsyncStorage.setItem("usuario", email);
+      await AsyncStorage.setItem("rol", JSON.stringify(["CLIENTE"])); 
       await AsyncStorage.setItem("isLoggedIn", "true");
       navigation.replace("PendingApproval");
 

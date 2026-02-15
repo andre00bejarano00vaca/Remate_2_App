@@ -70,6 +70,7 @@ import RemateDetailScreen from './screens/RemateDetailScreen';
 import LoteDetailScreen from './screens/LoteDetailScreen';
 import LoteListScreen from './screens/LoteListScreen';
 import HomeScreen from "./screens/HomeScreen";
+import PendingApprovalScreen from './screens/PendingApprovalScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -85,6 +86,7 @@ export default function App() {
           <Stack.Screen name="RematesList" component={RematesListScreen} options={{ title: 'Remates' }} />
           <Stack.Screen name="LotesList" component={LoteListScreen} options={{ title: "Lotes" }} />
           <Stack.Screen name="LoteDetail" component={LoteDetailScreenWrapper} options={{ title: 'Detalle del Lote' }} />
+          <Stack.Screen name="PendingApproval" component={PendingApprovalScreen} />
           <Stack.Screen name="AdminPanel" component={AdminPanelScreen}/>
         </Stack.Navigator>
       </NavigationContainer>
