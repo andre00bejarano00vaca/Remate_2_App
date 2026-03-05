@@ -11,6 +11,9 @@ const validatePassword = (password) => password.length >= 6;
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [celular, setCelular] = useState("");
+  const [ci, setCi] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -115,6 +118,11 @@ export default function LoginScreen({ navigation }) {
       setLoading(true);
       setError("");
 
+      if (!nombre || !celular || !ci) {
+        setError("Completa nombre, celular y CI");
+        return;
+      }
+
       // Validaciones
       if (!validateEmail(email)) {
         setError("Email inválido");
@@ -209,6 +217,9 @@ export default function LoginScreen({ navigation }) {
           body: JSON.stringify({
             username: email,
             password: password,
+            celular: celular,
+            ci: ci,
+            nombre: nombre,
             rol: 1,
           }),
         });
@@ -244,7 +255,16 @@ export default function LoginScreen({ navigation }) {
     mode === "signin" ? handleSignIn() : handleSignUp();
   };
 
-  const isFormValid = email && password && validateEmail(email) && validatePassword(password);
+  const isFormValid =
+    mode === "signin"
+      ? email && password && validateEmail(email) && validatePassword(password)
+      : nombre &&
+        celular &&
+        ci &&
+        email &&
+        password &&
+        validateEmail(email) &&
+        validatePassword(password);
 
   return (
     <KeyboardAvoidingView
@@ -280,6 +300,38 @@ export default function LoginScreen({ navigation }) {
               ]}
               style={styles.segmentedButtons}
             />
+
+            {mode === "signup" && (
+              <>
+                <TextInput
+                  label="Nombre completo"
+                  value={nombre}
+                  onChangeText={setNombre}
+                  mode="outlined"
+                  style={styles.input}
+                  autoCapitalize="words"
+                  left={<TextInput.Icon icon="account" color={CattleColors.accent} />}
+                />
+                <TextInput
+                  label="Celular"
+                  value={celular}
+                  onChangeText={setCelular}
+                  mode="outlined"
+                  style={styles.input}
+                  keyboardType="phone-pad"
+                  left={<TextInput.Icon icon="phone" color={CattleColors.accent} />}
+                />
+                <TextInput
+                  label="CI"
+                  value={ci}
+                  onChangeText={setCi}
+                  mode="outlined"
+                  style={styles.input}
+                  keyboardType="numeric"
+                  left={<TextInput.Icon icon="card-account-details" color={CattleColors.accent} />}
+                />
+              </>
+            )}
 
             <TextInput
               label="Email"
