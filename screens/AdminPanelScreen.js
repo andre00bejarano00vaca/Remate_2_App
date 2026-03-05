@@ -202,9 +202,9 @@ export default function AdminPanelScreen() {
     try {
       if (action === "approve") {
         console.log(action)
-        await updateUser(userId, { ...data, aprobado: true });
+        await updateUser(userId, { aprobado: true });
       } else if (action === "reject") {
-        await updateUser(userId, { ...data, aprobado: false });
+        await updateUser(userId, { aprobado: false });
       } else if (action === "changeRole") {
         await updateUser(userId, { ...data, roles: [newRole], rolId: rolId });
       } else if (action === "delete") {
