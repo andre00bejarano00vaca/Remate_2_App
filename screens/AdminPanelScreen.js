@@ -197,21 +197,23 @@ export default function AdminPanelScreen() {
   };
 
   // Funciones de acción
-  const handleUserAction = async (userId, action, data = null, newRole = null) => {
+  const handleUserAction = async (userId, action, data = null, newRole = null, rolId) => {
     setLoading(true);
     try {
       if (action === "approve") {
+        console.log(action)
         await updateUser(userId, { ...data, aprobado: true });
       } else if (action === "reject") {
         await updateUser(userId, { ...data, aprobado: false });
       } else if (action === "changeRole") {
-        await updateUser(userId, { ...data, roles: [newRole] });
+        await updateUser(userId, { ...data, roles: [newRole], rolId: rolId });
       } else if (action === "delete") {
         await updateUser(userId, { ...data, visible: false });
       }
       await loadUser(); // refrescar datos
     } catch (error) {
-      Alert.alert("Error", "No se pudo realizar la acción");
+      Alert.alert("Error", "No se pudo realizar la acción" + error.message);
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -437,12 +439,12 @@ export default function AdminPanelScreen() {
                         {
                           text: 'Admin',
                           onPress: () =>
-                            handleUserAction(user.id, 'changeRole', user, 'ADMIN')
+                            handleUserAction(user.id, 'changeRole', user, 'ADMIN', 2)
                         },
                         {
                           text: 'Cliente',
                           onPress: () =>
-                            handleUserAction(user.id, 'changeRole', user, 'CLIENTE')
+                            handleUserAction(user.id, 'changeRole', user, 'CLIENTE', 1)
                         },
                         {
                           text: 'Cancelar',

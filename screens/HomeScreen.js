@@ -50,6 +50,39 @@ export default function HomeScreen({ navigation, route }) {
         procesarEvento(mensaje, navigation);
     });
 
+
+    const obtenerRol = async (email) => {
+        try {
+          // No hace falta 'method: GET' porque es el default, ni Content-Type
+          const response = await fetch(`https://testapp.digitaltelecom.net/api/usuarios/rol/${email}`);
+
+          if (!response.ok) {
+            throw new Error("No se pudo obtener el rol");
+          }
+
+          const data = await response.json();
+          console.log("ID de Rol recibido:", data.rolId);
+
+          await AsyncStorage.setItem("rol", String(data.rolId));
+          return data.rolId;
+
+        } catch (error) {
+          console.error("Error obteniendo rol:", error);
+        }
+      };
+      const inicializarUsuario = async () => {
+  // 1. Esperamos a que AsyncStorage nos de el valor real
+  const correoGuardado = await AsyncStorage.getItem("usuario");
+
+  if (correoGuardado) {
+    // 2. Ahora sí, pasamos el STRING a la función
+    obtenerRol(correoGuardado);
+  } else {
+    console.log("No hay un usuario guardado");
+  }
+};
+
+inicializarUsuario();
     //web socket-----------------------------------------
     useEffect(() => {
         if (!loteid || !remateid) return; // asegurarse que los IDs existen
@@ -90,20 +123,34 @@ export default function HomeScreen({ navigation, route }) {
 
     //verificar si es usuario admin para mostrar el boton del panel de admin
     useEffect(() => {
-       (async () => {
-           try {
-               const stored = await AsyncStorage.getItem("rol");
-               if (!stored) return;
-               const roles = JSON.parse(stored);
-               const hasAdmin = Array.isArray(roles)
-                   ? roles.some(r => r.toString().toUpperCase().includes("ADMIN"))
-                   : roles.toString().toUpperCase().includes("ADMIN");
-               if (hasAdmin) setIsAdmin(true);
-           } catch (e) {
-               console.log("Error leyendo rol:", e);
-           }
-       })();
-   }, []);
+    (async () => {
+        try {
+            const stored = await AsyncStorage.getItem("rol");
+            if (!stored) return;
+
+            // Como guardamos el ID (número), lo convertimos a entero
+            // Si antes guardaste un JSON, el parse fallará, así que lo manejamos con cuidado
+            let rolId;
+            try {
+                rolId = JSON.parse(stored);
+            } catch {
+                rolId = stored; // Si no es JSON, lo tomamos como string/número directo
+            }
+
+            // Supongamos que el ID del Administrador es 1
+            const ADMIN_ROLE_ID = 2;
+
+            if (Number(rolId) === ADMIN_ROLE_ID) {
+                setIsAdmin(true);
+            } else {
+                setIsAdmin(false);
+            }
+
+        } catch (e) {
+            console.log("Error leyendo rol del almacenamiento:", e);
+        }
+    })();
+}, []);
 
     useEffect(() => {
         let interval;
