@@ -257,6 +257,7 @@ export default function AdminPanelScreen() {
       } else if (action === "delete") {
         await updateUser(userId, { ...data, visible: false });
       } else if (action === "update") {
+        console.log(data)
         await updateUser(userId, data);
       } else if (action === "create") {
         await createteUser(data);
@@ -869,16 +870,6 @@ export default function AdminPanelScreen() {
                   value={editingUser?.ci || ''}
                   onChangeText={text =>
                     setEditingUser(prev => ({ ...(prev || {}), ci: text }))
-                  }
-                />
-
-                <TextInput
-                  label="Contraseña"
-                  style={styles.input}
-                  secureTextEntry
-                  value={editingUser?.password || ''}
-                  onChangeText={text =>
-                    setEditingUser(prev => ({ ...(prev || {}), password: text }))
                   }
                 />
 
