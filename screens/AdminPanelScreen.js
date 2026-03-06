@@ -51,6 +51,9 @@ export default function AdminPanelScreen() {
     { id: 3, name: "COLABORADOR" },
     { id: 4, name: "SUPER_USUARIO" },
   ];
+  const editableRoleOptions = ROLE_OPTIONS
+    .filter(r => r.id !== 4)
+    .filter(r => (ROLE_PRIORITY[currentRolId] || 0) > (ROLE_PRIORITY[r.id] || 0));
 
   // Usuarios
   const [users, setUsers] = useState([]);
@@ -474,23 +477,15 @@ export default function AdminPanelScreen() {
                     </>
                   )}
                   <IconButton
-                    icon="account-cog"
-                    iconColor={canEditRoles ? CattleColors.info : CattleColors.mediumGray}
-                    disabled={!canEditRoles}
-                    onPress={() =>
-                      Alert.alert(
-                        'Cambiar Rol',
-                        'Selecciona el nuevo rol:',
-                        ROLE_OPTIONS
-                          .filter(r => r.id !== 4) // nunca mostrar SUPER_USUARIO
-                          .filter(r => (ROLE_PRIORITY[currentRolId] || 0) > (ROLE_PRIORITY[r.id] || 0))
-                          .map(r => ({
-                            text: r.name,
-                            onPress: () => handleUserAction(user.id, 'changeRole', user, r.name, r.id),
-                          }))
-                          .concat([{ text: 'Cancelar', style: 'cancel' }])
-                      )
-                    }
+                    icon="pencil"
+                    iconColor={CattleColors.info}
+                    onPress={() => {
+                      setEditingUser({
+                        ...user,
+                        rolId: user.rol?.id || user.rolId,
+                      });
+                      setShowUserModal(true);
+                    }}
                   />
                 </View>
               </View>
@@ -898,33 +893,32 @@ export default function AdminPanelScreen() {
                   />
                 </View>
 
-                {/* Selección de roles */}
-                <List.Accordion
-                  title={editingUser?.rol?.name || (editingUser?.rolId ? (ROLE_OPTIONS.find(r => r.id === editingUser.rolId)?.name || "Seleccionar Rol") : "Seleccionar Rol")}
-                  style={{ backgroundColor: "#fff", borderRadius: 8, marginBottom: 10 }}
+            {/* Selección de roles */}
+            {editableRoleOptions.length > 0 && (
+              <List.Accordion
+                title={editingUser?.rol?.name || (editingUser?.rolId ? (ROLE_OPTIONS.find(r => r.id === editingUser.rolId)?.name || "Seleccionar Rol") : "Seleccionar Rol")}
+                style={{ backgroundColor: "#fff", borderRadius: 8, marginBottom: 10 }}
+              >
+                <RadioButton.Group
+                  onValueChange={(value) =>
+                    setEditingUser(prev => ({
+                      ...(prev || {}),
+                      rolId: value,
+                      rol: { id: value, name: ROLE_OPTIONS.find(r => r.id === value)?.name }
+                    }))
+                  }
+                  value={editingUser?.rol?.id || editingUser?.rolId || null}
                 >
-                  <RadioButton.Group
-                    onValueChange={(value) =>
-                      setEditingUser(prev => ({
-                        ...(prev || {}),
-                        rolId: value,
-                        rol: { id: value, name: ROLE_OPTIONS.find(r => r.id === value)?.name }
-                      }))
-                    }
-                    value={editingUser?.rol?.id || editingUser?.rolId || null}
-                  >
-                    {ROLE_OPTIONS
-                      .filter(r => r.id !== 4)
-                      .filter(r => (ROLE_PRIORITY[currentRolId] || 0) > (ROLE_PRIORITY[r.id] || 0))
-                      .map(r => (
-                        <List.Item
-                          key={r.id}
-                          title={r.name}
-                          right={() => <RadioButton value={r.id} />}
-                        />
-                      ))}
-                  </RadioButton.Group>
-                </List.Accordion>
+                  {editableRoleOptions.map(r => (
+                    <List.Item
+                      key={r.id}
+                      title={r.name}
+                      right={() => <RadioButton value={r.id} />}
+                    />
+                  ))}
+                </RadioButton.Group>
+              </List.Accordion>
+            )}
 
                 {/* Switch para visible */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10 }}>
