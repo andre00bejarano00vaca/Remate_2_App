@@ -802,7 +802,20 @@ export default function AdminPanelScreen() {
           onPress={() => {
             if (activeTab === 'remates') { setEditingAuction(null); setShowAuctionModal(true); }
             else if (activeTab === 'lotes') { setEditingLot(null); setShowLotModal(true); }
-            else if (activeTab === 'usuarios') { setEditingUser(null); setShowUserModal(true); }
+            else if (activeTab === 'usuarios') {
+              setEditingUser({
+                username: "",
+                nombre: "",
+                celular: "",
+                ci: "",
+                password: "",
+                aprobado: false,
+                visible: true,
+                rolId: 1,
+                rol: { id: 1, name: "CLIENTE" },
+              });
+              setShowUserModal(true);
+            }
             else if (activeTab === 'cabanas') { setEditingCabana(null); setShowCabanaModal(true); } // ✅ agregar
           }}
           disabled={!['remates', 'lotes', 'cabanas', 'usuarios'].includes(activeTab)} // ✅ agregar 'cabanas'
@@ -816,128 +829,138 @@ export default function AdminPanelScreen() {
             onDismiss={() => setShowUserModal(false)}
             contentContainerStyle={styles.modalWrapper}
           >
-            <Title>{editingUser ? 'Editar Usuario' : 'Crear Usuario'}</Title>
-
-            <TextInput
-              label="Nombre de usuario"
-              style={styles.input}
-              value={editingUser?.username || ''}
-              onChangeText={text =>
-                setEditingUser(prev => ({ ...prev, username: text }))
-              }
-            />
-
-            <TextInput
-              label="Nombre"
-              style={styles.input}
-              value={editingUser?.nombre || ''}
-              onChangeText={text =>
-                setEditingUser(prev => ({ ...prev, nombre: text }))
-              }
-            />
-
-            <TextInput
-              label="Celular"
-              style={styles.input}
-              keyboardType="phone-pad"
-              value={editingUser?.celular || ''}
-              onChangeText={text =>
-                setEditingUser(prev => ({ ...prev, celular: text }))
-              }
-            />
-
-            <TextInput
-              label="CI"
-              style={styles.input}
-              keyboardType="numeric"
-              value={editingUser?.ci || ''}
-              onChangeText={text =>
-                setEditingUser(prev => ({ ...prev, ci: text }))
-              }
-            />
-
-            <TextInput
-              label="Contraseña"
-              style={styles.input}
-              secureTextEntry
-              value={editingUser?.password || ''}
-              onChangeText={text =>
-                setEditingUser(prev => ({ ...prev, password: text }))
-              }
-            />
-
-            {/* Switch para aprobar usuario */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10 }}>
-              <Text>Aprobado:</Text>
-              <Switch
-                value={editingUser?.aprobado || false}
-                onValueChange={value =>
-                  setEditingUser(prev => ({ ...prev, aprobado: value }))
-                }
-              />
-            </View>
-
-            {/* Selección de roles */}
-            <List.Accordion
-              title={editingUser?.rol?.name || (editingUser?.rolId ? (ROLE_OPTIONS.find(r => r.id === editingUser.rolId)?.name || "Seleccionar Rol") : "Seleccionar Rol")}
-              style={{ backgroundColor: "#fff", borderRadius: 8, marginBottom: 10 }}
-            >
-              <RadioButton.Group
-                onValueChange={(value) =>
-                  setEditingUser(prev => ({
-                    ...prev,
-                    rolId: value,
-                    rol: { id: value, name: ROLE_OPTIONS.find(r => r.id === value)?.name }
-                  }))
-                }
-                value={editingUser?.rol?.id || editingUser?.rolId || null}
+            <View style={styles.modal}>
+              <ScrollView
+                contentContainerStyle={styles.modalScroll}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={true}
+                persistentScrollbar={true}
+                indicatorStyle="black"
               >
-                {ROLE_OPTIONS
-                  .filter(r => r.id !== 4)
-                  .filter(r => (ROLE_PRIORITY[currentRolId] || 0) > (ROLE_PRIORITY[r.id] || 0))
-                  .map(r => (
-                    <List.Item
-                      key={r.id}
-                      title={r.name}
-                      right={() => <RadioButton value={r.id} />}
-                    />
-                  ))}
-              </RadioButton.Group>
-            </List.Accordion>
+                <Title>{editingUser?.id ? 'Editar Usuario' : 'Crear Usuario'}</Title>
 
-            {/* Switch para visible */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10 }}>
-              <Text>Visible:</Text>
-              <Switch
-                value={editingUser?.visible || false}
-                onValueChange={value =>
-                  setEditingUser(prev => ({ ...prev, visible: value }))
-                }
-              />
-            </View>
-
-            <Button
-              mode="contained"
-              onPress={async () => {
-                try {
-                  if (editingUser?.id) {
-                    // 📝 Actualizar usuario existente
-                    await handleUserAction(editingUser.id, "update", editingUser);
-                  } else {
-                    // 🆕 Crear nuevo usuario
-                    await handleUserAction(null, "create", editingUser);
+                <TextInput
+                  label="Nombre de usuario"
+                  style={styles.input}
+                  value={editingUser?.username || ''}
+                  onChangeText={text =>
+                    setEditingUser(prev => ({ ...(prev || {}), username: text }))
                   }
+                />
 
-                  setShowUserModal(false);
-                  setEditingUser(null); // limpia el estado
-                } catch (error) {
-                  console.error(error);
-                  Alert.alert("Error", "No se pudo guardar el usuario");
-                }
-              }}
-            >
-              Guardar
-            </Button>
+                <TextInput
+                  label="Nombre"
+                  style={styles.input}
+                  value={editingUser?.nombre || ''}
+                  onChangeText={text =>
+                    setEditingUser(prev => ({ ...(prev || {}), nombre: text }))
+                  }
+                />
+
+                <TextInput
+                  label="Celular"
+                  style={styles.input}
+                  keyboardType="phone-pad"
+                  value={editingUser?.celular || ''}
+                  onChangeText={text =>
+                    setEditingUser(prev => ({ ...(prev || {}), celular: text }))
+                  }
+                />
+
+                <TextInput
+                  label="CI"
+                  style={styles.input}
+                  keyboardType="numeric"
+                  value={editingUser?.ci || ''}
+                  onChangeText={text =>
+                    setEditingUser(prev => ({ ...(prev || {}), ci: text }))
+                  }
+                />
+
+                <TextInput
+                  label="Contraseña"
+                  style={styles.input}
+                  secureTextEntry
+                  value={editingUser?.password || ''}
+                  onChangeText={text =>
+                    setEditingUser(prev => ({ ...(prev || {}), password: text }))
+                  }
+                />
+
+                {/* Switch para aprobar usuario */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10 }}>
+                  <Text>Aprobado:</Text>
+                  <Switch
+                    value={editingUser?.aprobado || false}
+                    onValueChange={value =>
+                      setEditingUser(prev => ({ ...(prev || {}), aprobado: value }))
+                    }
+                  />
+                </View>
+
+                {/* Selección de roles */}
+                <List.Accordion
+                  title={editingUser?.rol?.name || (editingUser?.rolId ? (ROLE_OPTIONS.find(r => r.id === editingUser.rolId)?.name || "Seleccionar Rol") : "Seleccionar Rol")}
+                  style={{ backgroundColor: "#fff", borderRadius: 8, marginBottom: 10 }}
+                >
+                  <RadioButton.Group
+                    onValueChange={(value) =>
+                      setEditingUser(prev => ({
+                        ...(prev || {}),
+                        rolId: value,
+                        rol: { id: value, name: ROLE_OPTIONS.find(r => r.id === value)?.name }
+                      }))
+                    }
+                    value={editingUser?.rol?.id || editingUser?.rolId || null}
+                  >
+                    {ROLE_OPTIONS
+                      .filter(r => r.id !== 4)
+                      .filter(r => (ROLE_PRIORITY[currentRolId] || 0) > (ROLE_PRIORITY[r.id] || 0))
+                      .map(r => (
+                        <List.Item
+                          key={r.id}
+                          title={r.name}
+                          right={() => <RadioButton value={r.id} />}
+                        />
+                      ))}
+                  </RadioButton.Group>
+                </List.Accordion>
+
+                {/* Switch para visible */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10 }}>
+                  <Text>Visible:</Text>
+                  <Switch
+                    value={editingUser?.visible ?? true}
+                    onValueChange={value =>
+                      setEditingUser(prev => ({ ...(prev || {}), visible: value }))
+                    }
+                  />
+                </View>
+
+                <Button
+                  mode="contained"
+                  onPress={async () => {
+                    try {
+                      if (editingUser?.id) {
+                        // 📝 Actualizar usuario existente
+                        await handleUserAction(editingUser.id, "update", editingUser);
+                      } else {
+                        // 🆕 Crear nuevo usuario
+                        await handleUserAction(null, "create", editingUser);
+                      }
+
+                      setShowUserModal(false);
+                      setEditingUser(null); // limpia el estado
+                    } catch (error) {
+                      console.error(error);
+                      Alert.alert("Error", "No se pudo guardar el usuario");
+                    }
+                  }}
+                >
+                  Guardar
+                </Button>
+              </ScrollView>
+            </View>
           </Modal>
           {/* 📦 Modal de Remate */}
           <AuctionModal
@@ -1225,7 +1248,11 @@ const styles = StyleSheet.create({
     backgroundColor: CattleColors.white,
     borderRadius: 12,
     padding: 20,
-  }, input: {
+  },
+  modalScroll: {
+    paddingBottom: 20,
+  },
+  input: {
     marginBottom: 15,
     backgroundColor: CattleColors.white,
   },
