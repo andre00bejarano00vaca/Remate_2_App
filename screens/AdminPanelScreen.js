@@ -55,6 +55,28 @@ export default function AdminPanelScreen() {
     .filter(r => r.id !== 4)
     .filter(r => (ROLE_PRIORITY[currentRolId] || 0) > (ROLE_PRIORITY[r.id] || 0));
 
+  const buildUserPayload = (user, includePassword = false) => {
+    const payload = {
+      username: user?.username,
+      nombre: user?.nombre,
+      celular: user?.celular,
+      ci: user?.ci,
+      aprobado: user?.aprobado,
+      visible: user?.visible,
+      rol: user?.rol ?? user?.rolId ?? user?.rol?.id,
+    };
+
+    if (includePassword && user?.password) {
+      payload.password = user.password;
+    }
+
+    Object.keys(payload).forEach((key) => {
+      if (payload[key] === undefined) delete payload[key];
+    });
+
+    return payload;
+  };
+
   // Usuarios
   const [users, setUsers] = useState([]);
   const [userSearchQuery, setUserSearchQuery] = useState('');
@@ -253,14 +275,15 @@ export default function AdminPanelScreen() {
       } else if (action === "reject") {
         await updateUser(userId, { aprobado: false });
       } else if (action === "changeRole") {
-        await updateUser(userId, { ...data, rolId: rolId });
+        await updateUser(userId, { rol: rolId });
       } else if (action === "delete") {
         await updateUser(userId, { ...data, visible: false });
       } else if (action === "update") {
-        console.log(data)
-        await updateUser(userId, data);
+        const payload = buildUserPayload(data, Boolean(data?.password));
+        await updateUser(userId, payload);
       } else if (action === "create") {
-        await createteUser(data);
+        const payload = buildUserPayload(data, true);
+        await createteUser(payload);
       }
       await loadUser(); // refrescar datos
     } catch (error) {
@@ -483,7 +506,7 @@ export default function AdminPanelScreen() {
                     onPress={() => {
                       setEditingUser({
                         ...user,
-                        rolId: user.rol?.id || user.rolId,
+                        rol: user.rol?.id || user.rolId,
                       });
                       setShowUserModal(true);
                     }}
@@ -804,11 +827,9 @@ export default function AdminPanelScreen() {
                 nombre: "",
                 celular: "",
                 ci: "",
-                password: "",
                 aprobado: false,
                 visible: true,
-                rolId: 1,
-                rol: { id: 1, name: "CLIENTE" },
+                rol: 1,
               });
               setShowUserModal(true);
             }
@@ -887,18 +908,17 @@ export default function AdminPanelScreen() {
             {/* Selección de roles */}
             {editableRoleOptions.length > 0 && (
               <List.Accordion
-                title={editingUser?.rol?.name || (editingUser?.rolId ? (ROLE_OPTIONS.find(r => r.id === editingUser.rolId)?.name || "Seleccionar Rol") : "Seleccionar Rol")}
+                title={ROLE_OPTIONS.find(r => r.id === editingUser?.rol)?.name || "Seleccionar Rol"}
                 style={{ backgroundColor: "#fff", borderRadius: 8, marginBottom: 10 }}
               >
                 <RadioButton.Group
                   onValueChange={(value) =>
                     setEditingUser(prev => ({
                       ...(prev || {}),
-                      rolId: value,
-                      rol: { id: value, name: ROLE_OPTIONS.find(r => r.id === value)?.name }
+                      rol: value,
                     }))
                   }
-                  value={editingUser?.rol?.id || editingUser?.rolId || null}
+                  value={editingUser?.rol || null}
                 >
                   {editableRoleOptions.map(r => (
                     <List.Item
