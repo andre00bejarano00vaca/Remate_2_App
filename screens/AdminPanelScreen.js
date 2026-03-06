@@ -18,7 +18,7 @@ import { CattleColors } from "../styles/colors";
 import { List, RadioButton, Switch, DateTimePicker } from "react-native-paper";
 import AuctionModal from "../components/AuctionModal";
 
-import { getUsers } from "../services/userService";
+import { getUsers, createteUser } from "../services/userService";
 import { getAuctions, createAuction, updateAuction } from "../services/auctionService";
 import { getLots, createLot, updateLot } from "../services/lotService";
 import { getBids } from "../services/bidService";
@@ -42,6 +42,15 @@ export default function AdminPanelScreen() {
 
   const [activeTab, setActiveTab] = useState('remates');
   const [loading, setLoading] = useState(false);
+  const [currentRolId, setCurrentRolId] = useState(null);
+
+  const ROLE_PRIORITY = { 1: 1, 3: 2, 2: 3, 4: 4 }; // CLIENTE < COLABORADOR < ADMIN < SUPER_USUARIO
+  const ROLE_OPTIONS = [
+    { id: 1, name: "CLIENTE" },
+    { id: 2, name: "ADMIN" },
+    { id: 3, name: "COLABORADOR" },
+    { id: 4, name: "SUPER_USUARIO" },
+  ];
 
   // Usuarios
   const [users, setUsers] = useState([]);
@@ -104,6 +113,41 @@ export default function AdminPanelScreen() {
   // Cargar datos de ejemplo
   useEffect(() => {
     loadInitialData();
+  }, []);
+  useEffect(() => {
+    const loadCurrentRole = async () => {
+      try {
+        const stored = await AsyncStorage.getItem("rol");
+        if (!stored) {
+          setCurrentRolId(null);
+          return;
+        }
+        // Puede ser "1", "2" o un JSON array/string
+        const parsed = (() => {
+          try {
+            return JSON.parse(stored);
+          } catch {
+            return stored;
+          }
+        })();
+        if (typeof parsed === "number") {
+          setCurrentRolId(parsed);
+        } else if (typeof parsed === "string") {
+          const asNumber = parseInt(parsed, 10);
+          setCurrentRolId(Number.isNaN(asNumber) ? null : asNumber);
+        } else if (Array.isArray(parsed) && parsed.length > 0) {
+          const roleName = String(parsed[0]).toUpperCase();
+          const role = ROLE_OPTIONS.find(r => r.name === roleName);
+          setCurrentRolId(role ? role.id : null);
+        } else {
+          setCurrentRolId(null);
+        }
+      } catch (error) {
+        console.error("Error leyendo rol actual:", error);
+        setCurrentRolId(null);
+      }
+    };
+    loadCurrentRole();
   }, []);
   // --- FETCH DE DATOS (IP LOCAL + PUERTO 8080) ---
   useEffect(() => {
@@ -206,9 +250,13 @@ export default function AdminPanelScreen() {
       } else if (action === "reject") {
         await updateUser(userId, { aprobado: false });
       } else if (action === "changeRole") {
-        await updateUser(userId, { ...data, roles: [newRole], rolId: rolId });
+        await updateUser(userId, { ...data, rolId: rolId });
       } else if (action === "delete") {
         await updateUser(userId, { ...data, visible: false });
+      } else if (action === "update") {
+        await updateUser(userId, data);
+      } else if (action === "create") {
+        await createteUser(data);
       }
       await loadUser(); // refrescar datos
     } catch (error) {
@@ -314,21 +362,6 @@ export default function AdminPanelScreen() {
     }
   };
 
-  const handleCorrectBid = async () => {
-    try {
-      await axios.post(
-        `${BASE_URL}/contador/corregir/${selectedBid.lote.remate.id}/${selectedBid.lote.id}`,
-        { nuevoValor: Number(newBidValue) }
-      );
-
-      alert("Puja corregida correctamente.");
-      getBids();     // Recargar lista
-      setCorrectionVisible(false);
-    } catch (error) {
-      console.error(error);
-      alert("Error al corregir la puja.");
-    }
-  };
 
   const openCorrectionModal = (bid) => {
     setSelectedBid(bid);
@@ -379,20 +412,29 @@ export default function AdminPanelScreen() {
         style={styles.searchbar}
       />
       {users
-        // Filtrar por username y roles
+        // Filtrar por username y rol
         .filter(u =>
           u.username.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-          u.roles.join(', ').toLowerCase().includes(userSearchQuery.toLowerCase())
+          (u.rol?.name || '').toLowerCase().includes(userSearchQuery.toLowerCase())
         )
-        // Mostrar solo los visibles
-        .filter(u => u.visible)
-        .map(user => (
+        // Mostrar solo los visibles y ocultar SUPER_USUARIO
+        .filter(u => u.visible !== false)
+        .filter(u => (u.rol?.id || u.rolId) !== 4 && (u.rol?.name || '').toUpperCase() !== "SUPER_USUARIO")
+        .map(user => {
+          const userRolId = user.rol?.id || user.rolId;
+          const currentPriority = ROLE_PRIORITY[currentRolId] || 0;
+          const targetPriority = ROLE_PRIORITY[userRolId] || 0;
+          const canEditRoles = currentPriority > targetPriority;
+          return (
           <Card key={user.id} style={styles.card}>
             <Card.Content>
               <View style={styles.cardHeader}>
                 <View style={styles.userInfo}>
                   <Text style={styles.userName}>{user.username}</Text>
-                  <Text style={styles.userEmail}>Rol: {user.roles.join(', ')}</Text>
+                  <Text style={styles.userEmail}>Rol: {user.rol?.name || "—"}</Text>
+                  <Text style={styles.userEmail}>Nombre: {user.nombre || "—"}</Text>
+                  <Text style={styles.userEmail}>Celular: {user.celular || "—"}</Text>
+                  <Text style={styles.userEmail}>CI: {user.ci || "—"}</Text>
                   <View style={styles.chipContainer}>
                     <Chip
                       style={{ marginRight: 8, marginBottom: 8 }}
@@ -411,7 +453,7 @@ export default function AdminPanelScreen() {
                         backgroundColor: CattleColors.accent
                       }}
                     >
-                      {user.roles.join(', ')}
+                      {user.rol?.name || "—"}
                     </Chip>
                   </View>
                 </View>
@@ -433,31 +475,29 @@ export default function AdminPanelScreen() {
                   )}
                   <IconButton
                     icon="account-cog"
-                    iconColor={CattleColors.info}
+                    iconColor={canEditRoles ? CattleColors.info : CattleColors.mediumGray}
+                    disabled={!canEditRoles}
                     onPress={() =>
-                      Alert.alert('Cambiar Rol', 'Selecciona el nuevo rol:', [
-                        {
-                          text: 'Admin',
-                          onPress: () =>
-                            handleUserAction(user.id, 'changeRole', user, 'ADMIN', 2)
-                        },
-                        {
-                          text: 'Cliente',
-                          onPress: () =>
-                            handleUserAction(user.id, 'changeRole', user, 'CLIENTE', 1)
-                        },
-                        {
-                          text: 'Cancelar',
-                          style: 'cancel'
-                        }
-                      ])
+                      Alert.alert(
+                        'Cambiar Rol',
+                        'Selecciona el nuevo rol:',
+                        ROLE_OPTIONS
+                          .filter(r => r.id !== 4) // nunca mostrar SUPER_USUARIO
+                          .filter(r => (ROLE_PRIORITY[currentRolId] || 0) > (ROLE_PRIORITY[r.id] || 0))
+                          .map(r => ({
+                            text: r.name,
+                            onPress: () => handleUserAction(user.id, 'changeRole', user, r.name, r.id),
+                          }))
+                          .concat([{ text: 'Cancelar', style: 'cancel' }])
+                      )
                     }
                   />
                 </View>
               </View>
             </Card.Content>
           </Card>
-        ))}
+        );
+        })}
     </ScrollView>
   );
 
@@ -788,6 +828,35 @@ export default function AdminPanelScreen() {
             />
 
             <TextInput
+              label="Nombre"
+              style={styles.input}
+              value={editingUser?.nombre || ''}
+              onChangeText={text =>
+                setEditingUser(prev => ({ ...prev, nombre: text }))
+              }
+            />
+
+            <TextInput
+              label="Celular"
+              style={styles.input}
+              keyboardType="phone-pad"
+              value={editingUser?.celular || ''}
+              onChangeText={text =>
+                setEditingUser(prev => ({ ...prev, celular: text }))
+              }
+            />
+
+            <TextInput
+              label="CI"
+              style={styles.input}
+              keyboardType="numeric"
+              value={editingUser?.ci || ''}
+              onChangeText={text =>
+                setEditingUser(prev => ({ ...prev, ci: text }))
+              }
+            />
+
+            <TextInput
               label="Contraseña"
               style={styles.input}
               secureTextEntry
@@ -810,17 +879,29 @@ export default function AdminPanelScreen() {
 
             {/* Selección de roles */}
             <List.Accordion
-              title={editingUser?.roles?.join(', ') || "Seleccionar Rol"}
+              title={editingUser?.rol?.name || (editingUser?.rolId ? (ROLE_OPTIONS.find(r => r.id === editingUser.rolId)?.name || "Seleccionar Rol") : "Seleccionar Rol")}
               style={{ backgroundColor: "#fff", borderRadius: 8, marginBottom: 10 }}
             >
               <RadioButton.Group
                 onValueChange={(value) =>
-                  setEditingUser(prev => ({ ...prev, roles: [value] })) // Lista de roles
+                  setEditingUser(prev => ({
+                    ...prev,
+                    rolId: value,
+                    rol: { id: value, name: ROLE_OPTIONS.find(r => r.id === value)?.name }
+                  }))
                 }
-                value={editingUser?.roles?.[0] || null}
+                value={editingUser?.rol?.id || editingUser?.rolId || null}
               >
-                <List.Item title="ADMIN" right={() => <RadioButton value="ADMIN" />} />
-                <List.Item title="CLIENTE" right={() => <RadioButton value="CLIENTE" />} />
+                {ROLE_OPTIONS
+                  .filter(r => r.id !== 4)
+                  .filter(r => (ROLE_PRIORITY[currentRolId] || 0) > (ROLE_PRIORITY[r.id] || 0))
+                  .map(r => (
+                    <List.Item
+                      key={r.id}
+                      title={r.name}
+                      right={() => <RadioButton value={r.id} />}
+                    />
+                  ))}
               </RadioButton.Group>
             </List.Accordion>
 
