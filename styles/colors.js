@@ -1,37 +1,32 @@
 // Paleta de colores profesional para aplicación ganadera
 export const CattleColors = {
-    // Colores principales - Paleta neutra y profesional
-    primary: '#2C3E50',        // Azul oscuro profesional
-    secondary: '#34495E',      // Azul grisáceo
-    accent: '#E67E22',         // Naranja cálido para acentos
-    neutral: '#ECF0F1',        // Gris muy claro, casi blanco
-    
+    // Colores principales - Paleta minimalista verde
+    primary: '#0B3D2E',        // Verde oscuro principal
+    secondary: '#145A32',      // Verde secundario
+    accent: '#C9A227',         // Dorado para acentos
+    neutral: '#F5F7F6',        // Blanco suave
+
     // Colores base
     white: '#FFFFFF',          // Blanco puro
-    black: '#1A1A1A',         // Negro suave
-    
-    // Escala de grises profesionales
-    lightGray: '#F8F9FA',     // Gris muy claro
-    mediumLightGray: '#E9ECEF', // Gris claro
-    mediumGray: '#6C757D',    // Gris medio
-    darkGray: '#495057',      // Gris oscuro
-    charcoal: '#343A40',      // Gris carbón
-    
+    black: '#111111',         // Negro suave
+
+    // Escala de grises
+    lightGray: '#F2F4F3',     // Gris muy claro
+    mediumLightGray: '#E3E7E5', // Gris claro
+    mediumGray: '#7A8A84',    // Gris medio verdoso
+    darkGray: '#3E4A45',      // Gris oscuro
+    charcoal: '#232A27',      // Gris carbón
+
     // Colores de estado
-    success: '#27AE60',       // Verde profesional
-    warning: '#F39C12',       // Naranja de advertencia
-    error: '#E74C3C',         // Rojo profesional
-    info: '#3498DB',          // Azul informativo
-    
-    // Colores específicos para ganado
-    cattle: '#8B4513',        // Marrón ganado
-    pasture: '#228B22',       // Verde pasto
-    leather: '#CD853F',       // Marrón cuero
-    
+    success: '#1E8E5A',       // Verde éxito
+    warning: '#D4A017',       // Dorado advertencia
+    error: '#D64541',         // Rojo profesional
+    info: '#2F6F5E',          // Verde informativo
+
     // Transparencias y sombras
-    overlay: 'rgba(44, 62, 80, 0.8)',
-    cardShadow: 'rgba(0, 0, 0, 0.1)',
-    textShadow: 'rgba(0, 0, 0, 0.2)',
+    overlay: 'rgba(11, 61, 46, 0.8)',
+    cardShadow: 'rgba(0, 0, 0, 0.08)',
+    textShadow: 'rgba(0, 0, 0, 0.16)',
 };
 
 export const CattleTypography = {

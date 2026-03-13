@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, Dimensions, Image, TouchableOpacity, Modal } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Dimensions, Image } from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { Linking, Alert } from "react-native";
-import { Button, Card, Title, Paragraph, Chip, IconButton, Portal, Menu, Divider } from "react-native-paper";
+import { Button, Card, Title, Paragraph, Chip, IconButton } from "react-native-paper";
 import { CattleColors, CattleShadows } from "../styles/colors";
 import { cattleLots } from "../data/cattleLots";
 import LoteInfoScreen from "../components/LoteInfoScreen";
@@ -34,7 +34,6 @@ export default function HomeScreen({ navigation, route }) {
     console.log("loteId: " + loteid + "   ||  " + "remateId: " + remateid)
     const videoRef = useRef(null);
     const [counter, setCounter] = useState(0);
-    const [menuVisible, setMenuVisible] = useState(false);
     const sw = true;
     const { siguientePuja } = usePuja(counter, sw);
 
@@ -238,7 +237,6 @@ inicializarUsuario();
         } catch (error) {
             console.error("Error limpiando sesión:", error);
         } finally {
-            setMenuVisible(false);
             navigation.reset({
                 index: 0,
                 routes: [{ name: "Login" }],
@@ -246,19 +244,11 @@ inicializarUsuario();
         }
     };
 
-    const goToAdminPanel = () => {
-        setMenuVisible(false);
-        navigation.navigate('AdminPanel');
-    };
-
-    const goToHome = () => {
-        setMenuVisible(false);
-        // Ya estamos en Home, solo cerramos el menú
-    };
-
-    const goToCatalog = () => {
-        setMenuVisible(false);
-        navigation.navigate('ListView');
+    const openDrawer = () => {
+        const parent = navigation.getParent?.();
+        if (parent?.openDrawer) {
+            parent.openDrawer();
+        }
     };
 
     // Datos de ejemplo para los lotes de ganado (primeros 4 lotes)
@@ -295,7 +285,7 @@ inicializarUsuario();
                             icon="menu"
                             size={28}
                             iconColor={CattleColors.white}
-                            onPress={() => setMenuVisible(true)}
+                            onPress={openDrawer}
                             style={styles.menuButton}
                         />
                         <IconButton
@@ -357,89 +347,6 @@ inicializarUsuario();
                 </Button>
             </ScrollView>
 
-            {/* Menú Responsivo */}
-            <Portal>
-                <Modal
-                    visible={menuVisible}
-                    onDismiss={() => setMenuVisible(false)}
-                    contentContainerStyle={styles.menuContainer}
-                    animationType="slide"
-                    transparent={true}
-                >
-                    <View style={styles.menuOverlay}>
-                        <View style={styles.menuContent}>
-                            <View style={styles.menuHeader}>
-                                <Text style={styles.menuTitle}>Menú Principal</Text>
-                                <IconButton
-                                    icon="close"
-                                    size={24}
-                                    iconColor={CattleColors.primary}
-                                    onPress={() => setMenuVisible(false)}
-                                    style={styles.closeButton}
-                                />
-                            </View>
-
-                            <Divider style={styles.menuDivider} />
-
-                            <View style={styles.menuItems}>
-                                <TouchableOpacity
-                                    style={styles.menuItem}
-                                    onPress={goToHome}
-                                >
-                                    <IconButton
-                                        icon="home"
-                                        size={24}
-                                        iconColor={CattleColors.primary}
-                                        style={styles.menuItemIcon}
-                                    />
-                                    <Text style={styles.menuItemText}>Inicio</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={styles.menuItem}
-                                    onPress={openYouTube}
-                                >
-                                    <IconButton
-                                        icon="format-list-bulleted"
-                                        size={24}
-                                        iconColor={CattleColors.primary}
-                                        style={styles.menuItemIcon}
-                                    />
-                                    <Text style={styles.menuItemText}>Catálogo</Text>
-                                </TouchableOpacity>
-
-                                {isAdmin && (
-                                    <TouchableOpacity
-                                        style={styles.menuItem}
-                                        onPress={goToAdminPanel}
-                                    >
-                                        <IconButton
-                                            icon="cog"
-                                            size={24}
-                                            iconColor={CattleColors.primary}
-                                            style={styles.menuItemIcon}
-                                        />
-                                        <Text style={styles.menuItemText}>Panel Admin</Text>
-                                    </TouchableOpacity>
-                                )}
-
-                                <TouchableOpacity
-                                    style={styles.menuItem}
-                                    onPress={logout}
-                                >
-                                    <IconButton
-                                        icon="logout"
-                                        size={24}
-                                        iconColor={CattleColors.error}
-                                        style={styles.menuItemIcon}
-                                    />
-                                    <Text style={[styles.menuItemText, { color: CattleColors.error }]}>Cerrar Sesión</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                </Modal>
-            </Portal>
         </View>
     );
 }
