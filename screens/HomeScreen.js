@@ -227,8 +227,23 @@ inicializarUsuario();
         navigation.navigate('ListView');
     };
 
-    const logout = () => {
-        navigation.replace('Login');
+    const logout = async () => {
+        try {
+            await AsyncStorage.multiRemove([
+                "usuario",
+                "isLoggedIn",
+                "rol",
+                "authToken",
+            ]);
+        } catch (error) {
+            console.error("Error limpiando sesión:", error);
+        } finally {
+            setMenuVisible(false);
+            navigation.reset({
+                index: 0,
+                routes: [{ name: "Login" }],
+            });
+        }
     };
 
     const goToAdminPanel = () => {
