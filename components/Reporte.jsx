@@ -14,7 +14,7 @@ export default function ReporteScreen({remateId, remateName}) {
         console.log("remate id: " , remateId)
 
         const res = await fetch(
-          `https://testapp.digitaltelecom.net/api/pujas/informe/${remateId}`
+          `https://testapp.digitaltelecom.net/api/pujas/informe/npujas/${remateId}`
         );
         const data = await res.json();
         setDatos(data)
