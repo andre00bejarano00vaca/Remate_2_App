@@ -1,14 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { View, FlatList, TouchableOpacity } from 'react-native';
-import { Card } from 'react-native-paper';
+import { View, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { Card, Text } from 'react-native-paper';
 import { getAuctions } from '../services/auctionService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CattleColors, CattleShadows } from "../styles/colors";
+import AppHeader from "../components/AppHeader";
+import SideMenu from "../components/SideMenu";
 
 export default function RematesListScreen({ navigation }) {
   const [remates, setRemates] = useState([]);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     loadRemates();
+  }, []);
+
+  useEffect(() => {
+    const loadRole = async () => {
+      try {
+        const stored = await AsyncStorage.getItem("rol");
+        if (!stored) return setIsAdmin(false);
+        const parsed = (() => {
+          try {
+            return JSON.parse(stored);
+          } catch {
+            return stored;
+          }
+        })();
+        const rolId = typeof parsed === "number" ? parsed : parseInt(parsed, 10);
+        setIsAdmin(rolId === 2 || rolId === 4);
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+    loadRole();
   }, []);
 
   const loadRemates = async () => {
@@ -26,23 +52,75 @@ export default function RematesListScreen({ navigation }) {
           navigation.navigate('LotesList', { remate: item });
         }}
       >
-        <Card style={{ marginVertical: 5 }}>
-          <Card.Title
-            title={item.nombre}
-            subtitle={`Fecha Inicio: ${fecha} | Hora de Inicio: ${hora}`}
-          />
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text style={styles.title}>{item.nombre}</Text>
+            <Text style={styles.subtitle}>Inicio: {fecha} · {hora}</Text>
+          </Card.Content>
         </Card>
       </TouchableOpacity>
     );
   };
 
+  const logout = async () => {
+    try {
+      await AsyncStorage.multiRemove(["usuario", "isLoggedIn", "rol", "authToken"]);
+    } finally {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+    }
+  };
+
   return (
-    <View style={{ flex: 1, padding: 10 }}>
+    <View style={styles.container}>
+      <AppHeader
+        title="Remates"
+        onMenu={() => setMenuVisible(true)}
+        onLogout={logout}
+      />
       <FlatList
         data={remates}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
+        contentContainerStyle={styles.list}
+      />
+      <SideMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        navigation={navigation}
+        isAdmin={isAdmin}
       />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: CattleColors.neutral,
+  },
+  list: {
+    padding: 12,
+    paddingBottom: 24,
+  },
+  card: {
+    marginBottom: 10,
+    borderRadius: 12,
+    backgroundColor: CattleColors.white,
+    borderWidth: 1,
+    borderColor: CattleColors.mediumLightGray,
+    ...CattleShadows.card,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: CattleColors.primary,
+  },
+  subtitle: {
+    marginTop: 6,
+    fontSize: 12,
+    color: CattleColors.mediumGray,
+  },
+});

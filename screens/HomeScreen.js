@@ -13,6 +13,8 @@ import useEventosWS from "../services/useEventosWS";
 import { procesarEvento } from "../services/procesarEvento";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { usePuja } from "../hook/usePuja";
+import AppHeader from "../components/AppHeader";
+import SideMenu from "../components/SideMenu";
 
 
 const { width, height } = Dimensions.get('window');
@@ -24,6 +26,7 @@ function cerrarPantallaRemate() {
 
 export default function HomeScreen({ navigation, route }) {
     const [isAdmin, setIsAdmin] = useState(false);
+    const [menuVisible, setMenuVisible] = useState(false);
 
     console.log("route.params.lote.video")
     const videoLote = route?.params?.lote?.video;
@@ -244,12 +247,7 @@ inicializarUsuario();
         }
     };
 
-    const openDrawer = () => {
-        const parent = navigation.getParent?.();
-        if (parent?.openDrawer) {
-            parent.openDrawer();
-        }
-    };
+    const openMenu = () => setMenuVisible(true);
 
     // Datos de ejemplo para los lotes de ganado (primeros 4 lotes)
     const lotesData = cattleLots.slice(0, 4);
@@ -265,41 +263,11 @@ inicializarUsuario();
 
     return (
         <View style={styles.container}>
-            {/* Header profesional */}
-            <View style={styles.header}>
-                <View style={styles.headerContent}>
-                    {/* Columna izquierda vacía para balancear */}
-                    <View style={styles.sidePlaceholder} />
-
-                    {/* Logo centrado */}
-                    <View style={styles.logoContainer}>
-                        <Image
-                            source={require("../assets/PerfilELITE.png")}
-                            style={styles.logoImage}
-                        />
-                    </View>
-
-                    {/* Botón menú a la derecha */}
-                    <View style={styles.headerButtons}>
-                        <IconButton
-                            icon="menu"
-                            size={28}
-                            iconColor={CattleColors.white}
-                            onPress={openDrawer}
-                            style={styles.menuButton}
-                        />
-                        <IconButton
-                            icon="logout"
-                            size={28}
-                            iconColor={CattleColors.white}
-                            onPress={logout}
-                            style={styles.logoutButton}
-                        />
-                    </View>
-                </View>
-
-                <View style={styles.headerLine} />
-            </View>
+            <AppHeader
+                title={`Lote ${numeroLote ?? ""}`}
+                onMenu={openMenu}
+                onLogout={logout}
+            />
 
             <ScrollView
                 style={styles.scrollContainer}
@@ -346,6 +314,14 @@ inicializarUsuario();
                     VER CATÁLOGO COMPLETO CON VIDEOS
                 </Button>
             </ScrollView>
+
+            <SideMenu
+                visible={menuVisible}
+                onClose={() => setMenuVisible(false)}
+                navigation={navigation}
+                isAdmin={isAdmin}
+                remate={route?.params?.remate}
+            />
 
         </View>
     );
