@@ -44,12 +44,12 @@ export default function LoginScreen({ navigation }) {
     // data = { authenticated: boolean, confirmed: boolean }
 
     // 3. Lógica de validación basada en los booleanos del Backend
-    if (!data.visible) {
+    if (!data.authenticated) {
       setError("Usuario no registrado. Crea una cuenta.");
       return;
     }
 
-    if (!data.aprobado) {
+    if (!data.confirmed) {
       // El usuario existe pero aún no ha sido aceptado por el admin
       setError("Tu cuenta está pendiente de aprobación.");
       // Opcional: navigation.replace("PendingApproval");
