@@ -1,7 +1,7 @@
 import * as React from "react";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Provider as PaperProvider } from "react-native-paper";
+import { Provider as PaperProvider, MD3LightTheme } from "react-native-paper";
 import { CattleColors } from "./styles/colors";
 import LoginScreen from "./screens/LoginScreen";
 import VerifyUserScreen from "./screens/VerifyUserScreen";
@@ -16,16 +16,20 @@ import AdminPanelScreen from "./screens/AdminPanelScreen";
 const Stack = createNativeStackNavigator();
 
 const paperTheme = {
+  ...MD3LightTheme,
   colors: {
+    ...MD3LightTheme.colors,
     primary: CattleColors.primary,
-    accent: CattleColors.accent,
+    secondary: CattleColors.accent,
+    tertiary: CattleColors.black,
     background: CattleColors.neutral,
     surface: CattleColors.white,
-    text: CattleColors.black,
+    surfaceVariant: CattleColors.lightGray,
     onSurface: CattleColors.black,
     onBackground: CattleColors.black,
-    placeholder: CattleColors.mediumGray,
-    backdrop: CattleColors.overlay,
+    outline: CattleColors.mediumLightGray,
+    outlineVariant: CattleColors.mediumLightGray,
+    error: CattleColors.error,
   },
 };
 

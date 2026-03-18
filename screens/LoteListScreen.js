@@ -9,7 +9,7 @@ import SideMenu from "../components/SideMenu";
 
 
 export default function LotesListScreen({ route, navigation }) {
-const remate = route.params?.remate; 
+const remate = route?.params?.remate; 
 
 if (!remate) {
   return (
