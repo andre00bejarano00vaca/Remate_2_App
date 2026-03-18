@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, ScrollView, StyleSheet, Alert, RefreshControl } from "react-native";
+import { View, ScrollView, StyleSheet, Alert, RefreshControl, ActivityIndicator } from "react-native";
 import {
   TextInput,
   Button,
@@ -818,6 +818,11 @@ export default function AdminPanelScreen({ navigation }) {
             }
           }}
         />
+        {loading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={CattleColors.primary} />
+          </View>
+        )}
         <Title style={styles.title}>Panel Administrador</Title>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsContainer} contentContainerStyle={styles.tabsContent}>
           {renderTabButton('usuarios', 'Usuarios', 'account')}
@@ -1294,6 +1299,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.12)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
   },
 });
 const reporte = {
