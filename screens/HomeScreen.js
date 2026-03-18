@@ -27,6 +27,9 @@ function cerrarPantallaRemate() {
 export default function HomeScreen({ navigation, route }) {
     const [isAdmin, setIsAdmin] = useState(false);
     const [menuVisible, setMenuVisible] = useState(false);
+    const [isWinning, setIsWinning] = useState(false);
+    const [statusMessage, setStatusMessage] = useState("");
+    const [showStatus, setShowStatus] = useState(false);
 
     console.log("route.params.lote.video")
     const videoLote = route?.params?.lote?.video;
@@ -45,6 +48,8 @@ export default function HomeScreen({ navigation, route }) {
     });
     const [isError, setIsError] = useState(false);
     const ws = useRef(null);
+    const lastUserBidValueRef = useRef(null);
+    const pendingUserBidRef = useRef(false);
     // 🔥 Consumir WebSocket correctamente
     console.log("Remata id: ", remateid)
     ///esta funcion es para sacar a las personas del remate
@@ -101,7 +106,22 @@ inicializarUsuario();
         ws.current.onmessage = (event) => {
             console.log("Mensaje recibido:", event.data);
             const valor = parseInt(event.data, 10);
-            if (!isNaN(valor)) setCounter(valor);
+            if (isNaN(valor)) return;
+            setCounter(valor);
+
+            if (pendingUserBidRef.current && lastUserBidValueRef.current !== null) {
+                if (valor >= lastUserBidValueRef.current) {
+                    pendingUserBidRef.current = false;
+                    setIsWinning(true);
+                    setStatusMessage("Tu tienes el lote, ¡felicidades!");
+                    setShowStatus(true);
+                }
+            } else if (isWinning && lastUserBidValueRef.current !== null && valor > lastUserBidValueRef.current) {
+                setIsWinning(false);
+                setStatusMessage("Perdiste el lote");
+                setShowStatus(true);
+                lastUserBidValueRef.current = null;
+            }
         };
 
         ws.current.onerror = (error) => {
@@ -219,6 +239,13 @@ inicializarUsuario();
             })
         });
 
+        const nextValue = Number(counter) + Number(siguientePuja || 0);
+        lastUserBidValueRef.current = Number.isNaN(nextValue) ? Number(counter) : nextValue;
+        pendingUserBidRef.current = true;
+        setIsWinning(true);
+        setStatusMessage("Tu tienes el lote, ¡felicidades!");
+        setShowStatus(true);
+
     } catch (err) {
         console.log("Error en incrementCounter:", err);
     }
@@ -262,7 +289,7 @@ inicializarUsuario();
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, isWinning && styles.containerWinning]}>
             <AppHeader
                 title={`Lote ${numeroLote ?? ""}`}
                 onMenu={openMenu}
@@ -274,6 +301,12 @@ inicializarUsuario();
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
+                {showStatus && (
+                    <View style={[styles.statusBanner, isWinning ? styles.statusWin : styles.statusLose]}>
+                        <Text style={styles.statusText}>{statusMessage}</Text>
+                    </View>
+                )}
+
                 {/* Video promocional */}
                 <VideoScreen videoUri={videoLote} />
                 <Text style={styles.tituloLote}>Lote Número: {numeroLote}</Text>
@@ -380,6 +413,32 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: CattleColors.lightGray,
+    },
+    containerWinning: {
+        backgroundColor: "#0F3D2E",
+    },
+    statusBanner: {
+        marginHorizontal: 12,
+        marginTop: 10,
+        marginBottom: 6,
+        borderRadius: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderWidth: 1,
+    },
+    statusWin: {
+        backgroundColor: "rgba(201, 162, 39, 0.15)",
+        borderColor: CattleColors.accent,
+    },
+    statusLose: {
+        backgroundColor: "rgba(214, 69, 65, 0.12)",
+        borderColor: CattleColors.error,
+    },
+    statusText: {
+        color: CattleColors.black,
+        fontSize: 13,
+        fontWeight: "600",
+        textAlign: "center",
     },
     header: {
         backgroundColor: CattleColors.primary,
