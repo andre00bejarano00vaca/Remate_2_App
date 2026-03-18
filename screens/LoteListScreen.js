@@ -105,13 +105,18 @@ const loadLotes = async () => {
         }}
       />
       <View style={styles.content}>
-        <Title style={styles.sectionTitle}>Remate: {remate?.nombre || remate?.name}</Title>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionLabel}>Remate</Text>
+          <Text style={styles.sectionTitle}>{remate?.nombre || remate?.name}</Text>
+        </View>
 
         <Searchbar
           placeholder="Buscar lote..."
           value={query}
           onChangeText={setQuery}
           style={styles.searchbar}
+          iconColor={CattleColors.primary}
+          inputStyle={styles.searchInput}
         />
 
         <FlatList
@@ -119,7 +124,8 @@ const loadLotes = async () => {
           keyExtractor={(item) => String(item.id)}
           ListEmptyComponent={() => (
             <View style={styles.empty}>
-              <Text>No hay lotes para este remate.</Text>
+              <Text style={styles.emptyTitle}>Sin lotes</Text>
+              <Text style={styles.emptyText}>No hay lotes para este remate.</Text>
             </View>
           )}
           renderItem={({ item }) => (
@@ -130,12 +136,17 @@ const loadLotes = async () => {
             >
               <Card style={styles.card}>
                 <Card.Content>
-                  <Text style={styles.cardTitle}>
-                    {item.nombre || item.name}
-                  </Text>
-                  <Text style={styles.cardSubtitle}>
-                    Lote #{item.numLote || "-"} · Cabaña: {item.cabana?.nombre ?? "-"}
-                  </Text>
+                  <View style={styles.cardRow}>
+                    <View style={styles.cardLeft}>
+                      <Text style={styles.cardTitle}>
+                        {item.nombre || item.name}
+                      </Text>
+                      <Text style={styles.cardSubtitle}>
+                        Lote #{item.numLote || "-"} · Cabaña: {item.cabana?.nombre ?? "-"}
+                      </Text>
+                    </View>
+                    <Text style={styles.cardChip}>{item.estado || "Disponible"}</Text>
+                  </View>
                 </Card.Content>
               </Card>
             </TouchableOpacity>
@@ -167,13 +178,37 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  sectionHeader: {
+    marginBottom: 10,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    color: CattleColors.mediumGray,
+    letterSpacing: 0.6,
+  },
   sectionTitle: {
-    marginBottom: 8,
+    fontSize: 18,
+    fontWeight: "700",
     color: CattleColors.primary,
   },
   searchbar: {
     marginBottom: 12,
     backgroundColor: CattleColors.white,
+    borderWidth: 1,
+    borderColor: CattleColors.mediumLightGray,
+  },
+  searchInput: {
+    fontSize: 14,
+    color: CattleColors.black,
+  },
+  cardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  cardLeft: {
+    flex: 1,
+    paddingRight: 10,
   },
   card: {
     marginBottom: 10,
@@ -193,7 +228,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: CattleColors.mediumGray,
   },
+  cardChip: {
+    fontSize: 11,
+    color: CattleColors.accent,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+  },
   empty: {
-    padding: 20,
+    paddingTop: 40,
+    alignItems: "center",
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: CattleColors.primary,
+  },
+  emptyText: {
+    marginTop: 6,
+    fontSize: 12,
+    color: CattleColors.mediumGray,
   },
 });

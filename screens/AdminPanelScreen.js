@@ -1259,8 +1259,7 @@ export default function AdminPanelScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: CattleColors.lightGray,
-    paddingTop: 40,
+    backgroundColor: CattleColors.neutral,
   },
   title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', color: CattleColors.primary, marginBottom: 20, paddingHorizontal: 20 },
   tabsContainer: { maxHeight: 60, marginBottom: 10 },
