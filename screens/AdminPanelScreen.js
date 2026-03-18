@@ -801,6 +801,23 @@ export default function AdminPanelScreen({ navigation }) {
       <RematesScreen/>
   );
 
+  const isInitialLoading =
+    loading &&
+    users.length === 0 &&
+    auctions.length === 0 &&
+    cattleLots.length === 0 &&
+    cabanas.length === 0 &&
+    bids.length === 0;
+
+  if (isInitialLoading) {
+    return (
+      <View style={styles.loadingScreen}>
+        <ActivityIndicator size="large" color={CattleColors.primary} />
+        <Text style={styles.loadingText}>Cargando panel...</Text>
+      </View>
+    );
+  }
+
   return (
     <PaperProvider>
       <View style={styles.container}>
@@ -818,11 +835,6 @@ export default function AdminPanelScreen({ navigation }) {
             }
           }}
         />
-        {loading && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color={CattleColors.primary} />
-          </View>
-        )}
         <Title style={styles.title}>Panel Administrador</Title>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsContainer} contentContainerStyle={styles.tabsContent}>
           {renderTabButton('usuarios', 'Usuarios', 'account')}
@@ -1256,6 +1268,11 @@ export default function AdminPanelScreen({ navigation }) {
           navigation={navigation}
           isAdmin={isAdmin}
         />
+        {loading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={CattleColors.primary} />
+          </View>
+        )}
       </View>
     </PaperProvider>
   );
@@ -1310,6 +1327,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     zIndex: 10,
+    elevation: 10,
+  },
+  loadingScreen: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: CattleColors.neutral,
+  },
+  loadingText: {
+    marginTop: 10,
+    color: CattleColors.mediumGray,
+    fontSize: 14,
   },
 });
 const reporte = {
