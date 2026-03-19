@@ -3,7 +3,7 @@ import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Provider as PaperProvider, MD3LightTheme } from "react-native-paper";
 import { ActivityIndicator, View } from "react-native";
-import { useFonts, Montserrat_400Regular, Montserrat_600SemiBold, Montserrat_700Bold } from "@expo-google-fonts/montserrat";
+import { useFonts, Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
 import { CattleColors } from "./styles/colors";
 import LoginScreen from "./screens/LoginScreen";
 import VerifyUserScreen from "./screens/VerifyUserScreen";
@@ -21,21 +21,21 @@ const paperTheme = {
   ...MD3LightTheme,
   fonts: {
     ...MD3LightTheme.fonts,
-    displayLarge: { ...MD3LightTheme.fonts.displayLarge, fontFamily: "Montserrat_700Bold" },
-    displayMedium: { ...MD3LightTheme.fonts.displayMedium, fontFamily: "Montserrat_700Bold" },
-    displaySmall: { ...MD3LightTheme.fonts.displaySmall, fontFamily: "Montserrat_700Bold" },
-    headlineLarge: { ...MD3LightTheme.fonts.headlineLarge, fontFamily: "Montserrat_700Bold" },
-    headlineMedium: { ...MD3LightTheme.fonts.headlineMedium, fontFamily: "Montserrat_700Bold" },
-    headlineSmall: { ...MD3LightTheme.fonts.headlineSmall, fontFamily: "Montserrat_700Bold" },
-    titleLarge: { ...MD3LightTheme.fonts.titleLarge, fontFamily: "Montserrat_600SemiBold" },
-    titleMedium: { ...MD3LightTheme.fonts.titleMedium, fontFamily: "Montserrat_600SemiBold" },
-    titleSmall: { ...MD3LightTheme.fonts.titleSmall, fontFamily: "Montserrat_600SemiBold" },
-    labelLarge: { ...MD3LightTheme.fonts.labelLarge, fontFamily: "Montserrat_600SemiBold" },
-    labelMedium: { ...MD3LightTheme.fonts.labelMedium, fontFamily: "Montserrat_600SemiBold" },
-    labelSmall: { ...MD3LightTheme.fonts.labelSmall, fontFamily: "Montserrat_600SemiBold" },
-    bodyLarge: { ...MD3LightTheme.fonts.bodyLarge, fontFamily: "Montserrat_400Regular" },
-    bodyMedium: { ...MD3LightTheme.fonts.bodyMedium, fontFamily: "Montserrat_400Regular" },
-    bodySmall: { ...MD3LightTheme.fonts.bodySmall, fontFamily: "Montserrat_400Regular" },
+    displayLarge: { ...MD3LightTheme.fonts.displayLarge, fontFamily: "Poppins_700Bold" },
+    displayMedium: { ...MD3LightTheme.fonts.displayMedium, fontFamily: "Poppins_700Bold" },
+    displaySmall: { ...MD3LightTheme.fonts.displaySmall, fontFamily: "Poppins_700Bold" },
+    headlineLarge: { ...MD3LightTheme.fonts.headlineLarge, fontFamily: "Poppins_700Bold" },
+    headlineMedium: { ...MD3LightTheme.fonts.headlineMedium, fontFamily: "Poppins_700Bold" },
+    headlineSmall: { ...MD3LightTheme.fonts.headlineSmall, fontFamily: "Poppins_700Bold" },
+    titleLarge: { ...MD3LightTheme.fonts.titleLarge, fontFamily: "Poppins_600SemiBold" },
+    titleMedium: { ...MD3LightTheme.fonts.titleMedium, fontFamily: "Poppins_600SemiBold" },
+    titleSmall: { ...MD3LightTheme.fonts.titleSmall, fontFamily: "Poppins_600SemiBold" },
+    labelLarge: { ...MD3LightTheme.fonts.labelLarge, fontFamily: "Poppins_600SemiBold" },
+    labelMedium: { ...MD3LightTheme.fonts.labelMedium, fontFamily: "Poppins_600SemiBold" },
+    labelSmall: { ...MD3LightTheme.fonts.labelSmall, fontFamily: "Poppins_600SemiBold" },
+    bodyLarge: { ...MD3LightTheme.fonts.bodyLarge, fontFamily: "Poppins_400Regular" },
+    bodyMedium: { ...MD3LightTheme.fonts.bodyMedium, fontFamily: "Poppins_400Regular" },
+    bodySmall: { ...MD3LightTheme.fonts.bodySmall, fontFamily: "Poppins_400Regular" },
   },
   colors: {
     ...MD3LightTheme.colors,
@@ -68,9 +68,9 @@ const navTheme = {
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    Montserrat_400Regular,
-    Montserrat_600SemiBold,
-    Montserrat_700Bold,
+    Poppins_400Regular,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
   });
 
   if (!fontsLoaded) {
