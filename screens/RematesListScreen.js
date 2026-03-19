@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, FlatList, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 import { getAuctions } from '../services/auctionService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,6 +11,15 @@ export default function RematesListScreen({ navigation }) {
   const [remates, setRemates] = useState([]);
   const [menuVisible, setMenuVisible] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  const formatDate = (isoDate) => {
+    if (!isoDate) return { day: "--", month: "--", time: "--:--" };
+    const date = new Date(isoDate);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = date.toLocaleString("es-ES", { month: "short" }).replace(".", "");
+    const time = date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+    return { day, month, time };
+  };
 
   useEffect(() => {
     loadRemates();
@@ -43,7 +52,7 @@ export default function RematesListScreen({ navigation }) {
   };
 
   const renderItem = ({ item }) => {
-    const [fecha, hora] = item.fecha.split('T');
+    const { day, month, time } = formatDate(item.fecha);
 
     return (
       <TouchableOpacity
@@ -53,13 +62,23 @@ export default function RematesListScreen({ navigation }) {
         }}
       >
         <Card style={styles.card}>
-          <Card.Content>
-            <View style={styles.cardHeader}>
-              <Text style={styles.title}>{item.nombre}</Text>
-              <Text style={styles.badge}>ACTIVO</Text>
+          <Card.Content style={styles.cardContent}>
+            <View style={styles.dateBadge}>
+              <Text style={styles.dateDay}>{day}</Text>
+              <Text style={styles.dateMonth}>{month}</Text>
             </View>
-            <Text style={styles.subtitle}>Inicio: {fecha} · {hora}</Text>
-            <Text style={styles.meta}>Cabaña: {item?.cabana?.nombre || "—"}</Text>
+            <View style={styles.cardBody}>
+              <Text style={styles.title} numberOfLines={2}>{item.nombre}</Text>
+              <Text style={styles.subtitle} numberOfLines={1}>{item?.descripcion || "Oferta especial de remate"}</Text>
+              <View style={styles.timeRow}>
+                <Text style={styles.timeIcon}>⏰</Text>
+                <Text style={styles.timeText}>{time}</Text>
+              </View>
+            </View>
+            <Image
+              source={{ uri: item?.imagen || item?.banner || item?.imagenUrl || item?.flyerUrl || "https://via.placeholder.com/140x100.png?text=Remate" }}
+              style={styles.thumbnail}
+            />
           </Card.Content>
         </Card>
       </TouchableOpacity>
@@ -116,38 +135,70 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   card: {
-    marginBottom: 10,
-    borderRadius: 12,
+    marginBottom: 12,
+    borderRadius: 16,
     backgroundColor: CattleColors.white,
     borderWidth: 1,
     borderColor: CattleColors.mediumLightGray,
     ...CattleShadows.card,
   },
-  cardHeader: {
+  cardContent: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 10,
+  },
+  dateBadge: {
+    width: 64,
+    height: 72,
+    borderRadius: 12,
+    backgroundColor: CattleColors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dateDay: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: CattleColors.white,
+  },
+  dateMonth: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: CattleColors.white,
+    textTransform: "capitalize",
+  },
+  cardBody: {
+    flex: 1,
+    paddingRight: 6,
   },
   title: {
     fontSize: 16,
     fontWeight: "700",
     color: CattleColors.primary,
   },
-  badge: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: CattleColors.accent,
-    letterSpacing: 0.6,
-  },
   subtitle: {
     marginTop: 6,
+    fontSize: 13,
+    color: CattleColors.darkGray,
+  },
+  timeRow: {
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  timeIcon: {
+    marginRight: 6,
+    fontSize: 12,
+  },
+  timeText: {
     fontSize: 12,
     color: CattleColors.mediumGray,
+    fontWeight: "600",
   },
-  meta: {
-    marginTop: 4,
-    fontSize: 12,
-    color: CattleColors.darkGray,
+  thumbnail: {
+    width: 88,
+    height: 72,
+    borderRadius: 10,
+    backgroundColor: CattleColors.lightGray,
   },
   empty: {
     paddingTop: 40,
