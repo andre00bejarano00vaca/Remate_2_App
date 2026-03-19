@@ -135,18 +135,23 @@ const loadLotes = async () => {
                 navigation.navigate("LoteDetail", { lote: item, remate })}}
             >
               <Card style={styles.card}>
-                <Card.Content>
-                  <View style={styles.cardRow}>
-                    <View style={styles.cardLeft}>
-                      <Text style={styles.cardTitle}>
-                        {item.nombre || item.name}
-                      </Text>
-                      <Text style={styles.cardSubtitle}>
-                        Lote #{item.numLote || "-"} · Cabaña: {item.cabana?.nombre ?? "-"}
-                      </Text>
-                    </View>
-                    <Text style={styles.cardChip}>{item.estado || "Disponible"}</Text>
+                <Card.Content style={styles.cardContent}>
+                  <View style={styles.lotBadge}>
+                    <Text style={styles.lotBadgeLabel}>Lote</Text>
+                    <Text style={styles.lotBadgeNumber}>{item.numLote || "-"}</Text>
                   </View>
+                  <View style={styles.cardBody}>
+                    <Text style={styles.cardTitle} numberOfLines={2}>
+                      {item.nombre || item.name}
+                    </Text>
+                    <Text style={styles.cardSubtitle} numberOfLines={1}>
+                      Cabaña: {item.cabana?.nombre ?? "-"} · {item.raza || "Raza no indicada"}
+                    </Text>
+                    <Text style={styles.cardMeta}>
+                      Peso: {item.pesoPromedio || item.peso || "-"} kg · Prelance: ${item.prelance || 0}
+                    </Text>
+                  </View>
+                  <Text style={styles.cardChip}>{item.estado || "Disponible"}</Text>
                 </Card.Content>
               </Card>
             </TouchableOpacity>
@@ -201,22 +206,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: CattleColors.black,
   },
-  cardRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  cardLeft: {
-    flex: 1,
-    paddingRight: 10,
-  },
   card: {
-    marginBottom: 10,
-    borderRadius: 12,
+    marginBottom: 12,
+    borderRadius: 16,
     backgroundColor: CattleColors.white,
     borderWidth: 1,
     borderColor: CattleColors.mediumLightGray,
     ...CattleShadows.card,
+  },
+  cardContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  lotBadge: {
+    width: 64,
+    height: 72,
+    borderRadius: 12,
+    backgroundColor: CattleColors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  lotBadgeLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: CattleColors.white,
+  },
+  lotBadgeNumber: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: CattleColors.white,
+  },
+  cardBody: {
+    flex: 1,
+    paddingRight: 6,
   },
   cardTitle: {
     fontSize: 16,
@@ -224,6 +247,11 @@ const styles = StyleSheet.create({
     color: CattleColors.primary,
   },
   cardSubtitle: {
+    marginTop: 6,
+    fontSize: 13,
+    color: CattleColors.darkGray,
+  },
+  cardMeta: {
     marginTop: 6,
     fontSize: 12,
     color: CattleColors.mediumGray,
