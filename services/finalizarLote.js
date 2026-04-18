@@ -1,5 +1,7 @@
+import { apiBaseUrl } from "../config/env";
+
 export default async function finalizarLote(remateId, loteId) {
-  const url = `https://testapp.digitaltelecom.net/api/remates/${remateId}/finalizar/${loteId}`;
+  const url = `${apiBaseUrl}/api/remates/${remateId}/finalizar/${loteId}`;
 
   try {
     const response = await fetch(url, {

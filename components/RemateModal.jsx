@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { apiBaseUrl } from "../config/env";
 import { View } from "react-native";
 import { Modal, Portal, TextInput, Button, Title, List } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -17,7 +18,7 @@ const RemateModal = ({ visible, onDismiss, editingAuction, onSave }) => {
 
   // 🔹 Fetch de cabañas desde el backend
   useEffect(() => {
-    fetch("https://testapp.digitaltelecom.net/api/cabanas") // 🔧 ajusta esta ruta a tu API real
+    fetch(`${apiBaseUrl}/api/cabanas`) // 🔧 ajusta esta ruta a tu API real
       .then(res => res.json())
       .then(data => setCabanas(data))
       .catch(err => console.error("Error cargando cabañas:", err));

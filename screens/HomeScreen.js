@@ -13,6 +13,7 @@ import useEventosWS from "../services/useEventosWS";
 import { procesarEvento } from "../services/procesarEvento";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { usePuja } from "../hook/usePuja";
+import { apiBaseUrl, wsBaseUrl } from "../config/env";
 import AppHeader from "../components/AppHeader";
 import SideMenu from "../components/SideMenu";
 
@@ -58,44 +59,16 @@ export default function HomeScreen({ navigation, route }) {
     });
 
 
-    const obtenerRol = async (email) => {
-        try {
-          // No hace falta 'method: GET' porque es el default, ni Content-Type
-          const response = await fetch(`https://testapp.digitaltelecom.net/api/usuarios/rol/${email}`);
-
-          if (!response.ok) {
-            throw new Error("No se pudo obtener el rol");
-          }
-
-          const data = await response.json();
-          console.log("ID de Rol recibido:", data.rolId);
-
-          await AsyncStorage.setItem("rol", String(data.rolId));
-          return data.rolId;
-
-        } catch (error) {
-          console.error("Error obteniendo rol:", error);
-        }
-      };
-      const inicializarUsuario = async () => {
-  // 1. Esperamos a que AsyncStorage nos de el valor real
-  const correoGuardado = await AsyncStorage.getItem("usuario");
-
-  if (correoGuardado) {
-    // 2. Ahora sí, pasamos el STRING a la función
-    obtenerRol(correoGuardado);
-  } else {
-    console.log("No hay un usuario guardado");
-  }
-};
-
-inicializarUsuario();
+    const getAuthHeader = async () => {
+        const token = await AsyncStorage.getItem("authToken");
+        return token ? { Authorization: `Bearer ${token}` } : {};
+    };
     //web socket-----------------------------------------
     useEffect(() => {
         if (!loteid || !remateid) return; // asegurarse que los IDs existen
 
         const remateId = remateid; // según tu código, remate.id parece ser remateId
-        const wsUrl = `wss://testapp.digitaltelecom.net/ws/puja/${remateId}/${loteid}`;
+        const wsUrl = `${wsBaseUrl}/ws/puja/${remateId}/${loteid}`;
 
         ws.current = new WebSocket(wsUrl);
 
@@ -133,7 +106,7 @@ inicializarUsuario();
         };
 
         // Si quieres inicializar con un fetch igual que antes
-        fetch(`https://testapp.digitaltelecom.net/contador/${remateId}/${loteid}`)
+        fetch(`${apiBaseUrl}/contador/${remateId}/${loteid}`)
             .then(res => res.json())
             .then(data => setCounter(data))
             .catch(err => console.error("Error fetch inicial:", err));
@@ -207,7 +180,11 @@ inicializarUsuario();
         }
 
         // Obtener ID del usuario desde backend
-        const userRes = await fetch(`https://testapp.digitaltelecom.net/api/usuarios/id/${username}`);
+        const userRes = await fetch(`${apiBaseUrl}/api/usuarios/id/${username}`, {
+            headers: {
+                ...(await getAuthHeader()),
+            },
+        });
         
         if (!userRes.ok) {
             console.log(username)
@@ -219,15 +196,16 @@ inicializarUsuario();
         const userId = userData.id ?? userData; // soporta ambas respuestas
 
         // Incrementar contador
-        await fetch(`https://testapp.digitaltelecom.net/contador/incrementar/${remateid}/${loteid}`, {
+        await fetch(`${apiBaseUrl}/contador/incrementar/${remateid}/${loteid}`, {
             method: "POST",
         });
         console.log("crear puja en el id: ",remateid,"------------------------------")
         // Crear puja
-        await fetch("https://testapp.digitaltelecom.net/api/pujas", {
+        await fetch(`${apiBaseUrl}/api/pujas`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                ...(await getAuthHeader()),
             },
             body: JSON.stringify({
                 fecha: new Date().toISOString().slice(0, 19),

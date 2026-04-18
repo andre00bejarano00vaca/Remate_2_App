@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { apiBaseUrl } from "../config/env";
 import { View, FlatList, ActivityIndicator } from "react-native";
 import CardRemate from "./CardRemate";
 
@@ -10,7 +11,7 @@ export default function RematesScreen() {
     const fetchRemates = async () => {
       try {
         const res = await fetch(
-          "https://testapp.digitaltelecom.net/api/remates"
+          `${apiBaseUrl}/api/remates`
         );
         const data = await res.json();
         setRemates(data);

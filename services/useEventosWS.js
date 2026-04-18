@@ -1,9 +1,10 @@
 import { useEffect } from "react";
+import { wsBaseUrl } from "../config/env";
 export default function useEventosWS(idRemate, onMessage) {
   useEffect(() => {
     if (!idRemate) return;
 
-    const socket = new WebSocket(`wss://testapp.digitaltelecom.net/ws/eventos/${idRemate}`);
+    const socket = new WebSocket(`${wsBaseUrl}/ws/eventos/${idRemate}`);
 
     socket.onopen = () => console.log("WS conectado");
 

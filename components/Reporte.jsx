@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { apiBaseUrl } from "../config/env";
 import { Button, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { generarReporteRemate } from "./generarReporteRemate";
@@ -14,7 +15,7 @@ export default function ReporteScreen({remateId, remateName}) {
         console.log("remate id: " , remateId)
 
         const res = await fetch(
-          `https://testapp.digitaltelecom.net/api/pujas/informe/npujas/${remateId}`
+          `${apiBaseUrl}/api/pujas/informe/npujas/${remateId}`
         );
         const data = await res.json();
         setDatos(data)

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { apiBaseUrl } from "../config/env";
 import { View } from "react-native";
 import { Modal, Portal, TextInput, Button, Title, List } from "react-native-paper";
 
@@ -11,7 +12,7 @@ const LoteModal = ({ visible, onDismiss, editingLot, onSave }) => {
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    fetch("https://testapp.digitaltelecom.net/api/remates") // 🔧 ajusta esta ruta
+    fetch(`${apiBaseUrl}/api/remates`) // 🔧 ajusta esta ruta
       .then(res => res.json())
       .then(data => setRemates(data))
       .catch(err => console.error("Error cargando remates:", err));

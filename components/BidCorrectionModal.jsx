@@ -3,8 +3,7 @@ import { View, Text, Alert, StyleSheet } from "react-native";
 import { Modal, Button, TextInput } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-
-const BASE_URL = "https://testapp.digitaltelecom.net";
+import { apiBaseUrl } from "../config/env";
 
 export default function BidCorrectionModal({
   visible,
@@ -45,7 +44,7 @@ export default function BidCorrectionModal({
       }
 
       await axios.put(
-        `${BASE_URL}/contador/corregir/pujaid/${id}/remateid/${remateId}/loteid/${loteId}`,
+        `${apiBaseUrl}/contador/corregir/pujaid/${id}/remateid/${remateId}/loteid/${loteId}`,
         { nuevoValor: numericValue }
       );
 

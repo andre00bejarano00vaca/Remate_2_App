@@ -3,6 +3,7 @@ import { View, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView } f
 import { TextInput, Button, Title, Text, Card, SegmentedButtons } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CattleColors, CattleShadows } from "../styles/colors";
+import { apiBaseUrl } from "../config/env";
 
 // Validaciones
 const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -29,82 +30,36 @@ export default function LoginScreen({ navigation }) {
         return;
       }
 
-      // 1. Usar la URL correcta del endpoint @GetMapping("/confirmado/{username}")
-    const response = await fetch(`https://testapp.digitaltelecom.net/api/usuarios/confirmado/${encodeURIComponent(email)}`);
+      const response = await fetch(`${apiBaseUrl}/api/usuarios/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: email, password }),
+      });
 
-    console.log(response.status, " - Verificando usuario:", email);
-    if (!response.ok) {
-      // Esto solo pasaría si el servidor se cae (500) o la URL está mal (404)
-      setError("Error de conexión con el servidor");
-      return;
-    }
+      const data = await response.json().catch(() => ({}));
 
-    // 2. Parsear el objeto ConfirmadoTF
-    const data = await response.json(); 
-    // data = { authenticated: boolean, confirmed: boolean }
-
-    // 3. Lógica de validación basada en los booleanos del Backend
-    if (!data.authenticated) {
-      setError("Usuario no registrado. Crea una cuenta.");
-      return;
-    }
-
-    if (!data.confirmed) {
-      // El usuario existe pero aún no ha sido aceptado por el admin
-      setError("Tu cuenta está pendiente de aprobación.");
-      // Opcional: navigation.replace("PendingApproval");
-      return;
-    }
-
-    // 4. Si ambos son true, el login es "exitoso"
-    console.log("Login exitoso para:", email);
-    await AsyncStorage.setItem("usuario", email);
-    await AsyncStorage.setItem("isLoggedIn", "true");
-    
-    navigation.replace("RematesList");
-
-      const obtenerRol = async (email) => {
-        try {
-          // No hace falta 'method: GET' porque es el default, ni Content-Type
-          const response = await fetch(`https://testapp.digitaltelecom.net/api/usuarios/rol/${email}`);
-
-          if (!response.ok) {
-            throw new Error("No se pudo obtener el rol");
-          }
-
-          const data = await response.json();
-          console.log("ID de Rol recibido:", data.rolId);
-
-          await AsyncStorage.setItem("rol", String(data.rolId));
-          return data.rolId;
-
-        } catch (error) {
-          console.error("Error obteniendo rol:", error);
-        }
-      };
-
-      obtenerRol(email);
-      // Si el servidor responde OK, loguear posible payload para depuración
-      try {
-        const data = await response.json();
-        console.log("Login response:", data);
-        if (data.token) {
-          await AsyncStorage.setItem("authToken", data.token);
-        }
-      } catch (e) {
-        console.log("Login: respuesta OK sin JSON:", e);
+      if (response.status === 401) {
+        setError(data.error || "Credenciales inválidas");
+        return;
+      }
+      if (response.status === 403) {
+        setError(data.error || "Cuenta pendiente de aprobación");
+        return;
+      }
+      if (!response.ok) {
+        setError("Error de servidor");
+        return;
       }
 
-      // Guarda solo el email (NUNCA guardes contraseñas)
-      await AsyncStorage.setItem("usuario", email);
+      await AsyncStorage.setItem("authToken", data.token);
+      await AsyncStorage.setItem("usuario", data.username);
+      await AsyncStorage.setItem("rol", String(data.rolId));
       await AsyncStorage.setItem("isLoggedIn", "true");
-
-      // Opcional: guardar token JWT si el servidor lo proporciona
-      // const data = await response.json();
-      // if (data.token) await AsyncStorage.setItem("authToken", data.token);
+      if (data.userId) {
+        await AsyncStorage.setItem("userId", String(data.userId));
+      }
 
       navigation.replace("RematesList");
-
     } catch (err) {
       console.error("Error en login:", err);
       setError("Conexión fallida. Verifica tu internet.");
@@ -140,7 +95,7 @@ export default function LoginScreen({ navigation }) {
       try {
         // Construir URL segura (email puede tener @ + etc.)
         const verificarUrl =
-          `https://testapp.digitaltelecom.net/auth/verificar/${encodeURIComponent(email)}`;
+          `${apiBaseUrl}/auth/verificar/${encodeURIComponent(email)}`;
 
         // Hacer request GET
         const verifyResponse = await fetch(verificarUrl, {
@@ -209,7 +164,7 @@ export default function LoginScreen({ navigation }) {
       }
 
       try {
-        const response = await fetch("https://testapp.digitaltelecom.net/api/usuarios/registrar", {
+        const response = await fetch(`${apiBaseUrl}/api/usuarios/registrar`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -239,8 +194,8 @@ export default function LoginScreen({ navigation }) {
 
 
       await AsyncStorage.setItem("usuario", email);
-      await AsyncStorage.setItem("rol", JSON.stringify(["CLIENTE"]));
-      await AsyncStorage.setItem("isLoggedIn", "true");
+      await AsyncStorage.setItem("rol", String(1));
+      await AsyncStorage.setItem("isLoggedIn", "false");
       navigation.replace("PendingApproval");
 
     } catch (err) {

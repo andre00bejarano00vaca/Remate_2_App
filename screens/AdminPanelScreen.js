@@ -28,6 +28,7 @@ import { getCabanas, createCabana, updateCabana } from "../services/cabanaServic
 import PDFGenerator from "../components/PDFGenerator";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ReporteScreen from "../components/Reporte";
+import { apiBaseUrl } from "../config/env";
 import BidCorrectionModal from "../components/BidCorrectionModal"
 import finalizarLote from "../services/finalizarLote";
 import { DatePickerModal } from 'react-native-paper-dates';
@@ -193,7 +194,7 @@ export default function AdminPanelScreen({ navigation }) {
         setLoteId(loteId)
         // Usamos la IP
         //  192.168.0.116 y el puerto 8080
-        const response = await fetch(`https://testapp.digitaltelecom.net/api/pujas/remate/${remateId}`);
+        const response = await fetch(`${apiBaseUrl}/api/pujas/remate/${remateId}`);
 
         if (response.ok) {
           const data = await response.json();
