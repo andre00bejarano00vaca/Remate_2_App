@@ -30,14 +30,8 @@ export default function RematesListScreen({ navigation }) {
       try {
         const stored = await AsyncStorage.getItem("rol");
         if (!stored) return setIsAdmin(false);
-        const parsed = (() => {
-          try {
-            return JSON.parse(stored);
-          } catch {
-            return stored;
-          }
-        })();
-        const rolId = typeof parsed === "number" ? parsed : parseInt(parsed, 10);
+        const rolId = parseInt(stored, 10);
+        if (Number.isNaN(rolId)) return setIsAdmin(false);
         setIsAdmin(rolId === 2 || rolId === 4);
       } catch {
         setIsAdmin(false);

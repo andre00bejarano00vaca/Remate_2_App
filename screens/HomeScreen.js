@@ -121,28 +121,22 @@ export default function HomeScreen({ navigation, route }) {
     (async () => {
         try {
             const stored = await AsyncStorage.getItem("rol");
-            if (!stored) return;
-
-            // Como guardamos el ID (número), lo convertimos a entero
-            // Si antes guardaste un JSON, el parse fallará, así que lo manejamos con cuidado
-            let rolId;
-            try {
-                rolId = JSON.parse(stored);
-            } catch {
-                rolId = stored; // Si no es JSON, lo tomamos como string/número directo
-            }
-
-            // Supongamos que el ID del Administrador es 1
-            const ADMIN_ROLE_ID = 2;
-
-            if (Number(rolId) === ADMIN_ROLE_ID) {
-                setIsAdmin(true);
-            } else {
+            if (!stored) {
                 setIsAdmin(false);
+                return;
             }
 
+            const rolId = parseInt(stored, 10);
+            if (Number.isNaN(rolId)) {
+                setIsAdmin(false);
+                return;
+            }
+
+            const ADMIN_ROLE_ID = 2;
+            setIsAdmin(rolId === ADMIN_ROLE_ID);
         } catch (e) {
             console.log("Error leyendo rol del almacenamiento:", e);
+            setIsAdmin(false);
         }
     })();
 }, []);

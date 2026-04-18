@@ -186,7 +186,7 @@ export default function LoginScreen({ navigation }) {
 
         const data = await response.json();
         console.log("Usuario registrado:", data);
-        await AsyncStorage.setItem("rol", data.rol || 1);
+        await AsyncStorage.setItem("rol", String(data.rol?.id ?? data.rol ?? 1));
 
       } catch (error) {
         console.error("Registro falló:", error);

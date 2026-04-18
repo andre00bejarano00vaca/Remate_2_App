@@ -153,30 +153,14 @@ export default function AdminPanelScreen({ navigation }) {
           setIsAdmin(false);
           return;
         }
-        // Puede ser "1", "2" o un JSON array/string
-        const parsed = (() => {
-          try {
-            return JSON.parse(stored);
-          } catch {
-            return stored;
-          }
-        })();
-        if (typeof parsed === "number") {
-          setCurrentRolId(parsed);
-          setIsAdmin(parsed === 2 || parsed === 4);
-        } else if (typeof parsed === "string") {
-          const asNumber = parseInt(parsed, 10);
-          setCurrentRolId(Number.isNaN(asNumber) ? null : asNumber);
-          setIsAdmin(!Number.isNaN(asNumber) && (asNumber === 2 || asNumber === 4));
-        } else if (Array.isArray(parsed) && parsed.length > 0) {
-          const roleName = String(parsed[0]).toUpperCase();
-          const role = ROLE_OPTIONS.find(r => r.name === roleName);
-          setCurrentRolId(role ? role.id : null);
-          setIsAdmin(role ? role.id === 2 || role.id === 4 : false);
-        } else {
+        const asNumber = parseInt(stored, 10);
+        if (Number.isNaN(asNumber)) {
           setCurrentRolId(null);
           setIsAdmin(false);
+          return;
         }
+        setCurrentRolId(asNumber);
+        setIsAdmin(asNumber === 2 || asNumber === 4);
       } catch (error) {
         console.error("Error leyendo rol actual:", error);
         setCurrentRolId(null);
