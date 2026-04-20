@@ -13,11 +13,17 @@ export default function ReporteScreen({remateId, remateName}) {
     const fetchData = async () => {
       try {
         console.log("remate id: " , remateId)
-
+        const token = await AsyncStorage.getItem("authToken");
         const res = await fetch(
-          `${apiBaseUrl}/api/pujas/informe/npujas/${remateId}`
+          `${apiBaseUrl}/api/pujas/informe/npujas/${remateId}`,
+          {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
         );
         const data = await res.json();
+        console.log("Datos recibidos del backend:", data);
         setDatos(data)
         console.log("Datos cargados:", data);
       } catch (error) {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { apiBaseUrl } from "../config/env";
 import { View, FlatList, ActivityIndicator } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import CardRemate from "./CardRemate";
 
 export default function RematesScreen() {
@@ -10,10 +11,18 @@ export default function RematesScreen() {
   useEffect(() => {
     const fetchRemates = async () => {
       try {
+        const token = await AsyncStorage.getItem("authToken");
+
         const res = await fetch(
-          `${apiBaseUrl}/api/remates`
+          `${apiBaseUrl}/api/remates`,
+          {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
         );
         const data = await res.json();
+        console.log("REMATES INFORME:", data);
         setRemates(data);
       } catch (error) {
         console.log("Error cargando remates:", error);

@@ -178,7 +178,14 @@ export default function AdminPanelScreen({ navigation }) {
         setLoteId(loteId)
         // Usamos la IP
         //  192.168.0.116 y el puerto 8080
-        const response = await fetch(`${apiBaseUrl}/api/pujas/remate/${remateId}`);
+        const token = await AsyncStorage.getItem("authToken");
+        const response = await fetch(`${apiBaseUrl}/api/pujas/remate/${remateId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         if (response.ok) {
           const data = await response.json();
