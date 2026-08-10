@@ -1,7 +1,12 @@
 import apiClient from "../api/apiClient";
 
-export const getAuctions = async () => {
-  const response = await apiClient.get("/remates");
+export const getAuctions = async (token) => {
+  const response = await apiClient.get("/remates", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
   return response.data;
 };
 
