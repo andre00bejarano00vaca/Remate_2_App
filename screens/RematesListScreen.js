@@ -167,7 +167,7 @@ export default function RematesListScreen({ navigation }) {
       />
 
       <FlatList
-        data={remates}
+        data={remates.filter((remate) => remate?.visible === true)}
         renderItem={renderItem}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.list}

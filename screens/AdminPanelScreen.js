@@ -455,69 +455,69 @@ export default function AdminPanelScreen({ navigation }) {
           const targetPriority = ROLE_PRIORITY[userRolId] || 0;
           const canEditRoles = currentPriority > targetPriority;
           return (
-          <Card key={user.id} style={styles.card}>
-            <Card.Content>
-              <View style={styles.cardHeader}>
-                <View style={styles.userInfo}>
-                  <Text style={styles.userName}>{user.username}</Text>
-                  <Text style={styles.userEmail}>Rol: {user.rol?.name || "—"}</Text>
-                  <Text style={styles.userEmail}>Nombre: {user.nombre || "—"}</Text>
-                  <Text style={styles.userEmail}>Celular: {user.celular || "—"}</Text>
-                  <Text style={styles.userEmail}>CI: {user.ci || "—"}</Text>
-                  <View style={styles.chipContainer}>
-                    <Chip
-                      style={{ marginRight: 8, marginBottom: 8 }}
-                      textStyle={{
-                        color: user.aprobado
-                          ? CattleColors.success
-                          : CattleColors.error
+            <Card key={user.id} style={styles.card}>
+              <Card.Content>
+                <View style={styles.cardHeader}>
+                  <View style={styles.userInfo}>
+                    <Text style={styles.userName}>{user.username}</Text>
+                    <Text style={styles.userEmail}>Rol: {user.rol?.name || "—"}</Text>
+                    <Text style={styles.userEmail}>Nombre: {user.nombre || "—"}</Text>
+                    <Text style={styles.userEmail}>Celular: {user.celular || "—"}</Text>
+                    <Text style={styles.userEmail}>CI: {user.ci || "—"}</Text>
+                    <View style={styles.chipContainer}>
+                      <Chip
+                        style={{ marginRight: 8, marginBottom: 8 }}
+                        textStyle={{
+                          color: user.aprobado
+                            ? CattleColors.success
+                            : CattleColors.error
+                        }}
+                      >
+                        {user.aprobado ? 'Aprobado' : 'Pendiente'}
+                      </Chip>
+                      <Chip
+                        style={{
+                          marginRight: 8,
+                          marginBottom: 8,
+                          backgroundColor: CattleColors.accent
+                        }}
+                      >
+                        {user.rol?.name || "—"}
+                      </Chip>
+                    </View>
+                  </View>
+
+                  <View style={styles.actionButtons}>
+                    {!user.aprobado && (
+                      <>
+                        <IconButton
+                          icon="check"
+                          iconColor={CattleColors.success}
+                          onPress={() => handleUserAction(user.id, 'approve', user)}
+                        />
+                        <IconButton
+                          icon="close"
+                          iconColor={CattleColors.error}
+                          onPress={() => handleUserAction(user.id, 'reject', user)}
+                        />
+                      </>
+                    )}
+                    <IconButton
+                      icon="pencil"
+                      iconColor={CattleColors.info}
+                      onPress={() => {
+                        setEditingUser({
+                          ...user,
+                          rol: user.rol?.id || user.rolId,
+                        });
+                        setShowUserModal(true);
                       }}
-                    >
-                      {user.aprobado ? 'Aprobado' : 'Pendiente'}
-                    </Chip>
-                    <Chip
-                      style={{
-                        marginRight: 8,
-                        marginBottom: 8,
-                        backgroundColor: CattleColors.accent
-                      }}
-                    >
-                      {user.rol?.name || "—"}
-                    </Chip>
+                    />
                   </View>
                 </View>
-
-                <View style={styles.actionButtons}>
-                  {!user.aprobado && (
-                    <>
-                      <IconButton
-                        icon="check"
-                        iconColor={CattleColors.success}
-                        onPress={() => handleUserAction(user.id, 'approve', user)}
-                      />
-                      <IconButton
-                        icon="close"
-                        iconColor={CattleColors.error}
-                        onPress={() => handleUserAction(user.id, 'reject', user)}
-                      />
-                    </>
-                  )}
-                  <IconButton
-                    icon="pencil"
-                    iconColor={CattleColors.info}
-                    onPress={() => {
-                      setEditingUser({
-                        ...user,
-                        rol: user.rol?.id || user.rolId,
-                      });
-                      setShowUserModal(true);
-                    }}
-                  />
-                </View>
-              </View>
-            </Card.Content>
-          </Card>
-        );
+              </Card.Content>
+            </Card>
+          );
         })}
     </ScrollView>
   );
@@ -790,7 +790,7 @@ export default function AdminPanelScreen({ navigation }) {
   );
 
   const renderReportsTab = () => (
-      <RematesScreen/>
+    <RematesScreen />
   );
 
   const isInitialLoading =
@@ -938,31 +938,31 @@ export default function AdminPanelScreen({ navigation }) {
                   />
                 </View>
 
-            {/* Selección de roles */}
-            {editableRoleOptions.length > 0 && (
-              <List.Accordion
-                title={ROLE_OPTIONS.find(r => r.id === editingUser?.rol)?.name || "Seleccionar Rol"}
-                style={{ backgroundColor: "#fff", borderRadius: 8, marginBottom: 10 }}
-              >
-                <RadioButton.Group
-                  onValueChange={(value) =>
-                    setEditingUser(prev => ({
-                      ...(prev || {}),
-                      rol: value,
-                    }))
-                  }
-                  value={editingUser?.rol || null}
-                >
-                  {editableRoleOptions.map(r => (
-                    <List.Item
-                      key={r.id}
-                      title={r.name}
-                      right={() => <RadioButton value={r.id} />}
-                    />
-                  ))}
-                </RadioButton.Group>
-              </List.Accordion>
-            )}
+                {/* Selección de roles */}
+                {editableRoleOptions.length > 0 && (
+                  <List.Accordion
+                    title={ROLE_OPTIONS.find(r => r.id === editingUser?.rol)?.name || "Seleccionar Rol"}
+                    style={{ backgroundColor: "#fff", borderRadius: 8, marginBottom: 10 }}
+                  >
+                    <RadioButton.Group
+                      onValueChange={(value) =>
+                        setEditingUser(prev => ({
+                          ...(prev || {}),
+                          rol: value,
+                        }))
+                      }
+                      value={editingUser?.rol || null}
+                    >
+                      {editableRoleOptions.map(r => (
+                        <List.Item
+                          key={r.id}
+                          title={r.name}
+                          right={() => <RadioButton value={r.id} />}
+                        />
+                      ))}
+                    </RadioButton.Group>
+                  </List.Accordion>
+                )}
 
                 {/* Switch para visible */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10 }}>
@@ -1004,15 +1004,131 @@ export default function AdminPanelScreen({ navigation }) {
           <AuctionModal
             visible={showAuctionModal}
             onDismiss={() => setShowAuctionModal(false)}
+
             onSave={async (auctionData) => {
-              if (auctionData.id) await handleAuctionAction(auctionData.id, 'update', auctionData);
-              else await handleAuctionAction(null, 'create', auctionData);
-              setShowAuctionModal(false);
-              setEditingAuction(null);
+              try {
+                /*
+                 * Guardamos los datos especiales del banner
+                 */
+                const bannerFile = auctionData.bannerFile;
+                const bannerDeleted = auctionData.bannerDeleted;
+
+                /*
+                 * Quitamos estas propiedades antes de enviar
+                 * el remate al backend.
+                 */
+                const { bannerFile: _, bannerDeleted: __, ...remateData } =
+                  auctionData;
+
+                /*
+                 * ==========================
+                 * 1. GUARDAR REMATE
+                 * ==========================
+                 */
+
+                const savedAuction = await handleAuctionAction(
+                  remateData.id || null,
+                  remateData.id ? 'update' : 'create',
+                  remateData
+                );
+
+                /*
+                 * El ID puede venir del objeto retornado
+                 */
+                const remateId =
+                  savedAuction?.id || remateData.id;
+
+                if (!remateId) {
+                  throw new Error(
+                    'No se obtuvo el ID del remate.'
+                  );
+                }
+
+                /*
+                 * ==========================
+                 * 2. ELIMINAR BANNER
+                 * ==========================
+                 */
+
+                if (bannerDeleted) {
+                  await fetch(
+                    `${API_BASE_UR}/remates/${remateId}/banner`,
+                    {
+                      method: 'DELETE',
+                    }
+                  );
+                }
+
+                /*
+                 * ==========================
+                 * 3. SUBIR / ACTUALIZAR BANNER
+                 * ==========================
+                 */
+
+                if (bannerFile) {
+                  const formData = new FormData();
+
+                  formData.append('file', {
+                    uri: bannerFile.uri,
+                    name: bannerFile.name,
+                    type: bannerFile.type,
+                  });
+
+                  /*
+                   * Si el remate es nuevo usamos POST.
+                   * Si ya existía usamos PUT.
+                   */
+
+                  const method = remateData.id
+                    ? 'PUT'
+                    : 'POST';
+
+                  const response = await fetch(
+                    `${API_BASE_UR}/remates/${remateId}/banner`,
+                    {
+                      method,
+                      body: formData,
+                      headers: {
+                        'Content-Type':
+                          'multipart/form-data',
+                      },
+                    }
+                  );
+
+                  if (!response.ok) {
+                    throw new Error(
+                      'No se pudo guardar el banner.'
+                    );
+                  }
+                }
+
+                /*
+                 * ==========================
+                 * 4. CERRAR MODAL
+                 * ==========================
+                 */
+
+                setShowAuctionModal(false);
+                setEditingAuction(null);
+
+              } catch (error) {
+                console.error(
+                  'Error guardando remate:',
+                  error
+                );
+
+                Alert.alert(
+                  'Error',
+                  error.message ||
+                  'No se pudo guardar el remate.'
+                );
+              }
             }}
+
             editingAuction={editingAuction}
             cabanas={cabanas}
           />
+
 
 
           {/* 🐂 Modal de Lote */}

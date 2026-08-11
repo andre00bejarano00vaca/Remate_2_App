@@ -16,6 +16,7 @@ import { usePuja } from "../hook/usePuja";
 import { apiBaseUrl, wsBaseUrl } from "../config/env";
 import AppHeader from "../components/AppHeader";
 import SideMenu from "../components/SideMenu";
+import usePujaWebSocket from '../hook/usePujaWebSocket';
 
 
 const { width, height } = Dimensions.get('window');
@@ -64,57 +65,75 @@ export default function HomeScreen({ navigation, route }) {
         return token ? { Authorization: `Bearer ${token}` } : {};
     };
     //web socket-----------------------------------------
-    useEffect(() => {
-        if (!loteid || !remateid) return; // asegurarse que los IDs existen
+    // useEffect(() => {
+    //     if (!loteid || !remateid) return; // asegurarse que los IDs existen
 
-        const remateId = remateid; // según tu código, remate.id parece ser remateId
-        const wsUrl = `${wsBaseUrl}/ws/puja/${remateId}/${loteid}`;
+    //     const remateId = remateid; // según tu código, remate.id parece ser remateId
+    //     const wsUrl = `${wsBaseUrl}/ws/puja/${remateId}/${loteid}`;
 
-        ws.current = new WebSocket(wsUrl);
+    //     ws.current = new WebSocket(wsUrl);
 
-        ws.current.onopen = () => {
-            console.log("Conectado al WebSocket:", wsUrl);
-        };
+    //     ws.current.onopen = () => {
+    //         console.log("Conectado al WebSocket:", wsUrl);
+    //     };
 
-        ws.current.onmessage = (event) => {
-            console.log("Mensaje recibido:", event.data);
-            const valor = parseInt(event.data, 10);
-            if (isNaN(valor)) return;
-            setCounter(valor);
+    //     ws.current.onmessage = (event) => {
+    //         console.log("Mensaje recibido:", event.data);
+    //         const valor = parseInt(event.data, 10);
+    //         if (isNaN(valor)) return;
+    //         setCounter(valor);
 
-            if (pendingUserBidRef.current && lastUserBidValueRef.current !== null) {
-                if (valor >= lastUserBidValueRef.current) {
-                    pendingUserBidRef.current = false;
-                    setIsWinning(true);
-                    setStatusMessage("Tu tienes el lote, ¡felicidades!");
-                    setShowStatus(true);
-                }
-            } else if (isWinning && lastUserBidValueRef.current !== null && valor > lastUserBidValueRef.current) {
-                setIsWinning(false);
-                setStatusMessage("Perdiste el lote");
-                setShowStatus(true);
-                lastUserBidValueRef.current = null;
-            }
-        };
+    //         if (pendingUserBidRef.current && lastUserBidValueRef.current !== null) {
+    //             if (valor >= lastUserBidValueRef.current) {
+    //                 pendingUserBidRef.current = false;
+    //                 setIsWinning(true);
+    //                 setStatusMessage("Tu tienes el lote, ¡felicidades!");
+    //                 setShowStatus(true);
+    //             }
+    //         } else if (isWinning && lastUserBidValueRef.current !== null && valor > lastUserBidValueRef.current) {
+    //             setIsWinning(false);
+    //             setStatusMessage("Perdiste el lote");
+    //             setShowStatus(true);
+    //             lastUserBidValueRef.current = null;
+    //         }
+    //     };
 
-        ws.current.onerror = (error) => {
-            console.error("Error WebSocket:", error.message || error);
-        };
+    //     ws.current.onerror = (error) => {
+    //         console.error("Error WebSocket:", error.message || error);
+    //     };
 
-        ws.current.onclose = (event) => {
-            console.log("Conexión cerrada:", event.code, event.reason);
-        };
+    //     ws.current.onclose = (event) => {
+    //         console.log("Conexión cerrada:", event.code, event.reason);
+    //     };
 
-        // Si quieres inicializar con un fetch igual que antes
-        fetch(`${apiBaseUrl}/contador/${remateId}/${loteid}`)
-            .then(res => res.json())
-            .then(data => setCounter(data))
-            .catch(err => console.error("Error fetch inicial:", err));
+    //     // Si quieres inicializar con un fetch igual que antes
+    //     fetch(`${apiBaseUrl}/contador/${remateId}/${loteid}`)
+    //         .then(res => res.json())
+    //         .then(data => setCounter(data))
+    //         .catch(err => console.error("Error fetch inicial:", err));
 
-        return () => {
-            if (ws.current) ws.current.close();
-        };
-    }, [loteid, remateid]); // solo se ejecuta cuando estos cambian
+    //     return () => {
+    //         if (ws.current) ws.current.close();
+    //     };
+    // }, [loteid, remateid]); // solo se ejecuta cuando estos cambian
+
+
+usePujaWebSocket({
+    loteid,
+    remateid,
+
+    wsBaseUrl,
+    apiBaseUrl,
+
+    setCounter,
+    setIsWinning,
+    setStatusMessage,
+    setShowStatus,
+
+    pendingUserBidRef,
+    lastUserBidValueRef,
+    isWinning,
+});
 
     //verificar si es usuario admin para mostrar el boton del panel de admin
     useEffect(() => {

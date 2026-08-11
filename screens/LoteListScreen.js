@@ -49,25 +49,65 @@ if (!remate) {
   }, []);
 
 
+
 const loadLotes = async () => {
   setLoading(true);
+
   try {
-    const remateId = await AsyncStorage.getItem("remate"); // recupera el ID del remate
+    // Usamos directamente el remate recibido por navegación
+    const remateId = String(remate.id);
+
+    console.log("================================");
+    console.log("REMATE SELECCIONADO:", remate);
+    console.log("ID DEL REMATE:", remateId);
+
     const res = await getLots();
+
     const data = res.data ?? res;
-    // Filtra solo los lotes del remate actual
+
+    console.log("TOTAL DE LOTES RECIBIDOS:", data.length);
+
+    // Filtrar únicamente los lotes del remate actual
     const filtered = Array.isArray(data)
-      ? data.filter(lote => `${lote.remate.id}` === remateId)
+      ? data.filter((lote) => {
+          const loteRemateId = lote?.remate?.id;
+
+          console.log(
+            "Lote:",
+            lote.id,
+            "Remate:",
+            loteRemateId
+          );
+
+          return String(loteRemateId) === remateId;
+        })
       : [];
 
+    console.log(
+      "LOTES DEL REMATE:",
+      filtered.length
+    );
+
     setLotes(filtered);
+
   } catch (err) {
-    console.error("Error cargando lotes:", err);
-    Alert.alert("Error", "No se pudieron cargar los lotes");
+
+    console.error(
+      "Error cargando lotes:",
+      err
+    );
+
+    Alert.alert(
+      "Error",
+      "No se pudieron cargar los lotes"
+    );
+
   } finally {
+
     setLoading(false);
   }
 };
+
 
 
   const filtered = lotes.filter(l =>
