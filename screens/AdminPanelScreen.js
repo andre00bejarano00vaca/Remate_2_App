@@ -179,6 +179,7 @@ export default function AdminPanelScreen({ navigation }) {
         // Usamos la IP
         //  192.168.0.116 y el puerto 8080
         const token = await AsyncStorage.getItem("authToken");
+        console.log(`${apiBaseUrl}/api/pujas/remate/${remateId}`)
         const response = await fetch(`${apiBaseUrl}/api/pujas/remate/${remateId}`,
           {
             headers: {
