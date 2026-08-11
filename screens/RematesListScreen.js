@@ -113,11 +113,10 @@ export default function RematesListScreen({ navigation }) {
           activeOpacity={0.9}
           accessibilityRole="button"
           accessibilityLabel={item?.nombre || "Remate"}
-          onPress={() =>
-            navigation.navigate("LotesList", {
-              remate: item,
-            })
-          }
+          onPress={async () => {
+           await AsyncStorage.setItem('remate', `${item.id}`);
+           navigation.navigate('LotesList', { remate: item });
+         }}
         >
           <Card style={styles.card}>
             <Image
