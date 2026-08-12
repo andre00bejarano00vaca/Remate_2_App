@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import DefaultRemate from "../assets/images/modelo-vacuno.webp";
 import {
   View,
@@ -27,6 +27,7 @@ export default function RematesListScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const hasLoadedRef = useRef(false);
 
   const loadRole = useCallback(async () => {
     try {
@@ -45,32 +46,39 @@ export default function RematesListScreen({ navigation }) {
     }
   }, []);
 
-  const loadRemates = useCallback(async () => {
+  const loadRemates = useCallback(async ({showLoader = false}={}) => {
     try {
-      setLoading(true);
+      // solo mostrar loader en la primera carga para no desmontar el FlatList
+      // (y re/decodificar banners) al volver desde lotes
+      if(showLoader){
+        setLoading(true);
+      }
 
       const data = await getAuctions();
 
       setRemates(Array.isArray(data) ? data : []);
+      hasLoadedRef.current = true;
     } catch (error) {
       console.log("Error cargando remates:", error);
       setRemates([]);
     } finally {
+      if(showLoader){  
       setLoading(false);
+       }
     }
   }, []);
 
   useFocusEffect(
     useCallback(() => {
       loadRole();
-      loadRemates();
+      loadRemates({showLoader: !hasLoadedRef.current});
     }, [loadRole, loadRemates])
   );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
 
-    await loadRemates();
+    await loadRemates({showLoader: false});
 
     setRefreshing(false);
   }, [loadRemates]);
@@ -105,8 +113,6 @@ export default function RematesListScreen({ navigation }) {
           ? rawImageUrl
           : `${apiBaseUrl}${rawImageUrl.startsWith("/") ? "" : "/"}${rawImageUrl}`
         : "";
-
-      console.log("Remate:", item?.nombre, "Imagen URL:", imageUrl);
 
       return (
         <TouchableOpacity
