@@ -186,27 +186,18 @@ export default function usePujaWebSocket({
 
             socket.onmessage = (event) => {
 
-                console.log(
-                    'Mensaje WS:',
-                    event.data
-                );
+                console.log('========== WEBSOCKET ==========');
+                console.log('Mensaje recibido:', event.data);
+                console.log('Tipo:', typeof event.data);
+                console.log('================================');
 
-
-                const valor =
-                    parseInt(
-                        event.data,
-                        10
-                    );
-
+                const valor = parseInt(event.data, 10);
 
                 if (isNaN(valor)) {
                     return;
                 }
 
-
                 setCounter(valor);
-
-
                 /*
                  * Usuario tenía puja pendiente
                  */
@@ -234,15 +225,15 @@ export default function usePujaWebSocket({
                     }
 
 
-                /*
-                 * Usuario perdió
-                 */
+                    /*
+                     * Usuario perdió
+                     */
 
                 } else if (
                     isWinning &&
                     lastUserBidValueRef.current !== null &&
                     valor >
-                        lastUserBidValueRef.current
+                    lastUserBidValueRef.current
                 ) {
 
                     setIsWinning(false);
@@ -297,7 +288,7 @@ export default function usePujaWebSocket({
                 if (
                     shouldReconnect.current &&
                     appState.current ===
-                        'active'
+                    'active'
                 ) {
 
                     reconnectAttempts.current++;
@@ -314,7 +305,7 @@ export default function usePujaWebSocket({
                     const delay =
                         Math.min(
                             reconnectAttempts.current *
-                                2000,
+                            2000,
                             10000
                         );
 
