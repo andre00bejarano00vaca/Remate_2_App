@@ -10,16 +10,11 @@ export default function useEventosWS(idRemate, onMessage) {
 
     const socket = new WebSocket(`${wsBaseUrl}/ws/eventos/${idRemate}`);
 
-    socket.onopen = () => console.log("WS conectado");
-
     socket.onmessage = (event) => {
-      const mensaje = event.data;
-      console.log(mensaje);
-      onMessageRef.current?.(mensaje);
+      onMessageRef.current?.(event.data);
     };
 
-    socket.onerror = (err) => console.log("WS error:", err);
-    socket.onclose = () => console.log("WS cerrado");
+    socket.onerror = (err) => console.error("[EVENTOS WS] error:", err);
 
     return () => socket.close();
   }, [idRemate]);

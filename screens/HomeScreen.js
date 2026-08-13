@@ -6,8 +6,8 @@ import { Button, Card, Title, Paragraph, Chip, IconButton } from "react-native-p
 import { CattleColors, CattleShadows } from "../styles/colors";
 import { cattleLots } from "../data/cattleLots";
 import LoteInfoScreen from "../components/LoteInfoScreen";
-import Popup from "../components/Popup";
 import VideoScreen from "../components/VideoScreen";
+import PujaPanel from "../components/PujaPanel";
 import EventSource from 'react-native-event-source';
 import useEventosWS from "../services/useEventosWS";
 import { procesarEvento } from "../services/procesarEvento";
@@ -188,7 +188,6 @@ usePujaWebSocket({
         if (isError) {
             // intentar reconectar cada 5 segundos
             interval = setInterval(() => {
-                console.log("Intentando reconectar...");
                 setSource({ uri: videoLote, key: Date.now() });
 
                 setIsError(false);
@@ -206,17 +205,43 @@ usePujaWebSocket({
     );
 
     const incrementCounter = async () => {
-    if (isBiddingRef.current) return;
+    if (isBiddingRef.current) {
+        console.log("[PUJA] tap ignorado: ya hay una puja en curso");
+        return;
+    }
+
+    const t0 = Date.now();
+    const elapsed = () => `+${Date.now() - t0}ms`;
+    console.log(`[PUJA] 1. tap ${elapsed()}`, {
+        counter,
+        siguiente: siguientePuja,
+        remateid,
+        loteid,
+        userIdCache: userIdRef.current,
+    });
+
     isBiddingRef.current = true;
     setIsBidding(true);
+
+    const nextValue = Number(siguientePuja);
+    const safeNext = Number.isNaN(nextValue) ? Number(counter) : nextValue;
+
+    lastUserBidValueRef.current = safeNext;
+    pendingUserBidRef.current = true;
+    setCounter(safeNext);
+    setIsWinning(true);
+    setStatusMessage("¡Vas ganando el lote!");
+    setShowStatus(true);
+    console.log(`[PUJA] 2. UI optimista ${elapsed()}`, { monto: safeNext });
 
     try {
         let userId = userIdRef.current;
 
         if (!userId) {
+            console.log(`[PUJA] 3. buscando userId ${elapsed()}`);
             const username = await AsyncStorage.getItem("usuario");
             if (!username) {
-                console.log("No existe usuario en AsyncStorage");
+                console.log(`[PUJA] STOP sin usuario en storage ${elapsed()}`);
                 return;
             }
 
@@ -227,27 +252,28 @@ usePujaWebSocket({
             });
 
             if (!userRes.ok) {
-                console.log(username);
-                console.log("Error obteniendo ID del usuario");
+                console.log(`[PUJA] STOP error userId ${elapsed()}`, {
+                    username,
+                    status: userRes.status,
+                });
                 return;
             }
 
             const userData = await userRes.json();
             userId = userData.id ?? userData;
             userIdRef.current = userId;
+            console.log(`[PUJA] 3. userId listo ${elapsed()}`, userId);
+        } else {
+            console.log(`[PUJA] 3. userId cache ${elapsed()}`, userId);
         }
 
-        await fetch(`${apiBaseUrl}/contador/incrementar/${remateid}/${loteid}`, {
+        console.log(`[PUJA] 4. POST /contador/incrementar ${elapsed()}`);
+        const incRes = await fetch(`${apiBaseUrl}/contador/incrementar/${remateid}/${loteid}`, {
             method: "POST",
         });
+        console.log(`[PUJA] 5. contador incrementado ${elapsed()}`, incRes.status);
 
-        const nextValue = Number(counter) + Number(siguientePuja || 0);
-        lastUserBidValueRef.current = Number.isNaN(nextValue) ? Number(counter) : nextValue;
-        pendingUserBidRef.current = true;
-        setIsWinning(true);
-        setStatusMessage("Tu tienes el lote, ¡felicidades!");
-        setShowStatus(true);
-
+        console.log(`[PUJA] 6. POST /api/pujas ${elapsed()}`, { monto: safeNext, userId });
         fetch(`${apiBaseUrl}/api/pujas`, {
             method: "POST",
             headers: {
@@ -256,17 +282,20 @@ usePujaWebSocket({
             },
             body: JSON.stringify({
                 fecha: new Date().toISOString().slice(0, 19),
-                monto: counter,
+                monto: safeNext,
                 visible: true,
                 usuario: { id: userId },
                 cabana: { id: cabanaid },
                 lote: { id: loteid }
             })
-        }).catch((err) => console.log("Error creando puja:", err));
+        }).then((res) => {
+            console.log(`[PUJA] 7. puja creada ${elapsed()}`, res.status);
+        }).catch((err) => console.log(`[PUJA] ERROR creando puja ${elapsed()}`, err));
 
     } catch (err) {
-        console.log("Error en incrementCounter:", err);
+        console.log(`[PUJA] ERROR incrementCounter ${elapsed()}`, err);
     } finally {
+        console.log(`[PUJA] 8. botón desbloqueado ${elapsed()}`);
         isBiddingRef.current = false;
         setIsBidding(false);
     }
@@ -310,7 +339,7 @@ usePujaWebSocket({
     };
 
     return (
-        <View style={[styles.container, isWinning && styles.containerWinning]}>
+        <View style={styles.container}>
             <AppHeader
                 title={`Lote ${numeroLote ?? ""}`}
                 onMenu={openMenu}
@@ -322,38 +351,18 @@ usePujaWebSocket({
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
-                {showStatus && (
-                    <View style={[styles.statusBanner, isWinning ? styles.statusWin : styles.statusLose]}>
-                        <Text style={styles.statusText}>{statusMessage}</Text>
-                    </View>
-                )}
-
                 {/* Video promocional */}
                 <VideoScreen videoUri={videoLote} />
                 <Text style={styles.tituloLote}>Lote Número: {numeroLote}</Text>
-                {/* Sección de Monto con Contador */}
 
-                <Card style={styles.cardPuja}>
-                    <Card.Content>
-                        <View style={styles.sectionPuja}>
-                            <View style={styles.textContainerPuja}>
-                                <Text style={styles.labelPuja}>MONTO ACTUAL</Text>
-                                <Text style={styles.amountPuja}>${counter.toLocaleString()}</Text>
-                                <Text style={styles.nextLabelPuja}>SIGUIENTE PUJA</Text>
-                                <Text style={styles.nextAmountPuja}>${siguientePuja.toLocaleString()}</Text>
-                            </View>
-                            <Button
-                                mode="contained"
-                                onPress={incrementCounter}
-                                disabled={isBidding}
-                                style={styles.buttonPuja}
-                                labelStyle={styles.buttonText}
-                            >
-                                {isBidding ? "PUJANDO..." : "PUJAR"}
-                            </Button>
-                        </View>
-                    </Card.Content>
-                </Card>
+                <PujaPanel
+                    counter={counter}
+                    siguientePuja={siguientePuja}
+                    isBidding={isBidding}
+                    isWinning={isWinning}
+                    showStatus={showStatus}
+                    onPujar={incrementCounter}
+                />
 
 
                 {/* Botón para ver catálogo completo */}

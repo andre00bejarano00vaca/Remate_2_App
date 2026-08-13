@@ -72,17 +72,8 @@ export default function usePujaWebSocket({
 
                 setCounter(data);
 
-                console.log(
-                    'Contador actualizado:',
-                    data
-                );
-
             } catch (error) {
-
-                console.error(
-                    'Error fetch contador:',
-                    error
-                );
+                console.error('[PUJA WS] error fetch contador:', error);
             }
         };
 
@@ -96,11 +87,6 @@ export default function usePujaWebSocket({
         const cerrarWebSocket = () => {
 
             if (ws.current) {
-
-                console.log(
-                    'Cerrando WebSocket...'
-                );
-
                 ws.current.onopen = null;
                 ws.current.onmessage = null;
                 ws.current.onerror = null;
@@ -148,12 +134,6 @@ export default function usePujaWebSocket({
             }
 
 
-            console.log(
-                'Conectando WebSocket:',
-                wsUrl
-            );
-
-
             const socket =
                 new WebSocket(wsUrl);
 
@@ -167,11 +147,6 @@ export default function usePujaWebSocket({
              */
 
             socket.onopen = () => {
-
-                console.log(
-                    'WebSocket conectado'
-                );
-
                 reconnectAttempts.current = 0;
 
                 /*
@@ -189,22 +164,21 @@ export default function usePujaWebSocket({
              */
 
             socket.onmessage = (event) => {
-
-                console.log('========== WEBSOCKET ==========');
-                console.log('Mensaje recibido:', event.data);
-                console.log('Tipo:', typeof event.data);
-                console.log('================================');
-
                 const valor = parseInt(event.data, 10);
 
                 if (isNaN(valor)) {
+                    console.log('[PUJA WS] mensaje ignorado (no numérico):', event.data);
                     return;
                 }
 
+                console.log('[PUJA WS] mensaje', {
+                    valor,
+                    pending: pendingUserBidRef.current,
+                    lastBid: lastUserBidValueRef.current,
+                    winning: isWinningRef.current,
+                });
+
                 setCounter(valor);
-                /*
-                 * Usuario tenía puja pendiente
-                 */
 
                 if (
                     pendingUserBidRef.current &&
@@ -215,23 +189,12 @@ export default function usePujaWebSocket({
                         valor >=
                         lastUserBidValueRef.current
                     ) {
-
-                        pendingUserBidRef.current =
-                            false;
-
+                        pendingUserBidRef.current = false;
                         setIsWinning(true);
-
-                        setStatusMessage(
-                            'Tu tienes el lote, ¡felicidades!'
-                        );
-
+                        setStatusMessage('¡Vas ganando el lote!');
                         setShowStatus(true);
+                        console.log('[PUJA WS] confirmado ganando', valor);
                     }
-
-
-                    /*
-                     * Usuario perdió
-                     */
 
                 } else if (
                     isWinningRef.current &&
@@ -239,17 +202,11 @@ export default function usePujaWebSocket({
                     valor >
                     lastUserBidValueRef.current
                 ) {
-
                     setIsWinning(false);
-
-                    setStatusMessage(
-                        'Perdiste el lote'
-                    );
-
+                    setStatusMessage('Te superaron, pujá de nuevo');
                     setShowStatus(true);
-
-                    lastUserBidValueRef.current =
-                        null;
+                    lastUserBidValueRef.current = null;
+                    console.log('[PUJA WS] superado', valor);
                 }
             };
 
@@ -261,11 +218,7 @@ export default function usePujaWebSocket({
              */
 
             socket.onerror = (error) => {
-
-                console.error(
-                    'WebSocket error:',
-                    error.message || error
-                );
+                console.error('[PUJA WS] error:', error.message || error);
             };
 
 
@@ -279,13 +232,7 @@ export default function usePujaWebSocket({
                 event
             ) => {
 
-                console.log(
-                    'WebSocket cerrado:',
-                    event.code,
-                    event.reason
-                );
-
-
+                console.log('[PUJA WS] cerrado', event.code, event.reason);
                 ws.current = null;
 
 
@@ -314,11 +261,7 @@ export default function usePujaWebSocket({
                         );
 
 
-                    console.log(
-                        `Reintentando en ${delay / 1000}s`
-                    );
-
-
+                    console.log(`[PUJA WS] reintento en ${delay / 1000}s`);
                     clearTimeout(
                         reconnectTimeout.current
                     );
@@ -345,30 +288,12 @@ export default function usePujaWebSocket({
         const handleAppStateChange =
             (nextState) => {
 
-                console.log(
-                    'AppState:',
-                    appState.current,
-                    '→',
-                    nextState
-                );
-
-
-                /*
-                 * App vuelve a primer plano
-                 */
-
                 if (
                     appState.current.match(
                         /inactive|background/
                     ) &&
                     nextState === 'active'
                 ) {
-
-                    console.log(
-                        'App volvió a primer plano'
-                    );
-
-
                     clearTimeout(
                         reconnectTimeout.current
                     );
@@ -405,12 +330,6 @@ export default function usePujaWebSocket({
                     nextState === 'background' ||
                     nextState === 'inactive'
                 ) {
-
-                    console.log(
-                        'App pasó a segundo plano'
-                    );
-
-
                     clearTimeout(
                         reconnectTimeout.current
                     );
@@ -452,12 +371,6 @@ export default function usePujaWebSocket({
          */
 
         return () => {
-
-            console.log(
-                'Saliendo de la vista del lote'
-            );
-
-
             shouldReconnect.current =
                 false;
 
