@@ -29,6 +29,10 @@ export default function usePujaWebSocket({
 
     const shouldReconnect = useRef(true);
 
+    // Evita closure obsoleto sin reconectar el WS al cambiar isWinning
+    const isWinningRef = useRef(isWinning);
+    isWinningRef.current = isWinning;
+
 
     useEffect(() => {
 
@@ -230,7 +234,7 @@ export default function usePujaWebSocket({
                      */
 
                 } else if (
-                    isWinning &&
+                    isWinningRef.current &&
                     lastUserBidValueRef.current !== null &&
                     valor >
                     lastUserBidValueRef.current

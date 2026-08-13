@@ -33,13 +33,11 @@ export default function HomeScreen({ navigation, route }) {
     const [statusMessage, setStatusMessage] = useState("");
     const [showStatus, setShowStatus] = useState(false);
 
-    console.log("route.params.lote.video")
     const videoLote = route?.params?.lote?.video;
     const loteid = route?.params?.lote?.id;
     const numeroLote = route?.params?.lote?.numLote;
     const remateid = route?.params?.lote?.remate.id;
     const cabanaid= route?.params?.lote?.cabana?.id;
-    console.log("loteId: " + loteid + "   ||  " + "remateId: " + remateid)
     const videoRef = useRef(null);
     const [counter, setCounter] = useState(0);
     const sw = true;
@@ -49,11 +47,13 @@ export default function HomeScreen({ navigation, route }) {
         uri: videoLote,
     });
     const [isError, setIsError] = useState(false);
+    const [isBidding, setIsBidding] = useState(false);
     const ws = useRef(null);
     const lastUserBidValueRef = useRef(null);
     const pendingUserBidRef = useRef(false);
-    // 🔥 Consumir WebSocket correctamente
-    console.log("Remata id: ", remateid)
+    const isBiddingRef = useRef(false);
+    const userIdRef = useRef(null);
+    const authHeaderRef = useRef({});
     ///esta funcion es para sacar a las personas del remate
     useEventosWS(remateid, (mensaje) => {
         procesarEvento(mensaje, navigation);
@@ -161,6 +161,29 @@ usePujaWebSocket({
 }, []);
 
     useEffect(() => {
+        (async () => {
+            try {
+                const [username, token] = await Promise.all([
+                    AsyncStorage.getItem("usuario"),
+                    AsyncStorage.getItem("authToken"),
+                ]);
+                authHeaderRef.current = token ? { Authorization: `Bearer ${token}` } : {};
+                if (!username) return;
+
+                const userRes = await fetch(`${apiBaseUrl}/api/usuarios/id/${username}`, {
+                    headers: { ...authHeaderRef.current },
+                });
+                if (!userRes.ok) return;
+
+                const userData = await userRes.json();
+                userIdRef.current = userData.id ?? userData;
+            } catch (e) {
+                console.log("Error precargando usuario:", e);
+            }
+        })();
+    }, []);
+
+    useEffect(() => {
         let interval;
         if (isError) {
             // intentar reconectar cada 5 segundos
@@ -183,51 +206,39 @@ usePujaWebSocket({
     );
 
     const incrementCounter = async () => {
+    if (isBiddingRef.current) return;
+    isBiddingRef.current = true;
+    setIsBidding(true);
+
     try {
-        // Obtener usuario del almacenamiento local
-        const username = await AsyncStorage.getItem("usuario");
+        let userId = userIdRef.current;
 
-        if (!username) {
-            console.log("No existe usuario en AsyncStorage");
-            return;
+        if (!userId) {
+            const username = await AsyncStorage.getItem("usuario");
+            if (!username) {
+                console.log("No existe usuario en AsyncStorage");
+                return;
+            }
+
+            const userRes = await fetch(`${apiBaseUrl}/api/usuarios/id/${username}`, {
+                headers: {
+                    ...(await getAuthHeader()),
+                },
+            });
+
+            if (!userRes.ok) {
+                console.log(username);
+                console.log("Error obteniendo ID del usuario");
+                return;
+            }
+
+            const userData = await userRes.json();
+            userId = userData.id ?? userData;
+            userIdRef.current = userId;
         }
 
-        // Obtener ID del usuario desde backend
-        const userRes = await fetch(`${apiBaseUrl}/api/usuarios/id/${username}`, {
-            headers: {
-                ...(await getAuthHeader()),
-            },
-        });
-        
-        if (!userRes.ok) {
-            console.log(username)
-            console.log("Error obteniendo ID del usuario");
-            return;
-        }
-
-        const userData = await userRes.json();
-        const userId = userData.id ?? userData; // soporta ambas respuestas
-
-        // Incrementar contador
         await fetch(`${apiBaseUrl}/contador/incrementar/${remateid}/${loteid}`, {
             method: "POST",
-        });
-        console.log("crear puja en el id: ",remateid,"------------------------------")
-        // Crear puja
-        await fetch(`${apiBaseUrl}/api/pujas`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...(await getAuthHeader()),
-            },
-            body: JSON.stringify({
-                fecha: new Date().toISOString().slice(0, 19),
-                monto: counter,
-                visible: true,
-                usuario: { id: userId },
-                cabana: { id: cabanaid },
-                lote: { id: loteid }
-            })
         });
 
         const nextValue = Number(counter) + Number(siguientePuja || 0);
@@ -237,8 +248,27 @@ usePujaWebSocket({
         setStatusMessage("Tu tienes el lote, ¡felicidades!");
         setShowStatus(true);
 
+        fetch(`${apiBaseUrl}/api/pujas`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...authHeaderRef.current,
+            },
+            body: JSON.stringify({
+                fecha: new Date().toISOString().slice(0, 19),
+                monto: counter,
+                visible: true,
+                usuario: { id: userId },
+                cabana: { id: cabanaid },
+                lote: { id: loteid }
+            })
+        }).catch((err) => console.log("Error creando puja:", err));
+
     } catch (err) {
         console.log("Error en incrementCounter:", err);
+    } finally {
+        isBiddingRef.current = false;
+        setIsBidding(false);
     }
 };
 
@@ -315,10 +345,11 @@ usePujaWebSocket({
                             <Button
                                 mode="contained"
                                 onPress={incrementCounter}
+                                disabled={isBidding}
                                 style={styles.buttonPuja}
                                 labelStyle={styles.buttonText}
                             >
-                                PUJAR
+                                {isBidding ? "PUJANDO..." : "PUJAR"}
                             </Button>
                         </View>
                     </Card.Content>

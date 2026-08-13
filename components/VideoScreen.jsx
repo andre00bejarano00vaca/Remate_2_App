@@ -4,7 +4,6 @@ import YoutubePlayer from "react-native-youtube-iframe";
 
 export default function VideoScreen({ videoUri }) {
   const playerRef = useRef(null);
-  console.log("video", videoUri)
   const videoLink =
     videoUri ?? "https://youtu.be/u-NtX-R_VLc";
   const videoId = videoLink.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})/)?.[1];

@@ -1,6 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { wsBaseUrl } from "../config/env";
+
 export default function useEventosWS(idRemate, onMessage) {
+  const onMessageRef = useRef(onMessage);
+  onMessageRef.current = onMessage;
+
   useEffect(() => {
     if (!idRemate) return;
 
@@ -10,13 +14,13 @@ export default function useEventosWS(idRemate, onMessage) {
 
     socket.onmessage = (event) => {
       const mensaje = event.data;
-      console.log(mensaje)
-      onMessage(mensaje);  // 👈 aquí se procesa el mensaje
+      console.log(mensaje);
+      onMessageRef.current?.(mensaje);
     };
 
     socket.onerror = (err) => console.log("WS error:", err);
     socket.onclose = () => console.log("WS cerrado");
 
     return () => socket.close();
-  }, [idRemate, onMessage]);
+  }, [idRemate]);
 }
