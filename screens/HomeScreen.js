@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, Dimensions, Image } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Dimensions, Image, AppState } from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { Linking, Alert } from "react-native";
 import { Button, Card, Title, Paragraph, Chip, IconButton } from "react-native-paper";
@@ -17,6 +17,15 @@ import { apiBaseUrl, wsBaseUrl } from "../config/env";
 import AppHeader from "../components/AppHeader";
 import SideMenu from "../components/SideMenu";
 import usePujaWebSocket from '../hook/usePujaWebSocket';
+import {
+    extractUserBidFromPujas,
+    getMyPuja,
+    markNotifiedOutbid,
+    markPujaOutbid,
+    saveMyPuja,
+    setCurrentViewedLote,
+} from "../services/pujaPersistence";
+import { notifyOutbid, registerExpoPushToken } from "../services/outbidNotifications";
 
 
 const { width, height } = Dimensions.get('window');
@@ -38,10 +47,14 @@ export default function HomeScreen({ navigation, route }) {
     const numeroLote = route?.params?.lote?.numLote;
     const remateid = route?.params?.lote?.remate.id;
     const cabanaid= route?.params?.lote?.cabana?.id;
+    const baseInicial =
+        Number(route?.params?.lote?.prelance ?? route?.params?.lote?.precio) || 0;
     const videoRef = useRef(null);
-    const [counter, setCounter] = useState(0);
-    const sw = true;
-    const { siguientePuja } = usePuja(counter, sw);
+    const [counter, setCounter] = useState(null);
+    const [myBidMonto, setMyBidMonto] = useState(null);
+    const [userId, setUserId] = useState(null);
+    const displayCounter = Number(counter) || 0;
+    const { siguientePuja, incremento } = usePuja(displayCounter, baseInicial);
 
     const [source, setSource] = useState({
         uri: videoLote,
@@ -133,6 +146,26 @@ usePujaWebSocket({
     pendingUserBidRef,
     lastUserBidValueRef,
     isWinning,
+    onOutbid: async (valor) => {
+        const userId = userIdRef.current;
+        if (!userId || !loteid) return;
+
+        await markPujaOutbid({
+            userId,
+            loteId: loteid,
+            currentMonto: valor,
+        });
+
+        if (AppState.currentState === "active") return;
+
+        await notifyOutbid({
+            numeroLote,
+            montoActual: valor,
+            loteId: loteid,
+            remateId: remateid,
+        });
+        await markNotifiedOutbid(userId, loteid);
+    },
 });
 
     //verificar si es usuario admin para mostrar el boton del panel de admin
@@ -161,13 +194,25 @@ usePujaWebSocket({
 }, []);
 
     useEffect(() => {
+        setCurrentViewedLote(loteid);
+        return () => setCurrentViewedLote(null);
+    }, [loteid]);
+
+    useEffect(() => {
         (async () => {
             try {
-                const [username, token] = await Promise.all([
+                const [username, token, storedUserId] = await Promise.all([
                     AsyncStorage.getItem("usuario"),
                     AsyncStorage.getItem("authToken"),
+                    AsyncStorage.getItem("userId"),
                 ]);
                 authHeaderRef.current = token ? { Authorization: `Bearer ${token}` } : {};
+
+                if (storedUserId) {
+                    const parsedId = Number(storedUserId);
+                    userIdRef.current = parsedId;
+                    setUserId(parsedId);
+                }
                 if (!username) return;
 
                 const userRes = await fetch(`${apiBaseUrl}/api/usuarios/id/${username}`, {
@@ -176,12 +221,82 @@ usePujaWebSocket({
                 if (!userRes.ok) return;
 
                 const userData = await userRes.json();
-                userIdRef.current = userData.id ?? userData;
+                const loadedUserId = userData.id ?? userData;
+                userIdRef.current = loadedUserId;
+                setUserId(loadedUserId);
+                await AsyncStorage.setItem("userId", String(loadedUserId));
+                registerExpoPushToken(loadedUserId, authHeaderRef.current);
             } catch (e) {
                 console.log("Error precargando usuario:", e);
             }
         })();
     }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const restoreMyPuja = async () => {
+            if (!loteid || !remateid || !userId) return;
+
+            try {
+
+                let myPuja = await getMyPuja(userId, loteid);
+                console.log("[PUJA] restaurando local", myPuja);
+
+                try {
+                    const res = await fetch(`${apiBaseUrl}/api/pujas/remate/${remateid}`, {
+                        headers: { ...authHeaderRef.current },
+                    });
+                    if (res.ok) {
+                        const pujas = await res.json();
+                        const apiMonto = extractUserBidFromPujas(pujas, {
+                            userId,
+                            loteId: loteid,
+                        });
+                        console.log("[PUJA] restaurando api", apiMonto);
+                        if (apiMonto != null && (!myPuja || apiMonto > Number(myPuja.monto))) {
+                            myPuja = await saveMyPuja({
+                                userId,
+                                loteId: loteid,
+                                remateId: remateid,
+                                monto: apiMonto,
+                                numeroLote,
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.log("[PUJA] no se pudo sincronizar pujas:", error?.message || error);
+                }
+
+                if (cancelled || !myPuja) return;
+
+                lastUserBidValueRef.current = Number(myPuja.monto);
+                setMyBidMonto(Number(myPuja.monto));
+            } catch (error) {
+                console.log("[PUJA] error restaurando puja:", error?.message || error);
+            }
+        };
+
+        restoreMyPuja();
+        return () => {
+            cancelled = true;
+        };
+    }, [loteid, remateid, numeroLote, userId]);
+
+    useEffect(() => {
+        if (myBidMonto == null || counter == null) return;
+
+        lastUserBidValueRef.current = myBidMonto;
+        if (Number(counter) > Number(myBidMonto)) {
+            setIsWinning(false);
+            setShowStatus(true);
+            setStatusMessage("Te superaron, pujá de nuevo");
+        } else {
+            setIsWinning(true);
+            setShowStatus(true);
+            setStatusMessage("¡Vas ganando el lote!");
+        }
+    }, [counter, myBidMonto]);
 
     useEffect(() => {
         let interval;
@@ -228,6 +343,7 @@ usePujaWebSocket({
 
     lastUserBidValueRef.current = safeNext;
     pendingUserBidRef.current = true;
+    setMyBidMonto(safeNext);
     setCounter(safeNext);
     setIsWinning(true);
     setStatusMessage("¡Vas ganando el lote!");
@@ -262,6 +378,8 @@ usePujaWebSocket({
             const userData = await userRes.json();
             userId = userData.id ?? userData;
             userIdRef.current = userId;
+            setUserId(userId);
+            await AsyncStorage.setItem("userId", String(userId));
             console.log(`[PUJA] 3. userId listo ${elapsed()}`, userId);
         } else {
             console.log(`[PUJA] 3. userId cache ${elapsed()}`, userId);
@@ -271,9 +389,25 @@ usePujaWebSocket({
         const incRes = await fetch(`${apiBaseUrl}/contador/incrementar/${remateid}/${loteid}`, {
             method: "POST",
         });
-        console.log(`[PUJA] 5. contador incrementado ${elapsed()}`, incRes.status);
+        const incBody = await incRes.text();
+        const incCounter = Number(incBody);
+        const finalMonto = !Number.isNaN(incCounter) ? incCounter : safeNext;
+        if (!Number.isNaN(incCounter)) {
+            setCounter(incCounter);
+            lastUserBidValueRef.current = incCounter;
+            setMyBidMonto(incCounter);
+        }
+        console.log(`[PUJA] 5. contador incrementado ${elapsed()}`, incRes.status, incBody);
 
-        console.log(`[PUJA] 6. POST /api/pujas ${elapsed()}`, { monto: safeNext, userId });
+        saveMyPuja({
+            userId,
+            loteId: loteid,
+            remateId: remateid,
+            monto: finalMonto,
+            numeroLote,
+        }).catch((err) => console.log("[PUJA] error persistiendo", err));
+
+        console.log(`[PUJA] 6. POST /api/pujas ${elapsed()}`, { monto: finalMonto, userId });
         fetch(`${apiBaseUrl}/api/pujas`, {
             method: "POST",
             headers: {
@@ -282,7 +416,7 @@ usePujaWebSocket({
             },
             body: JSON.stringify({
                 fecha: new Date().toISOString().slice(0, 19),
-                monto: safeNext,
+                monto: finalMonto,
                 visible: true,
                 usuario: { id: userId },
                 cabana: { id: cabanaid },
@@ -356,8 +490,9 @@ usePujaWebSocket({
                 <Text style={styles.tituloLote}>Lote Número: {numeroLote}</Text>
 
                 <PujaPanel
-                    counter={counter}
+                    counter={displayCounter}
                     siguientePuja={siguientePuja}
+                    incremento={incremento}
                     isBidding={isBidding}
                     isWinning={isWinning}
                     showStatus={showStatus}

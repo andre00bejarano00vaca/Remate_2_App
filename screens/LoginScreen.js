@@ -8,6 +8,21 @@ import { apiBaseUrl } from "../config/env";
 // Validaciones
 const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 const validatePassword = (password) => password.length >= 6;
+const normalizePhone = (phone) => phone.replace(/[\s\-\(\)]/g, "");
+const validatePhone = (phone) => /^\+?\d{7,15}$/.test(normalizePhone(phone));
+const isPhoneIdentifier = (value) => {
+  const trimmed = value.trim();
+  return trimmed.length > 0 && !trimmed.includes("@");
+};
+const validateLoginIdentifier = (value) => {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  return trimmed.includes("@") ? validateEmail(trimmed) : validatePhone(trimmed);
+};
+const toLoginUsername = (value) => {
+  const trimmed = value.trim();
+  return trimmed.includes("@") ? trimmed : normalizePhone(trimmed);
+};
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -25,15 +40,17 @@ export default function LoginScreen({ navigation }) {
       setLoading(true);
       setError("");
 
-      if (!validateEmail(email)) {
-        setError("Por favor ingresa un email válido");
+      if (!validateLoginIdentifier(email)) {
+        setError("Ingresa un email o número de teléfono válido");
         return;
       }
+
+      const username = toLoginUsername(email);
 
       const response = await fetch(`${apiBaseUrl}/api/usuarios/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: email, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json().catch(() => ({}));
@@ -212,7 +229,7 @@ export default function LoginScreen({ navigation }) {
 
   const isFormValid =
     mode === "signin"
-      ? email && password && validateEmail(email) && validatePassword(password)
+      ? email && password && validateLoginIdentifier(email) && validatePassword(password)
       : nombre &&
         celular &&
         ci &&
@@ -220,6 +237,8 @@ export default function LoginScreen({ navigation }) {
         password &&
         validateEmail(email) &&
         validatePassword(password);
+
+  const signInUsesPhone = mode === "signin" && isPhoneIdentifier(email);
 
   return (
     <KeyboardAvoidingView
@@ -243,7 +262,9 @@ export default function LoginScreen({ navigation }) {
               {mode === "signin" ? "Iniciar Sesión" : "Crear Cuenta"}
             </Title>
             <Text style={styles.loginSubtitle}>
-              {mode === "signin" ? "Accede con tu email" : "Regístrate para continuar"}
+              {mode === "signin"
+                ? "Accede con tu email o teléfono"
+                : "Regístrate para continuar"}
             </Text>
 
             <SegmentedButtons
@@ -289,14 +310,20 @@ export default function LoginScreen({ navigation }) {
             )}
 
             <TextInput
-              label="Email"
+              label={mode === "signin" ? "Email o teléfono" : "Email"}
               value={email}
               onChangeText={setEmail}
               mode="outlined"
               style={styles.input}
               autoCapitalize="none"
-              keyboardType="email-address"
-              left={<TextInput.Icon icon="email" color={CattleColors.accent} />}
+              autoCorrect={false}
+              keyboardType={mode === "signin" ? "default" : "email-address"}
+              left={
+                <TextInput.Icon
+                  icon={mode === "signin" && signInUsesPhone ? "phone" : "email"}
+                  color={CattleColors.accent}
+                />
+              }
             />
 
             <TextInput

@@ -3,6 +3,7 @@ import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Provider as PaperProvider, MD3LightTheme } from "react-native-paper";
 import { ActivityIndicator, View } from "react-native";
+import * as Notifications from "expo-notifications";
 import { useFonts, Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
 import { CattleColors } from "./styles/colors";
 import LoginScreen from "./screens/LoginScreen";
@@ -14,6 +15,9 @@ import LoteListScreen from "./screens/LoteListScreen";
 import HomeScreen from "./screens/HomeScreen";
 import PendingApprovalScreen from "./screens/PendingApprovalScreen";
 import AdminPanelScreen from "./screens/AdminPanelScreen";
+import useOutbidWatcher from "./hook/useOutbidWatcher";
+import { navigationRef, navigate } from "./services/navigationRef";
+import { getLots } from "./services/lotService";
 
 const Stack = createNativeStackNavigator();
 
@@ -66,6 +70,34 @@ const navTheme = {
   },
 };
 
+function AppNotifications() {
+  useOutbidWatcher();
+
+  React.useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      async (response) => {
+        const data = response.notification.request.content.data || {};
+        if (data.type !== "outbid" || !data.loteId) return;
+
+        try {
+          const lots = await getLots();
+          const list = Array.isArray(lots) ? lots : lots?.data ?? [];
+          const lote = list.find((item) => Number(item.id) === Number(data.loteId));
+          if (lote) {
+            navigate("LoteDetail", { lote, remate: lote.remate });
+          }
+        } catch (error) {
+          console.log("[PUJA PUSH] no se pudo abrir el lote:", error?.message || error);
+        }
+      }
+    );
+
+    return () => subscription.remove();
+  }, []);
+
+  return null;
+}
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
@@ -83,7 +115,8 @@ export default function App() {
 
   return (
     <PaperProvider theme={paperTheme}>
-      <NavigationContainer theme={navTheme}>
+      <NavigationContainer ref={navigationRef} theme={navTheme}>
+        <AppNotifications />
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="VerifyUser" component={VerifyUserScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />

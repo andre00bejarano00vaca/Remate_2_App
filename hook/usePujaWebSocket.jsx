@@ -15,6 +15,7 @@ export default function usePujaWebSocket({
     pendingUserBidRef,
     lastUserBidValueRef,
     isWinning,
+    onOutbid,
 }) {
 
     const ws = useRef(null);
@@ -32,6 +33,8 @@ export default function usePujaWebSocket({
     // Evita closure obsoleto sin reconectar el WS al cambiar isWinning
     const isWinningRef = useRef(isWinning);
     isWinningRef.current = isWinning;
+    const onOutbidRef = useRef(onOutbid);
+    onOutbidRef.current = onOutbid;
 
 
     useEffect(() => {
@@ -70,7 +73,10 @@ export default function usePujaWebSocket({
                 const data =
                     await response.json();
 
-                setCounter(data);
+                const valor = Number(data);
+                if (!Number.isNaN(valor)) {
+                    setCounter(valor);
+                }
 
             } catch (error) {
                 console.error('[PUJA WS] error fetch contador:', error);
@@ -205,8 +211,8 @@ export default function usePujaWebSocket({
                     setIsWinning(false);
                     setStatusMessage('Te superaron, pujá de nuevo');
                     setShowStatus(true);
-                    lastUserBidValueRef.current = null;
                     console.log('[PUJA WS] superado', valor);
+                    onOutbidRef.current?.(valor);
                 }
             };
 
@@ -297,45 +303,8 @@ export default function usePujaWebSocket({
                     clearTimeout(
                         reconnectTimeout.current
                     );
-
-
-                    cerrarWebSocket();
-
-
-                    /*
-                     * Obtener valor actual
-                     */
-
                     obtenerContador();
-
-
-                    /*
-                     * Reconectar
-                     */
-
-                    setTimeout(
-                        () => {
-                            conectarWebSocket();
-                        },
-                        300
-                    );
-                }
-
-
-                /*
-                 * App pasa a segundo plano
-                 */
-
-                if (
-                    nextState === 'background' ||
-                    nextState === 'inactive'
-                ) {
-                    clearTimeout(
-                        reconnectTimeout.current
-                    );
-
-
-                    cerrarWebSocket();
+                    conectarWebSocket();
                 }
 
 

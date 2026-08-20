@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { Button, Icon } from "react-native-paper";
 import { CattleColors, CattleShadows } from "../styles/colors";
@@ -6,6 +6,7 @@ import { CattleColors, CattleShadows } from "../styles/colors";
 export default function PujaPanel({
   counter,
   siguientePuja,
+  incremento = 0,
   isBidding,
   isWinning,
   showStatus,
@@ -17,12 +18,6 @@ export default function PujaPanel({
   const buttonPulse = useRef(new Animated.Value(1)).current;
   const bannerOpacity = useRef(new Animated.Value(0)).current;
   const bannerY = useRef(new Animated.Value(-10)).current;
-
-  const incremento = useMemo(() => {
-    const next = Number(siguientePuja) || 0;
-    const current = Number(counter) || 0;
-    return Math.max(0, next - current);
-  }, [counter, siguientePuja]);
 
   useEffect(() => {
     amountScale.setValue(1.14);

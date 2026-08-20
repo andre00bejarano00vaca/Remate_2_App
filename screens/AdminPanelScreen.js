@@ -8,7 +8,6 @@ import {
   Card,
   IconButton,
   Chip,
-  FAB,
   Portal,
   Modal,
   Provider as PaperProvider,
@@ -417,6 +416,54 @@ export default function AdminPanelScreen({ navigation }) {
     }
   };
 
+  const openAddModal = () => {
+    if (activeTab === 'remates') {
+      setEditingAuction(null);
+      setShowAuctionModal(true);
+    } else if (activeTab === 'lotes') {
+      setEditingLot(null);
+      setShowLotModal(true);
+    } else if (activeTab === 'usuarios') {
+      setEditingUser({
+        username: "",
+        nombre: "",
+        celular: "",
+        ci: "",
+        aprobado: false,
+        visible: true,
+        rol: 1,
+      });
+      setShowUserModal(true);
+    } else if (activeTab === 'cabanas') {
+      setEditingCabana(null);
+      setShowCabanaModal(true);
+    }
+  };
+
+  const renderSearchRow = (placeholder, query, setQuery, showAdd = false) => (
+    <View style={styles.searchRow}>
+      <Searchbar
+        placeholder={placeholder}
+        onChangeText={setQuery}
+        value={query}
+        style={styles.searchbar}
+      />
+      {showAdd && (
+        <Button
+          mode="contained"
+          icon="plus"
+          onPress={openAddModal}
+          style={styles.addButton}
+          contentStyle={styles.addButtonContent}
+          labelStyle={styles.addButtonLabel}
+          compact
+        >
+          Añadir
+        </Button>
+      )}
+    </View>
+  );
+
   const renderTabButton = (tabKey, title, icon) => (
     <Button
       mode={activeTab === tabKey ? "contained" : "outlined"}
@@ -435,12 +482,7 @@ export default function AdminPanelScreen({ navigation }) {
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }>
-      <Searchbar
-        placeholder="Buscar usuarios..."
-        onChangeText={setUserSearchQuery}
-        value={userSearchQuery}
-        style={styles.searchbar}
-      />
+      {renderSearchRow("Buscar usuarios...", userSearchQuery, setUserSearchQuery, true)}
       {users
         // Filtrar por username y rol
         .filter(u =>
@@ -529,12 +571,7 @@ export default function AdminPanelScreen({ navigation }) {
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }>
-      <Searchbar
-        placeholder="Buscar remates..."
-        onChangeText={setAuctionSearchQuery}
-        value={auctionSearchQuery}
-        style={styles.searchbar}
-      />
+      {renderSearchRow("Buscar remates...", auctionSearchQuery, setAuctionSearchQuery, true)}
       {auctions
         .filter(a =>
           a.nombre.toLowerCase().includes(auctionSearchQuery.toLowerCase())
@@ -618,12 +655,7 @@ export default function AdminPanelScreen({ navigation }) {
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }>
-      <Searchbar
-        placeholder="Buscar lotes..."
-        onChangeText={setLotSearchQuery}
-        value={lotSearchQuery}
-        style={styles.searchbar}
-      />
+      {renderSearchRow("Buscar lotes...", lotSearchQuery, setLotSearchQuery, true)}
 
       {cattleLots
         .filter(l => l.nombre.toLowerCase().includes(lotSearchQuery.toLowerCase()))
@@ -641,12 +673,12 @@ export default function AdminPanelScreen({ navigation }) {
                     {/* Información de precios */}
                     <View style={{ marginVertical: 5 }}>
                       <Text>Precio Inicial: ${l.precio}</Text>
-                      <Text>Prelance: ${l.prelance}</Text>
+                      {/*<Text>Prelance: ${l.prelance}</Text>*/}
                       <Text>Puja mínima: ${l.puja}</Text>
                     </View>
 
                     {/* Estado */}
-                    <Chip style={{ marginTop: 5 }}>{l.estado || "SIN ESTADO"}</Chip>
+                    {/*<Chip style={{ marginTop: 5 }}>{l.estado || "SIN ESTADO"}</Chip>*/}
 
                     {/* Información de cabana/remate */}
                     <View style={{ marginTop: 10 }}>
@@ -688,12 +720,7 @@ export default function AdminPanelScreen({ navigation }) {
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }>
-      <Searchbar
-        placeholder="Buscar cabañas..."
-        onChangeText={setCabanaSearchQuery}
-        value={cabanaSearchQuery}
-        style={styles.searchbar}
-      />
+      {renderSearchRow("Buscar cabañas...", cabanaSearchQuery, setCabanaSearchQuery, true)}
       {cabanas
         .filter(c =>
           c.nombre.toLowerCase().includes(cabanaSearchQuery.toLowerCase())
@@ -740,12 +767,7 @@ export default function AdminPanelScreen({ navigation }) {
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }>
-      <Searchbar
-        placeholder="Buscar por monto..."
-        onChangeText={setBidSearchQuery}
-        value={bidSearchQuery}
-        style={styles.searchbar}
-      />
+      {renderSearchRow("Buscar por monto...", bidSearchQuery, setBidSearchQuery)}
 
       {bids.filter(b => `${b.monto}`.includes(bidSearchQuery)).map(b => {
         return (
@@ -815,7 +837,7 @@ export default function AdminPanelScreen({ navigation }) {
     <PaperProvider>
       <View style={styles.container}>
         <AppHeader
-          title="Panel Admin"
+          title="PANEL ADMINISTRADOR"
           onMenu={() => setMenuVisible(true)}
           onLogout={async () => {
             try {
@@ -828,7 +850,7 @@ export default function AdminPanelScreen({ navigation }) {
             }
           }}
         />
-        <Title style={styles.title}>Panel Administrador</Title>
+        <Title style={styles.title}>PANEL ADMINISTADOR</Title>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsContainer} contentContainerStyle={styles.tabsContent}>
           {renderTabButton('usuarios', 'Usuarios', 'account')}
           {renderTabButton('remates', 'Remates', 'calendar')}
@@ -848,30 +870,6 @@ export default function AdminPanelScreen({ navigation }) {
           {activeTab === 'reportes' && renderReportsTab()}
 
         </View>
-
-        <FAB
-          style={styles.fab}
-          icon="plus"
-          onPress={() => {
-            if (activeTab === 'remates') { setEditingAuction(null); setShowAuctionModal(true); }
-            else if (activeTab === 'lotes') { setEditingLot(null); setShowLotModal(true); }
-            else if (activeTab === 'usuarios') {
-              setEditingUser({
-                username: "",
-                nombre: "",
-                celular: "",
-                ci: "",
-                aprobado: false,
-                visible: true,
-                rol: 1,
-              });
-              setShowUserModal(true);
-            }
-            else if (activeTab === 'cabanas') { setEditingCabana(null); setShowCabanaModal(true); } // ✅ agregar
-          }}
-          disabled={!['remates', 'lotes', 'cabanas', 'usuarios'].includes(activeTab)} // ✅ agregar 'cabanas'
-        />
-
 
         <Portal>
           {/* 🧑 Modal de Usuario */}
@@ -1177,7 +1175,7 @@ export default function AdminPanelScreen({ navigation }) {
                   }
                 />
 
-                <TextInput
+                {/*<TextInput
                   label="Prelance"
                   style={styles.input}
                   keyboardType="numeric"
@@ -1185,37 +1183,39 @@ export default function AdminPanelScreen({ navigation }) {
                   onChangeText={text =>
                     setEditingLot(prev => ({ ...prev, prelance: parseFloat(text) || 0 }))
                   }
-                />
+                />*/}
                 <TextInput
                   label="Número de lote"
                   style={styles.input}
-                  keyboardType="numeric"
                   value={editingLot?.numLote?.toString() || ''}
                   onChangeText={text =>
                     setEditingLot(prev => ({
                       ...prev,
-                      numLote: parseInt(text) || 0
+                      numLote: text || 0
                     }))
-                  }
-                />
-                <TextInput
-                  label="Puja"
-                  style={styles.input}
-                  keyboardType="numeric"
-                  value={editingLot?.puja?.toString() || ''}
-                  onChangeText={text =>
-                    setEditingLot(prev => ({ ...prev, puja: parseFloat(text) || 0 }))
                   }
                 />
 
                 <TextInput
+                  label="Video (URL)"
+                  style={styles.input}
+                  value={editingLot?.video || ''}
+                  onChangeText={text =>
+                    setEditingLot(prev => ({ ...prev, video: text }))
+                  }
+                  placeholder="https://..."
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+
+                {/*<TextInput
                   label="Estado"
                   style={styles.input}
                   value={editingLot?.estado || ''}
                   onChangeText={text =>
                     setEditingLot(prev => ({ ...prev, estado: text }))
                   }
-                />
+                />*/}
 
                 <List.Accordion
                   title={
@@ -1398,7 +1398,23 @@ const styles = StyleSheet.create({
   tabButton: { marginRight: 10, borderRadius: 20 },
   activeTab: { backgroundColor: CattleColors.primary },
   contentContainer: { flex: 1, paddingHorizontal: 20 },
-  searchbar: { marginBottom: 15, backgroundColor: CattleColors.white },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    gap: 8,
+  },
+  searchbar: { flex: 1, backgroundColor: CattleColors.white },
+  addButton: {
+    backgroundColor: CattleColors.primary,
+    borderRadius: 8,
+  },
+  addButtonContent: {
+    paddingHorizontal: 4,
+  },
+  addButtonLabel: {
+    fontSize: 13,
+  },
   card: { marginBottom: 15, backgroundColor: CattleColors.white, ...CattleColors.cardShadow },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   userInfo: { flex: 1 },
@@ -1406,7 +1422,6 @@ const styles = StyleSheet.create({
   userEmail: { fontSize: 14, color: CattleColors.mediumGray, marginBottom: 8 },
   chipContainer: { flexDirection: 'row', flexWrap: 'wrap' },
   actionButtons: { flexDirection: 'column' },
-  fab: { position: 'absolute', margin: 16, right: 0, bottom: 0, backgroundColor: CattleColors.primary },
   modal: {
     width: '90%',
     height: '70%', // ✅ solo 70% de la pantalla
