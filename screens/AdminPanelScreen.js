@@ -17,16 +17,17 @@ import { CattleColors } from "../styles/colors";
 import { List, RadioButton, Switch, DateTimePicker } from "react-native-paper";
 import AuctionModal from "../components/AuctionModal";
 
-import { getUsers, createteUser } from "../services/userService";
-import { getAuctions, createAuction, updateAuction } from "../services/auctionService";
-import { getLots, createLot, updateLot } from "../services/lotService";
-import { getBids } from "../services/bidService";
+import { getUsersPaginado, createteUser } from "../services/userService";
+import { getAuctionsPaginado, createAuction, updateAuction, deleteAuction } from "../services/auctionService";
+import { getLotsPaginado, createLot, updateLot, deleteLot } from "../services/lotService";
+import { getBidsPaginado, createBid, updateBid, deleteBid } from "../services/bidService";
 
 import { updateUser, deleteUser } from "../services/userService";
-import { getCabanas, createCabana, updateCabana } from "../services/cabanaService";
+import { getCabanasPaginado, createCabana, updateCabana, deleteCabana } from "../services/cabanaService";
 import PDFGenerator from "../components/PDFGenerator";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ReporteScreen from "../components/Reporte";
+import apiClient from "../api/apiClient";
 import { apiBaseUrl } from "../config/env";
 import BidCorrectionModal from "../components/BidCorrectionModal"
 import finalizarLote from "../services/finalizarLote";
@@ -39,6 +40,8 @@ import SideMenu from "../components/SideMenu";
 
 
 export default function AdminPanelScreen({ navigation }) {
+
+  const PAGE_SIZE = 20;
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -93,6 +96,9 @@ export default function AdminPanelScreen({ navigation }) {
 
   // Usuarios
   const [users, setUsers] = useState([]);
+  const [userPage, setUserPage] = useState(0);
+  const [userTotalPages, setUserTotalPages] = useState(0);
+  const [userTotalElements, setUserTotalElements] = useState(0);
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [showUserModal, setShowUserModal] = useState(false);
 
@@ -118,6 +124,9 @@ export default function AdminPanelScreen({ navigation }) {
 
   // Remates
   const [auctions, setAuctions] = useState([]);
+  const [auctionPage, setAuctionPage] = useState(0);
+  const [auctionTotalPages, setAuctionTotalPages] = useState(0);
+  const [auctionTotalElements, setAuctionTotalElements] = useState(0);
   const [auctionSearchQuery, setAuctionSearchQuery] = useState('');
   const [showAuctionModal, setShowAuctionModal] = useState(false);
   const [editingAuction, setEditingAuction] = useState(null);
@@ -127,12 +136,18 @@ export default function AdminPanelScreen({ navigation }) {
 
   // Lotes
   const [cattleLots, setCattleLots] = useState([]);
+  const [lotPage, setLotPage] = useState(0);
+  const [lotTotalPages, setLotTotalPages] = useState(0);
+  const [lotTotalElements, setLotTotalElements] = useState(0);
   const [lotSearchQuery, setLotSearchQuery] = useState('');
   const [showLotModal, setShowLotModal] = useState(false);
   const [editingLot, setEditingLot] = useState(null);
 
   //cabanas
   const [cabanas, setCabanas] = useState([]);
+  const [cabanaPage, setCabanaPage] = useState(0);
+  const [cabanaTotalPages, setCabanaTotalPages] = useState(0);
+  const [cabanaTotalElements, setCabanaTotalElements] = useState(0);
   const [cabanaSearchQuery, setCabanaSearchQuery] = useState('');
   const [showCabanaModal, setShowCabanaModal] = useState(false);
   const [editingCabana, setEditingCabana] = useState(null);
@@ -140,6 +155,9 @@ export default function AdminPanelScreen({ navigation }) {
 
   // Pujas
   const [bids, setBids] = useState([]);
+  const [bidPage, setBidPage] = useState(0);
+  const [bidTotalPages, setBidTotalPages] = useState(0);
+  const [bidTotalElements, setBidTotalElements] = useState(0);
   const [bidSearchQuery, setBidSearchQuery] = useState('');
   const [correctionVisible, setCorrectionVisible] = useState(false);
   const [selectedBid, setSelectedBid] = useState(null);
@@ -151,7 +169,7 @@ export default function AdminPanelScreen({ navigation }) {
 
   // Cargar datos de ejemplo
   useEffect(() => {
-    loadInitialData();
+    loadAuctions(0);
   }, []);
   useEffect(() => {
     const loadCurrentRole = async () => {
@@ -178,98 +196,60 @@ export default function AdminPanelScreen({ navigation }) {
     };
     loadCurrentRole();
   }, []);
-  // --- FETCH DE DATOS (IP LOCAL + PUERTO 8080) ---
-  useEffect(() => {
-    const fetchPujas = async () => {
-      try {
-        const remateId = await AsyncStorage.getItem("remate");
-        const loteId = await AsyncStorage.getItem("Lote")
-        setLoteId(loteId)
-        // Usamos la IP
-        //  192.168.0.116 y el puerto 8080
-        const token = await AsyncStorage.getItem("authToken");
-        console.log(`${apiBaseUrl}/api/pujas/remate/${remateId}`)
-        const response = await fetch(`${apiBaseUrl}/api/pujas/remate/${remateId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
 
-        if (response.ok) {
-          const data = await response.json();
-          // Ordenamos por ID descendente (opcional, para ver las más nuevas arriba)
-          const pujasOrdenadas = data.sort((a, b) => b.id - a.id);
-          setBids(pujasOrdenadas);
-        } else {
-          console.error("Error status:", response.status);
-        }
-      } catch (error) {
-        console.error("Error fetching pujas:", error);
+  useEffect(() => {
+    const loadLoteId = async () => {
+      try {
+        const id = await AsyncStorage.getItem("Lote");
+        setLoteId(id);
+      } catch (_) {
+        /* ignore */
       }
     };
-
-    fetchPujas();
-
-    // Actualizar automáticamente cada 5 segundos (Polling)
-    const interval = setInterval(fetchPujas, 5000);
-    return () => clearInterval(interval);
+    loadLoteId();
   }, []);
 
-  const loadInitialData = async () => {
-    setLoading(true);
+  useEffect(() => {
+    if (activeTab === "usuarios") loadUser(userPage);
+    else if (activeTab === "remates") loadAuctions(auctionPage);
+    else if (activeTab === "lotes") loadLots(lotPage);
+    else if (activeTab === "cabanas") loadCabanas(cabanaPage);
+    else if (activeTab === "pujas") loadPujas(bidPage);
+  }, [activeTab]);
+
+  const applyPage = (data, setters) => {
+    const content = data?.content ?? [];
+    setters.setItems(content);
+    setters.setPage(data?.page ?? 0);
+    setters.setTotalPages(data?.totalPages ?? 0);
+    setters.setTotalElements(data?.totalElements ?? 0);
+    return content;
+  };
+
+  const loadUser = async (pageToLoad = userPage) => {
     try {
-      const [usuario, auctionsData, lotsData, bidsData, cabana] = await Promise.all([
-        getUsers(),
-        getAuctions(),
-        getLots(),
-        getBids(),
-        getCabanas(),
-      ]);
-      setUsers(usuario)
-      setAuctions(auctionsData);
-      setCattleLots(lotsData);
-      setBids(bidsData.data);
-      setCabanas(cabana);
-
-
-
-
-
-      // Si tus reportes no vienen del backend aún:
-      setReports({
-        totalSales: lotsData.reduce((sum, l) => sum + (l.puja || 0), 0),
-        totalAuctions: auctionsData.length,
-        totalLots: lotsData.length,
-        topBuyers: [],
+      const data = await getUsersPaginado({ page: pageToLoad, size: PAGE_SIZE });
+      applyPage(data, {
+        setItems: setUsers,
+        setPage: setUserPage,
+        setTotalPages: setUserTotalPages,
+        setTotalElements: setUserTotalElements,
       });
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "No se pudieron cargar los datos");
-    } finally {
-      setLoading(false);
-    }
-  };
-  const loadUser = async () => {
-    try {
-      const data = await getUsers();
-      setUsers(data);
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "No se pudieron cargar los remates");
+      Alert.alert("Error", "No se pudieron cargar los usuarios");
     }
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      if (activeTab === "usuarios") await loadUser();
-      else if (activeTab === "remates") await loadAuctions();
-      else if (activeTab === "lotes") await loadLots();
-      else if (activeTab === "cabanas") await loadCabanas();
-      else if (activeTab === "puja") await loadPujas();
-      else await loadInitialData();
+      if (activeTab === "usuarios") await loadUser(userPage);
+      else if (activeTab === "remates") await loadAuctions(auctionPage);
+      else if (activeTab === "lotes") await loadLots(lotPage);
+      else if (activeTab === "cabanas") await loadCabanas(cabanaPage);
+      else if (activeTab === "pujas") await loadPujas(bidPage);
+      else await loadAuctions(0);
     } catch (e) {
       console.error(e);
     } finally {
@@ -297,7 +277,7 @@ export default function AdminPanelScreen({ navigation }) {
         const payload = buildUserPayload(data, true);
         await createteUser(payload);
       }
-      await loadUser(); // refrescar datos
+      await loadUser(userPage);
     } catch (error) {
       Alert.alert("Error", "No se pudo realizar la acción" + error.message);
       console.error(error);
@@ -310,16 +290,20 @@ export default function AdminPanelScreen({ navigation }) {
   const handleAuctionAction = async (auctionId, action, data = null) => {
     setLoading(true);
     try {
+      let saved = null;
       if (action === "create") {
-        await createAuction(data);
+        saved = await createAuction(data);
       } else if (action === "update") {
-        await updateAuction(auctionId, data);
+        saved = await updateAuction(auctionId, data);
       } else if (action === "delete") {
         await deleteAuction(auctionId);
       }
-      loadAuctions();
+      await loadAuctions(auctionPage);
+      return saved;
     } catch (error) {
+      console.error(error);
       Alert.alert("Error", "No se pudo procesar el remate");
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -335,7 +319,7 @@ export default function AdminPanelScreen({ navigation }) {
       } else if (action === "delete") {
         await deleteLot(lotId);
       }
-      loadLots();
+      loadLots(lotPage);
     } catch (error) {
       Alert.alert("Error", "No se pudo procesar el lote");
     } finally {
@@ -343,42 +327,85 @@ export default function AdminPanelScreen({ navigation }) {
     }
   };
 
-  const loadAuctions = async () => {
+  const loadAuctions = async (pageToLoad = auctionPage) => {
     try {
-      const data = await getAuctions();
-      setAuctions(data);
+      const data = await getAuctionsPaginado({ page: pageToLoad, size: PAGE_SIZE });
+      const content = applyPage(data, {
+        setItems: setAuctions,
+        setPage: setAuctionPage,
+        setTotalPages: setAuctionTotalPages,
+        setTotalElements: setAuctionTotalElements,
+      });
+      setReports((prev) => ({
+        ...prev,
+        totalAuctions: data?.totalElements ?? content.length,
+      }));
     } catch (error) {
       console.error(error);
       Alert.alert("Error", "No se pudieron cargar los remates");
     }
   };
 
-  const loadLots = async () => {
+  const loadLots = async (pageToLoad = lotPage) => {
     try {
-      const data = await getLots();
-      setCattleLots(data); // o el estado que uses para tus lotes
+      const data = await getLotsPaginado({ page: pageToLoad, size: PAGE_SIZE });
+      const content = applyPage(data, {
+        setItems: setCattleLots,
+        setPage: setLotPage,
+        setTotalPages: setLotTotalPages,
+        setTotalElements: setLotTotalElements,
+      });
+      setReports((prev) => ({
+        ...prev,
+        totalLots: data?.totalElements ?? content.length,
+        totalSales: content.reduce((sum, l) => sum + (l.puja || 0), 0),
+      }));
     } catch (error) {
       console.error(error);
       Alert.alert("Error", "No se pudieron cargar los lotes");
     }
   };
 
-  const loadCabanas = async () => {
+  const loadCabanas = async (pageToLoad = cabanaPage) => {
     try {
-      const data = await getCabanas();
-      setCabanas(data);
+      const data = await getCabanasPaginado({ page: pageToLoad, size: PAGE_SIZE });
+      applyPage(data, {
+        setItems: setCabanas,
+        setPage: setCabanaPage,
+        setTotalPages: setCabanaTotalPages,
+        setTotalElements: setCabanaTotalElements,
+      });
     } catch (error) {
       console.error(error);
       Alert.alert("Error", "No se pudieron cargar las cabañas");
     }
   };
-  const loadPujas = async () => {
+  const loadPujas = async (pageToLoad = bidPage) => {
     try {
-      const data = await getBids();
-      setBids(data);
+      const remateId = await AsyncStorage.getItem("remate");
+      if (remateId) {
+        const response = await apiClient.get(`/pujas/remate/${remateId}`);
+        const list = Array.isArray(response.data) ? response.data : [];
+        const ordered = [...list].sort((a, b) => (b.id || 0) - (a.id || 0));
+        const totalPages = ordered.length === 0 ? 0 : Math.ceil(ordered.length / PAGE_SIZE);
+        const start = pageToLoad * PAGE_SIZE;
+        setBids(ordered.slice(start, start + PAGE_SIZE));
+        setBidPage(pageToLoad);
+        setBidTotalElements(ordered.length);
+        setBidTotalPages(totalPages);
+        return;
+      }
+
+      const data = await getBidsPaginado({ page: pageToLoad, size: PAGE_SIZE });
+      applyPage(data, {
+        setItems: setBids,
+        setPage: setBidPage,
+        setTotalPages: setBidTotalPages,
+        setTotalElements: setBidTotalElements,
+      });
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "No se pudieron cargar las cabañas");
+      Alert.alert("Error", "No se pudieron cargar las pujas");
     }
   };
 
@@ -393,7 +420,7 @@ export default function AdminPanelScreen({ navigation }) {
       } else if (action === "delete") {
         await deleteCabana(cabanaId);
       }
-      loadCabanas();
+      loadCabanas(cabanaPage);
     } catch (error) {
       Alert.alert("Error", "No se pudo procesar la cabaña");
     } finally {
@@ -418,12 +445,43 @@ export default function AdminPanelScreen({ navigation }) {
       } else if (action === "delete") {
         await deleteBid(bidId);
       }
-      loadBids();
+      loadPujas(bidPage);
     } catch (error) {
       Alert.alert("Error", "No se pudo procesar la puja");
     } finally {
       setLoading(false);
     }
+  };
+
+  const renderPagination = (page, totalPages, totalElements, onChangePage, label) => {
+    if (!totalElements) return null;
+    const canPrev = page > 0;
+    const canNext = totalPages > 0 && page < totalPages - 1;
+    return (
+      <View style={styles.paginationRow}>
+        <Text style={styles.paginationInfo}>
+          Página {page + 1} de {Math.max(totalPages, 1)} · {totalElements} {label}
+        </Text>
+        <View style={styles.paginationButtons}>
+          <Button
+            mode="outlined"
+            compact
+            disabled={!canPrev}
+            onPress={() => onChangePage(page - 1)}
+          >
+            Anterior
+          </Button>
+          <Button
+            mode="outlined"
+            compact
+            disabled={!canNext}
+            onPress={() => onChangePage(page + 1)}
+          >
+            Siguiente
+          </Button>
+        </View>
+      </View>
+    );
   };
 
   const openAddModal = () => {
@@ -572,6 +630,7 @@ export default function AdminPanelScreen({ navigation }) {
             </Card>
           );
         })}
+      {renderPagination(userPage, userTotalPages, userTotalElements, loadUser, "usuarios")}
     </ScrollView>
   );
 
@@ -657,6 +716,7 @@ export default function AdminPanelScreen({ navigation }) {
 
           )
         })}
+      {renderPagination(auctionPage, auctionTotalPages, auctionTotalElements, loadAuctions, "remates")}
     </ScrollView>
   );
   //---------------------Lotes ----------------------------------
@@ -721,6 +781,7 @@ export default function AdminPanelScreen({ navigation }) {
             </Card>
           )
         })}
+      {renderPagination(lotPage, lotTotalPages, lotTotalElements, loadLots, "lotes")}
     </ScrollView>
   );
 
@@ -767,6 +828,7 @@ export default function AdminPanelScreen({ navigation }) {
             </Card.Content>
           </Card>
         ))}
+      {renderPagination(cabanaPage, cabanaTotalPages, cabanaTotalElements, loadCabanas, "cabañas")}
     </ScrollView>
   );
 
@@ -779,7 +841,9 @@ export default function AdminPanelScreen({ navigation }) {
       }>
       {renderSearchRow("Buscar por monto...", bidSearchQuery, setBidSearchQuery)}
 
-      {bids.filter(b => `${b.monto}`.includes(bidSearchQuery)).map(b => {
+      {(Array.isArray(bids) ? bids : [])
+        .filter(b => `${b.monto ?? ""}`.includes(bidSearchQuery))
+        .map(b => {
         return (
 
           <Card key={b.id} style={styles.card}>
@@ -819,6 +883,7 @@ export default function AdminPanelScreen({ navigation }) {
           </Card>
         )
       })}
+      {renderPagination(bidPage, bidTotalPages, bidTotalElements, loadPujas, "pujas")}
     </ScrollView>
   );
 
@@ -1074,10 +1139,12 @@ export default function AdminPanelScreen({ navigation }) {
                  */
 
                 if (bannerDeleted) {
+                  const token = await AsyncStorage.getItem("authToken");
                   await fetch(
-                    `${API_BASE_UR}/remates/${remateId}/banner`,
+                    `${apiBaseUrl}/api/remates/${remateId}/banner`,
                     {
                       method: 'DELETE',
+                      headers: token ? { Authorization: `Bearer ${token}` } : {},
                     }
                   );
                 }
@@ -1106,14 +1173,14 @@ export default function AdminPanelScreen({ navigation }) {
                     ? 'PUT'
                     : 'POST';
 
+                  const token = await AsyncStorage.getItem("authToken");
                   const response = await fetch(
-                    `${API_BASE_UR}/remates/${remateId}/banner`,
+                    `${apiBaseUrl}/api/remates/${remateId}/banner`,
                     {
                       method,
                       body: formData,
                       headers: {
-                        'Content-Type':
-                          'multipart/form-data',
+                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
                       },
                     }
                   );
@@ -1390,8 +1457,11 @@ export default function AdminPanelScreen({ navigation }) {
           <BidCorrectionModal
             visible={correctionVisible}
             onDismiss={() => setCorrectionVisible(false)}
-            onCorrect={() => getBids()}
+            onCorrect={() => loadPujas(bidPage)}
             id={selectedBid?.id}
+            remateId={selectedBid?.lote?.remate?.id ?? selectedBid?.lote?.remateId}
+            loteId={selectedBid?.lote?.id}
+            initialValue={selectedBid?.monto}
           />
         </Portal>
 
@@ -1487,6 +1557,21 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: CattleColors.mediumGray,
     fontSize: 14,
+  },
+  paginationRow: {
+    paddingHorizontal: 12,
+    paddingVertical: 16,
+    gap: 10,
+  },
+  paginationInfo: {
+    textAlign: "center",
+    color: CattleColors.mediumGray,
+    fontSize: 13,
+  },
+  paginationButtons: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 12,
   },
 });
 const reporte = {

@@ -5,6 +5,14 @@ export const getCabanas = async () => {
   return response.data;
 };
 
+/** Respuesta: { content, page, size, totalElements, totalPages, first, last } */
+export const getCabanasPaginado = async ({ page = 0, size = 20 } = {}) => {
+  const response = await apiClient.get("/cabanas/paginado", {
+    params: { page, size },
+  });
+  return response.data;
+};
+
 export const createCabana = async (payload) => {
   const response = await apiClient.post("/cabanas", payload);
   return response.data;

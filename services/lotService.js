@@ -5,6 +5,14 @@ export const getLots = async () => {
   return response.data;
 };
 
+/** Respuesta: { content, page, size, totalElements, totalPages, first, last } */
+export const getLotsPaginado = async ({ page = 0, size = 20 } = {}) => {
+  const response = await apiClient.get("/lotes/paginado", {
+    params: { page, size },
+  });
+  return response.data;
+};
+
 export const getLotsByRemate = async (id) => {
   const response = await apiClient.get(`/lotes/${id}`);
   return response.data;

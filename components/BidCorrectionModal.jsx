@@ -10,25 +10,39 @@ export default function BidCorrectionModal({
   onDismiss,
   onCorrect,
   id,
+  remateId: remateIdProp,
+  loteId: loteIdProp,
+  initialValue,
 }) {
   const [newValue, setNewValue] = useState("");
 
-  // Limpia el estado cada vez que el modal se cierra
   useEffect(() => {
     if (!visible) {
       setNewValue("");
+      return;
     }
-  }, [visible]);
+    if (initialValue != null && initialValue !== "") {
+      setNewValue(String(initialValue));
+    }
+  }, [visible, initialValue]);
 
   const handleSubmit = async () => {
     try {
-      const remateId = await AsyncStorage.getItem("remate");
-      const loteId = await AsyncStorage.getItem("Lote");
+      const remateFromStorage = await AsyncStorage.getItem("remate");
+      const loteFromStorage = await AsyncStorage.getItem("Lote");
+
+      const remateId = remateIdProp != null ? String(remateIdProp) : remateFromStorage;
+      const loteId = loteIdProp != null ? String(loteIdProp) : loteFromStorage;
+
+      if (!id) {
+        Alert.alert("Error", "No se pudo identificar la puja");
+        return;
+      }
 
       if (!remateId || !loteId) {
         Alert.alert(
           "Error",
-          "No se pudo obtener el remate o el lote"
+          "No se pudo obtener el remate o el lote de esta puja. Abrí un remate/lote o elegí otra puja."
         );
         return;
       }
@@ -45,7 +59,7 @@ export default function BidCorrectionModal({
 
       await axios.put(
         `${apiBaseUrl}/contador/corregir/pujaid/${id}/remateid/${remateId}/loteid/${loteId}`,
-        { nuevoValor: numericValue }
+        { nuevoValor: Math.round(numericValue) }
       );
 
       onCorrect?.();
@@ -53,10 +67,11 @@ export default function BidCorrectionModal({
 
     } catch (error) {
       console.error("Error al corregir la puja:", error);
-      Alert.alert(
-        "Error",
-        "Ocurrió un error al corregir la puja"
-      );
+      const msg =
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        "Ocurrió un error al corregir la puja";
+      Alert.alert("Error", typeof msg === "string" ? msg : "Ocurrió un error al corregir la puja");
     }
   };
 

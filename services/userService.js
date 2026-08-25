@@ -5,6 +5,14 @@ export const getUsers = async () => {
   return response.data;
 };
 
+/** Respuesta: { content, page, size, totalElements, totalPages, first, last } */
+export const getUsersPaginado = async ({ page = 0, size = 20 } = {}) => {
+  const response = await apiClient.get("/usuarios/paginado", {
+    params: { page, size },
+  });
+  return response.data;
+};
+
 export const createteUser = async (payload) => {
   const response = await apiClient.post(`/usuarios/registrar`, payload);
   return response.data;

@@ -14,16 +14,21 @@ import { Card, Text } from "react-native-paper";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { getAuctions } from "../services/auctionService";
+import { getAuctionsPaginado } from "../services/auctionService";
 import { apiBaseUrl } from "../config/env";
 import { CattleColors, CattleShadows } from "../styles/colors";
 
 import AppHeader from "../components/AppHeader";
 import SideMenu from "../components/SideMenu";
 
+const PAGE_SIZE = 20;
+
 export default function RematesListScreen({ navigation }) {
   const [remates, setRemates] = useState([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -46,42 +51,55 @@ export default function RematesListScreen({ navigation }) {
     }
   }, []);
 
-  const loadRemates = useCallback(async ({showLoader = false}={}) => {
+  const loadRemates = useCallback(async ({
+    showLoader = false,
+    pageToLoad = 0,
+    append = false,
+  } = {}) => {
     try {
-      // solo mostrar loader en la primera carga para no desmontar el FlatList
-      // (y re/decodificar banners) al volver desde lotes
-      if(showLoader){
+      if (showLoader) {
         setLoading(true);
+      } else if (append) {
+        setLoadingMore(true);
       }
 
-      const data = await getAuctions();
+      const data = await getAuctionsPaginado({ page: pageToLoad, size: PAGE_SIZE });
+      const content = Array.isArray(data?.content) ? data.content : [];
 
-      setRemates(Array.isArray(data) ? data : []);
+      setRemates((prev) => (append ? [...prev, ...content] : content));
+      setPage(data?.page ?? pageToLoad);
+      setTotalPages(data?.totalPages ?? 0);
       hasLoadedRef.current = true;
     } catch (error) {
       console.log("Error cargando remates:", error);
-      setRemates([]);
+      if (!append) setRemates([]);
     } finally {
-      if(showLoader){  
-      setLoading(false);
-       }
+      if (showLoader) {
+        setLoading(false);
+      }
+      setLoadingMore(false);
     }
   }, []);
 
   useFocusEffect(
     useCallback(() => {
       loadRole();
-      loadRemates({showLoader: !hasLoadedRef.current});
+      loadRemates({ showLoader: !hasLoadedRef.current, pageToLoad: 0, append: false });
     }, [loadRole, loadRemates])
   );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
 
-    await loadRemates({showLoader: false});
+    await loadRemates({ showLoader: false, pageToLoad: 0, append: false });
 
     setRefreshing(false);
   }, [loadRemates]);
+
+  const loadMore = useCallback(() => {
+    if (loadingMore || loading || page + 1 >= totalPages) return;
+    loadRemates({ pageToLoad: page + 1, append: true });
+  }, [loadingMore, loading, page, totalPages, loadRemates]);
 
   const logout = async () => {
     try {
@@ -181,6 +199,15 @@ export default function RematesListScreen({ navigation }) {
         maxToRenderPerBatch={4}
         windowSize={8}
         removeClippedSubviews
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={{ paddingVertical: 16 }}>
+              <ActivityIndicator color={CattleColors.primary} />
+            </View>
+          ) : null
+        }
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
