@@ -5,8 +5,8 @@ export const getUsers = async () => {
   return response.data;
 };
 
-export const createteUser = async ( payload) => {
-  const response = await apiClient.post(`/usuarios/`, payload);
+export const createteUser = async (payload) => {
+  const response = await apiClient.post(`/usuarios/registrar`, payload);
   return response.data;
 };
 

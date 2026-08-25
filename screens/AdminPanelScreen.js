@@ -60,14 +60,24 @@ export default function AdminPanelScreen({ navigation }) {
     .filter(r => (ROLE_PRIORITY[currentRolId] || 0) > (ROLE_PRIORITY[r.id] || 0));
 
   const buildUserPayload = (user, includePassword = false) => {
+    const rolId = typeof user?.rol === "object" && user?.rol !== null
+      ? user.rol.id
+      : (user?.rol ?? user?.rolId);
+
+    const toLong = (value) => {
+      if (value === "" || value === undefined || value === null) return null;
+      const n = Number(value);
+      return Number.isNaN(n) ? null : n;
+    };
+
     const payload = {
       username: user?.username,
       nombre: user?.nombre,
-      celular: user?.celular,
-      ci: user?.ci,
-      aprobado: user?.aprobado,
-      visible: user?.visible,
-      rol: user?.rol ?? user?.rolId ?? user?.rol?.id,
+      celular: toLong(user?.celular),
+      ci: toLong(user?.ci),
+      aprobado: Boolean(user?.aprobado),
+      visible: user?.visible !== false,
+      rol: rolId != null ? Number(rolId) : null,
     };
 
     if (includePassword && user?.password) {
@@ -75,7 +85,7 @@ export default function AdminPanelScreen({ navigation }) {
     }
 
     Object.keys(payload).forEach((key) => {
-      if (payload[key] === undefined) delete payload[key];
+      if (payload[key] === undefined || payload[key] === null) delete payload[key];
     });
 
     return payload;
@@ -897,6 +907,18 @@ export default function AdminPanelScreen({ navigation }) {
                   }
                 />
 
+                {!editingUser?.id && (
+                  <TextInput
+                    label="Contraseña"
+                    style={styles.input}
+                    secureTextEntry
+                    value={editingUser?.password || ''}
+                    onChangeText={text =>
+                      setEditingUser(prev => ({ ...(prev || {}), password: text }))
+                    }
+                  />
+                )}
+
                 <TextInput
                   label="Nombre"
                   style={styles.input}
@@ -979,10 +1001,12 @@ export default function AdminPanelScreen({ navigation }) {
                   onPress={async () => {
                     try {
                       if (editingUser?.id) {
-                        // 📝 Actualizar usuario existente
                         await handleUserAction(editingUser.id, "update", editingUser);
                       } else {
-                        // 🆕 Crear nuevo usuario
+                        if (!editingUser?.password) {
+                          Alert.alert("Error", "La contraseña es obligatoria al crear un usuario");
+                          return;
+                        }
                         await handleUserAction(null, "create", editingUser);
                       }
 

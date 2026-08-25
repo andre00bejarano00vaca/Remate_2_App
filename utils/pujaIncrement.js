@@ -1,6 +1,6 @@
 export const calcularIncremento = (valor, sw = false) => {
   const n = Number(valor) || 0;
-  if (n < 500) return sw ? 30 : 20;
+  if (n < 500) return n % 50==0? 30 : 20;
   if (n < 1000) return 50;
   if (n < 2000) return 100;
   return 500;
