@@ -4,6 +4,12 @@ import { View, ActivityIndicator, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiBaseUrl } from "../config/env";
 
+const SESSION_KEYS = ["authToken", "isLoggedIn", "usuario", "rol", "userId"];
+
+/**
+ * Solo restaura sesión si hay JWT válido.
+ * Sin token → Login (evita entrar a Remates por el atajo /auth/verificar sin JWT).
+ */
 export default function VerifyUserScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
 
@@ -11,53 +17,42 @@ export default function VerifyUserScreen({ navigation }) {
     const verifyUser = async () => {
       try {
         const token = await AsyncStorage.getItem("authToken");
-        const usuario = await AsyncStorage.getItem("usuario");
 
-        if (token) {
-          const response = await fetch(`${apiBaseUrl}/api/usuarios/me`, {
-            method: "GET",
-            headers: { Authorization: `Bearer ${token}` },
-          });
-
-          if (response.status === 401) {
-            await AsyncStorage.multiRemove(["authToken", "isLoggedIn", "usuario", "rol"]);
-            navigation.replace("Login");
-            return;
-          }
-
-          if (!response.ok) {
-            navigation.replace("Login");
-            return;
-          }
-
-          const data = await response.json();
-          if (data.confirmed) {
-            navigation.replace("RematesList");
-          } else {
-            navigation.replace("PendingApproval");
-          }
-          return;
-        }
-
-        if (!usuario) {
+        if (!token) {
+          await AsyncStorage.multiRemove(SESSION_KEYS);
           navigation.replace("Login");
           return;
         }
 
-        const response = await fetch(`${apiBaseUrl}/auth/verificar/${usuario}`);
+        const response = await fetch(`${apiBaseUrl}/api/usuarios/me`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.status === 401) {
+          await AsyncStorage.multiRemove(SESSION_KEYS);
+          navigation.replace("Login");
+          return;
+        }
+
         if (!response.ok) {
           navigation.replace("Login");
           return;
         }
 
         const data = await response.json();
-        if (!data.authenticated) {
-          navigation.replace("Login");
-        } else if (data.confirmed) {
+        if (data.confirmed) {
           navigation.replace("RematesList");
-        } else {
-          navigation.replace("PendingApproval");
+          return;
         }
+
+        // Token sin aprobación: limpiar y pedir login cuando lo aprueben
+        await AsyncStorage.multiRemove(SESSION_KEYS);
+        Alert.alert(
+          "Aprobación requerida",
+          "Tu cuenta debe ser aprobada por un administrador antes de ingresar. Cuando te aprueben, inicia sesión con tus datos."
+        );
+        navigation.replace("Login");
       } catch (error) {
         console.error("Error verificando usuario:", error);
         Alert.alert("Error", "No se pudo verificar al usuario");
@@ -68,7 +63,7 @@ export default function VerifyUserScreen({ navigation }) {
     };
 
     verifyUser();
-  }, []);
+  }, [navigation]);
 
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>

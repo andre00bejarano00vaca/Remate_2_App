@@ -20,7 +20,6 @@ import {
   Chip,
   Portal,
   Modal,
-  Provider as PaperProvider,
   Searchbar
 } from "react-native-paper";
 import { CattleColors } from "../styles/colors";
@@ -919,8 +918,7 @@ export default function AdminPanelScreen({ navigation }) {
   }
 
   return (
-    <PaperProvider>
-      <View style={styles.container}>
+    <View style={styles.container}>
         <AppHeader
           title="PANEL ADMINISTRADOR"
           onMenu={() => setMenuVisible(true)}
@@ -1499,7 +1497,6 @@ export default function AdminPanelScreen({ navigation }) {
           </View>
         )}
       </View>
-    </PaperProvider>
   );
 }
 

@@ -1,9 +1,27 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Alert,
+} from "react-native";
 import { TextInput, Button, Title, Text, Card, SegmentedButtons } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CattleColors, CattleShadows } from "../styles/colors";
 import { apiBaseUrl } from "../config/env";
+
+const SESSION_KEYS = ["authToken", "usuario", "isLoggedIn", "rol", "userId"];
+
+const showPendingApprovalAlert = (onOk) => {
+  Alert.alert(
+    "Aprobación requerida",
+    "Tu cuenta debe ser aprobada por un administrador antes de ingresar a la app. Cuando te aprueben, inicia sesión con tu email y contraseña.",
+    [{ text: "Entendido", onPress: onOk }]
+  );
+};
 
 // Validaciones
 const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -60,7 +78,8 @@ export default function LoginScreen({ navigation }) {
         return;
       }
       if (response.status === 403) {
-        setError(data.error || "Cuenta pendiente de aprobación");
+        await AsyncStorage.multiRemove(SESSION_KEYS);
+        showPendingApprovalAlert(() => setMode("signin"));
         return;
       }
       if (!response.ok) {
@@ -95,7 +114,6 @@ export default function LoginScreen({ navigation }) {
         return;
       }
 
-      // Validaciones
       if (!validateEmail(email)) {
         setError("Email inválido");
         return;
@@ -108,84 +126,47 @@ export default function LoginScreen({ navigation }) {
       // ===============================
       // VERIFICAR SI USUARIO EXISTE / ESTÁ APROBADO
       // ===============================
-
       try {
-        // Construir URL segura (email puede tener @ + etc.)
-        const verificarUrl =
-          `${apiBaseUrl}/auth/verificar/${encodeURIComponent(email)}`;
-
-        // Hacer request GET
+        const verificarUrl = `${apiBaseUrl}/auth/verificar/${encodeURIComponent(email)}`;
         const verifyResponse = await fetch(verificarUrl, {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         });
 
         console.log("Verificar status:", verifyResponse.status);
 
-        // ===============================
-        // CASO 1: Usuario NO existe (404)
-        // ===============================
-        if (verifyResponse.status === 404) {
-          console.log("Usuario no existe, continuar registro normal...");
-          // Aquí simplemente sigues el flujo normal del registro
-          return;
+        // 404 = no existe → seguir con registro
+        if (verifyResponse.status !== 404) {
+          if (!verifyResponse.ok) {
+            console.warn("Error verificando usuario:", verifyResponse.status);
+            setError("Error verificando usuario. Intenta nuevamente.");
+            return;
+          }
+
+          const verified = await verifyResponse.json();
+          console.log("Usuario verificado:", verified);
+
+          if (verified.authenticated && verified.confirmed) {
+            setError("Usuario ya registrado y aprobado.");
+            return;
+          }
+
+          if (verified.authenticated && !verified.confirmed) {
+            await AsyncStorage.multiRemove(SESSION_KEYS);
+            showPendingApprovalAlert(() => setMode("signin"));
+            return;
+          }
         }
-
-        // ===============================
-        // CASO 2: Otro error inesperado
-        // ===============================
-        if (!verifyResponse.ok) {
-          console.warn("Error verificando usuario:", verifyResponse.status);
-          setError("Error verificando usuario. Intenta nuevamente.");
-          return;
-        }
-
-        // ===============================
-        // CASO 3: Respuesta válida JSON
-        // ===============================
-        const verified = await verifyResponse.json();
-
-        console.log("Usuario verificado:", verified);
-
-        // verified = { authenticated: true/false, confirmed: true/false }
-
-        // ===============================
-        // SI YA EXISTE Y ESTÁ APROBADO
-        // ===============================
-        if (verified.authenticated && verified.confirmed) {
-          setError("Usuario ya registrado y aprobado.");
-          return;
-        }
-
-        // ===============================
-        // SI EXISTE PERO NO ESTÁ APROBADO
-        // ===============================
-        if (verified.authenticated && !verified.confirmed) {
-          await AsyncStorage.setItem("usuario", email);
-          await AsyncStorage.setItem("isLoggedIn", "true");
-
-          navigation.replace("PendingApproval");
-          return;
-        }
-
-        // ===============================
-        // SI NO EXISTE → CONTINUAR REGISTRO NORMAL
-        // ===============================
-        console.log("Usuario no registrado, continuar flujo...");
-
       } catch (error) {
         console.error("Error en verificación:", error);
         setError("No se pudo verificar usuario. Revisa tu conexión.");
+        return;
       }
 
       try {
         const response = await fetch(`${apiBaseUrl}/api/usuarios/registrar`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             username: email,
             password: password,
@@ -201,20 +182,15 @@ export default function LoginScreen({ navigation }) {
           throw new Error("Error al registrar: " + errorText);
         }
 
-        const data = await response.json();
-        console.log("Usuario registrado:", data);
-        await AsyncStorage.setItem("rol", String(data.rol?.id ?? data.rol ?? 1));
+        console.log("Usuario registrado:", await response.json().catch(() => ({})));
 
+        // Sin sesión falsa: debe volver a loguearse cuando lo aprueben (así obtiene JWT)
+        await AsyncStorage.multiRemove(SESSION_KEYS);
+        showPendingApprovalAlert(() => setMode("signin"));
       } catch (error) {
         console.error("Registro falló:", error);
+        setError("No se pudo completar el registro. Intenta nuevamente.");
       }
-
-
-      await AsyncStorage.setItem("usuario", email);
-      await AsyncStorage.setItem("rol", String(1));
-      await AsyncStorage.setItem("isLoggedIn", "false");
-      navigation.replace("PendingApproval");
-
     } catch (err) {
       console.error("Error en signup:", err);
       setError("Fallo en la conexión.");

@@ -6,6 +6,7 @@ import { ActivityIndicator, View } from "react-native";
 import * as Notifications from "expo-notifications";
 import { useFonts, Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
 import { CattleColors } from "./styles/colors";
+import { cattlePaperTheme } from "./styles/paperTheme";
 import LoginScreen from "./screens/LoginScreen";
 import VerifyUserScreen from "./screens/VerifyUserScreen";
 import RematesListScreen from "./screens/RematesListScreen";
@@ -22,7 +23,7 @@ import { getLots } from "./services/lotService";
 const Stack = createNativeStackNavigator();
 
 const paperTheme = {
-  ...MD3LightTheme,
+  ...cattlePaperTheme,
   fonts: {
     ...MD3LightTheme.fonts,
     displayLarge: { ...MD3LightTheme.fonts.displayLarge, fontFamily: "Poppins_700Bold" },
@@ -40,20 +41,6 @@ const paperTheme = {
     bodyLarge: { ...MD3LightTheme.fonts.bodyLarge, fontFamily: "Poppins_400Regular" },
     bodyMedium: { ...MD3LightTheme.fonts.bodyMedium, fontFamily: "Poppins_400Regular" },
     bodySmall: { ...MD3LightTheme.fonts.bodySmall, fontFamily: "Poppins_400Regular" },
-  },
-  colors: {
-    ...MD3LightTheme.colors,
-    primary: CattleColors.primary,
-    secondary: CattleColors.accent,
-    tertiary: CattleColors.black,
-    background: CattleColors.neutral,
-    surface: CattleColors.white,
-    surfaceVariant: CattleColors.lightGray,
-    onSurface: CattleColors.black,
-    onBackground: CattleColors.black,
-    outline: CattleColors.mediumLightGray,
-    outlineVariant: CattleColors.mediumLightGray,
-    error: CattleColors.error,
   },
 };
 
