@@ -25,7 +25,14 @@ export default function RemateDetailScreen({ route, navigation }) {
         data={lotes}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => navigation.navigate('LoteDetail', { lote: item })}>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate('LoteDetail', {
+                lote: { ...item, remate: item.remate ?? remate },
+                remate,
+              })
+            }
+          >
             <Card style={{ marginVertical: 5 }}>
               <Card.Title title={item.nombre} subtitle={`Raza: ${item.raza} | Precio: ${item.precio}`} />
             </Card>

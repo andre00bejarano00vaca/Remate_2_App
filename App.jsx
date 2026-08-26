@@ -84,7 +84,14 @@ function AppNotifications() {
           const list = Array.isArray(lots) ? lots : lots?.data ?? [];
           const lote = list.find((item) => Number(item.id) === Number(data.loteId));
           if (lote) {
-            navigate("LoteDetail", { lote, remate: lote.remate });
+            const remate =
+              lote.remate ??
+              (data.remateId != null ? { id: data.remateId } : undefined);
+            navigate("LoteDetail", {
+              lote: { ...lote, remate },
+              remate,
+              remateId: remate?.id ?? data.remateId,
+            });
           }
         } catch (error) {
           console.log("[PUJA PUSH] no se pudo abrir el lote:", error?.message || error);

@@ -42,13 +42,25 @@ export default function HomeScreen({ navigation, route }) {
     const [statusMessage, setStatusMessage] = useState("");
     const [showStatus, setShowStatus] = useState(false);
 
-    const videoLote = route?.params?.lote?.video;
-    const loteid = route?.params?.lote?.id;
-    const numeroLote = route?.params?.lote?.numLote;
-    const remateid = route?.params?.lote?.remate.id;
-    const cabanaid= route?.params?.lote?.cabana?.id;
+    const loteParam = route?.params?.lote;
+    const remateParam = route?.params?.remate;
+    const videoLote = loteParam?.video;
+    const loteid = loteParam?.id ?? null;
+    const numeroLote = loteParam?.numLote;
+    const cabanaid = loteParam?.cabana?.id;
+    const remateIdFromRoute = (() => {
+        const raw =
+            loteParam?.remate?.id ??
+            loteParam?.remateId ??
+            remateParam?.id ??
+            route?.params?.remateId ??
+            null;
+        return raw != null && String(raw).trim() !== "" ? String(raw) : null;
+    })();
+    const [remateid, setRemateid] = useState(remateIdFromRoute);
+    const [remateResolved, setRemateResolved] = useState(Boolean(remateIdFromRoute));
     const baseInicial =
-        Number(route?.params?.lote?.prelance ?? route?.params?.lote?.precio) || 0;
+        Number(loteParam?.prelance ?? loteParam?.precio) || 0;
     const videoRef = useRef(null);
     const [counter, setCounter] = useState(null);
     const [myBidMonto, setMyBidMonto] = useState(null);
@@ -167,6 +179,57 @@ usePujaWebSocket({
         await markNotifiedOutbid(userId, loteid);
     },
 });
+
+    // Resolver remate: params → AsyncStorage (evita crash si lote.remate viene vacío)
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            if (remateIdFromRoute) {
+                if (!cancelled) {
+                    setRemateid(remateIdFromRoute);
+                    setRemateResolved(true);
+                }
+                try {
+                    await AsyncStorage.setItem("remate", remateIdFromRoute);
+                } catch (_) {
+                    /* ignore */
+                }
+                return;
+            }
+            try {
+                const stored = await AsyncStorage.getItem("remate");
+                if (!cancelled) {
+                    setRemateid(stored || null);
+                    setRemateResolved(true);
+                }
+            } catch (_) {
+                if (!cancelled) {
+                    setRemateid(null);
+                    setRemateResolved(true);
+                }
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [remateIdFromRoute, loteid]);
+
+    useEffect(() => {
+        if (!remateResolved) return;
+        if (!loteid) {
+            Alert.alert("Error", "No se pudo identificar el lote.", [
+                { text: "OK", onPress: () => navigation.goBack() },
+            ]);
+            return;
+        }
+        if (!remateid) {
+            Alert.alert(
+                "Error",
+                "No se pudo identificar el remate de este lote.",
+                [{ text: "OK", onPress: () => navigation.goBack() }]
+            );
+        }
+    }, [remateResolved, loteid, remateid, navigation]);
 
     //verificar si es usuario admin para mostrar el boton del panel de admin
     useEffect(() => {

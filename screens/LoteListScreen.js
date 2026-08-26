@@ -165,8 +165,16 @@ const loadLotes = async () => {
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={ async () => {
-                await AsyncStorage.setItem("Lote",`${item.id}`)
-                navigation.navigate("LoteDetail", { lote: item, remate })}}
+                const remateForLote = item.remate ?? remate;
+                await AsyncStorage.setItem("Lote", `${item.id}`);
+                if (remateForLote?.id != null) {
+                  await AsyncStorage.setItem("remate", String(remateForLote.id));
+                }
+                navigation.navigate("LoteDetail", {
+                  lote: { ...item, remate: remateForLote },
+                  remate: remateForLote,
+                });
+              }}
             >
               <Card style={styles.card}>
                 <Card.Content style={styles.cardContent}>
