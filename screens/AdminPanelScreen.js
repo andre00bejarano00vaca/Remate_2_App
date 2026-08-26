@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { View, ScrollView, StyleSheet, Alert, RefreshControl, ActivityIndicator } from "react-native";
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  Alert,
+  RefreshControl,
+  ActivityIndicator,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import {
   TextInput,
   Button,
@@ -953,22 +963,28 @@ export default function AdminPanelScreen({ navigation }) {
             onDismiss={() => setShowUserModal(false)}
             contentContainerStyle={styles.modalWrapper}
           >
-            <View style={styles.modal}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : undefined}
+              style={styles.modal}
+            >
+              <Title style={styles.modalTitle}>
+                {editingUser?.id ? "Editar Usuario" : "Crear Usuario"}
+              </Title>
+
               <ScrollView
+                style={styles.modalScrollView}
                 contentContainerStyle={styles.modalScroll}
                 keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={true}
-                persistentScrollbar={true}
-                indicatorStyle="black"
+                nestedScrollEnabled
+                showsVerticalScrollIndicator
+                bounces={false}
               >
-                <Title>{editingUser?.id ? 'Editar Usuario' : 'Crear Usuario'}</Title>
-
                 <TextInput
                   label="Nombre de usuario"
                   style={styles.input}
-                  value={editingUser?.username || ''}
-                  onChangeText={text =>
-                    setEditingUser(prev => ({ ...(prev || {}), username: text }))
+                  value={editingUser?.username || ""}
+                  onChangeText={(text) =>
+                    setEditingUser((prev) => ({ ...(prev || {}), username: text }))
                   }
                 />
 
@@ -977,9 +993,9 @@ export default function AdminPanelScreen({ navigation }) {
                     label="Contraseña"
                     style={styles.input}
                     secureTextEntry
-                    value={editingUser?.password || ''}
-                    onChangeText={text =>
-                      setEditingUser(prev => ({ ...(prev || {}), password: text }))
+                    value={editingUser?.password || ""}
+                    onChangeText={(text) =>
+                      setEditingUser((prev) => ({ ...(prev || {}), password: text }))
                     }
                   />
                 )}
@@ -987,9 +1003,9 @@ export default function AdminPanelScreen({ navigation }) {
                 <TextInput
                   label="Nombre"
                   style={styles.input}
-                  value={editingUser?.nombre || ''}
-                  onChangeText={text =>
-                    setEditingUser(prev => ({ ...(prev || {}), nombre: text }))
+                  value={editingUser?.nombre || ""}
+                  onChangeText={(text) =>
+                    setEditingUser((prev) => ({ ...(prev || {}), nombre: text }))
                   }
                 />
 
@@ -997,9 +1013,9 @@ export default function AdminPanelScreen({ navigation }) {
                   label="Celular"
                   style={styles.input}
                   keyboardType="phone-pad"
-                  value={editingUser?.celular || ''}
-                  onChangeText={text =>
-                    setEditingUser(prev => ({ ...(prev || {}), celular: text }))
+                  value={editingUser?.celular || ""}
+                  onChangeText={(text) =>
+                    setEditingUser((prev) => ({ ...(prev || {}), celular: text }))
                   }
                 />
 
@@ -1007,60 +1023,64 @@ export default function AdminPanelScreen({ navigation }) {
                   label="CI"
                   style={styles.input}
                   keyboardType="numeric"
-                  value={editingUser?.ci || ''}
-                  onChangeText={text =>
-                    setEditingUser(prev => ({ ...(prev || {}), ci: text }))
+                  value={editingUser?.ci || ""}
+                  onChangeText={(text) =>
+                    setEditingUser((prev) => ({ ...(prev || {}), ci: text }))
                   }
                 />
 
-                {/* Switch para aprobar usuario */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10 }}>
+                <View style={styles.modalSwitchRow}>
                   <Text>Aprobado:</Text>
                   <Switch
                     value={editingUser?.aprobado || false}
-                    onValueChange={value =>
-                      setEditingUser(prev => ({ ...(prev || {}), aprobado: value }))
+                    onValueChange={(value) =>
+                      setEditingUser((prev) => ({ ...(prev || {}), aprobado: value }))
                     }
                   />
                 </View>
 
-                {/* Selección de roles */}
                 {editableRoleOptions.length > 0 && (
-                  <List.Accordion
-                    title={ROLE_OPTIONS.find(r => r.id === editingUser?.rol)?.name || "Seleccionar Rol"}
-                    style={{ backgroundColor: "#fff", borderRadius: 8, marginBottom: 10 }}
-                  >
+                  <>
+                    <Text style={styles.modalSectionLabel}>Rol</Text>
                     <RadioButton.Group
                       onValueChange={(value) =>
-                        setEditingUser(prev => ({
+                        setEditingUser((prev) => ({
                           ...(prev || {}),
                           rol: value,
                         }))
                       }
                       value={editingUser?.rol || null}
                     >
-                      {editableRoleOptions.map(r => (
+                      {editableRoleOptions.map((r) => (
                         <List.Item
                           key={r.id}
                           title={r.name}
+                          onPress={() =>
+                            setEditingUser((prev) => ({
+                              ...(prev || {}),
+                              rol: r.id,
+                            }))
+                          }
                           right={() => <RadioButton value={r.id} />}
+                          style={styles.modalSelectItem}
                         />
                       ))}
                     </RadioButton.Group>
-                  </List.Accordion>
+                  </>
                 )}
 
-                {/* Switch para visible */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10 }}>
+                <View style={styles.modalSwitchRow}>
                   <Text>Visible:</Text>
                   <Switch
                     value={editingUser?.visible ?? true}
-                    onValueChange={value =>
-                      setEditingUser(prev => ({ ...(prev || {}), visible: value }))
+                    onValueChange={(value) =>
+                      setEditingUser((prev) => ({ ...(prev || {}), visible: value }))
                     }
                   />
                 </View>
+              </ScrollView>
 
+              <View style={styles.modalFooter}>
                 <Button
                   mode="contained"
                   onPress={async () => {
@@ -1069,14 +1089,17 @@ export default function AdminPanelScreen({ navigation }) {
                         await handleUserAction(editingUser.id, "update", editingUser);
                       } else {
                         if (!editingUser?.password) {
-                          Alert.alert("Error", "La contraseña es obligatoria al crear un usuario");
+                          Alert.alert(
+                            "Error",
+                            "La contraseña es obligatoria al crear un usuario"
+                          );
                           return;
                         }
                         await handleUserAction(null, "create", editingUser);
                       }
 
                       setShowUserModal(false);
-                      setEditingUser(null); // limpia el estado
+                      setEditingUser(null);
                     } catch (error) {
                       console.error(error);
                       Alert.alert("Error", "No se pudo guardar el usuario");
@@ -1085,8 +1108,8 @@ export default function AdminPanelScreen({ navigation }) {
                 >
                   Guardar
                 </Button>
-              </ScrollView>
-            </View>
+              </View>
+            </KeyboardAvoidingView>
           </Modal>
           {/* 📦 Modal de Remate */}
           <AuctionModal
@@ -1227,32 +1250,37 @@ export default function AdminPanelScreen({ navigation }) {
             onDismiss={() => setShowLotModal(false)}
             contentContainerStyle={styles.modalWrapper}
           >
-            <View style={styles.modal}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : undefined}
+              style={styles.modal}
+            >
+              <Title style={styles.modalTitle}>
+                {editingLot ? "Editar Lote" : "Crear Lote"}
+              </Title>
+
               <ScrollView
+                style={styles.modalScrollView}
                 contentContainerStyle={styles.modalScroll}
                 keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={true} // iOS + Android
-                persistentScrollbar={true}          // Android (iOS lo ignora)
-                indicatorStyle="black"              // iOS (Android lo ignora)
+                nestedScrollEnabled
+                showsVerticalScrollIndicator
+                bounces={false}
               >
-
-                <Title>{editingLot ? 'Editar Lote' : 'Crear Lote'}</Title>
-
                 <TextInput
                   label="Nombre del lote"
                   style={styles.input}
-                  value={editingLot?.nombre || ''}
-                  onChangeText={text =>
-                    setEditingLot(prev => ({ ...prev, nombre: text }))
+                  value={editingLot?.nombre || ""}
+                  onChangeText={(text) =>
+                    setEditingLot((prev) => ({ ...prev, nombre: text }))
                   }
                 />
 
                 <TextInput
                   label="Raza"
                   style={styles.input}
-                  value={editingLot?.raza || ''}
-                  onChangeText={text =>
-                    setEditingLot(prev => ({ ...prev, raza: text }))
+                  value={editingLot?.raza || ""}
+                  onChangeText={(text) =>
+                    setEditingLot((prev) => ({ ...prev, raza: text }))
                   }
                 />
 
@@ -1260,29 +1288,23 @@ export default function AdminPanelScreen({ navigation }) {
                   label="Precio"
                   style={styles.input}
                   keyboardType="numeric"
-                  value={editingLot?.precio?.toString() || ''}
-                  onChangeText={text =>
-                    setEditingLot(prev => ({ ...prev, precio: parseFloat(text) || 0 }))
+                  value={editingLot?.precio?.toString() || ""}
+                  onChangeText={(text) =>
+                    setEditingLot((prev) => ({
+                      ...prev,
+                      precio: parseFloat(text) || 0,
+                    }))
                   }
                 />
 
-                {/*<TextInput
-                  label="Prelance"
-                  style={styles.input}
-                  keyboardType="numeric"
-                  value={editingLot?.prelance?.toString() || ''}
-                  onChangeText={text =>
-                    setEditingLot(prev => ({ ...prev, prelance: parseFloat(text) || 0 }))
-                  }
-                />*/}
                 <TextInput
                   label="Número de lote"
                   style={styles.input}
-                  value={editingLot?.numLote?.toString() || ''}
-                  onChangeText={text =>
-                    setEditingLot(prev => ({
+                  value={editingLot?.numLote?.toString() || ""}
+                  onChangeText={(text) =>
+                    setEditingLot((prev) => ({
                       ...prev,
-                      numLote: text || 0
+                      numLote: text || 0,
                     }))
                   }
                 />
@@ -1290,99 +1312,90 @@ export default function AdminPanelScreen({ navigation }) {
                 <TextInput
                   label="Video (URL)"
                   style={styles.input}
-                  value={editingLot?.video || ''}
-                  onChangeText={text =>
-                    setEditingLot(prev => ({ ...prev, video: text }))
+                  value={editingLot?.video || ""}
+                  onChangeText={(text) =>
+                    setEditingLot((prev) => ({ ...prev, video: text }))
                   }
                   placeholder="https://..."
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
 
-                {/*<TextInput
-                  label="Estado"
-                  style={styles.input}
-                  value={editingLot?.estado || ''}
-                  onChangeText={text =>
-                    setEditingLot(prev => ({ ...prev, estado: text }))
+                {/* Selectores sin Accordion: no pelean el scroll del modal */}
+                <Text style={styles.modalSectionLabel}>Cabaña</Text>
+                <RadioButton.Group
+                  onValueChange={(value) =>
+                    setEditingLot((prev) => ({
+                      ...prev,
+                      cabana: { id: value },
+                    }))
                   }
-                />*/}
+                  value={editingLot?.cabana?.id || null}
+                >
+                  {Array.isArray(cabanas) && cabanas.length > 0 ? (
+                    cabanas.map((c) => (
+                      <List.Item
+                        key={c.id}
+                        title={c.nombre}
+                        onPress={() =>
+                          setEditingLot((prev) => ({
+                            ...prev,
+                            cabana: { id: c.id },
+                          }))
+                        }
+                        right={() => <RadioButton value={c.id} />}
+                        style={styles.modalSelectItem}
+                      />
+                    ))
+                  ) : (
+                    <List.Item title="No hay cabañas disponibles" />
+                  )}
+                </RadioButton.Group>
 
-                <List.Accordion
-                  title={
-                    editingLot?.cabana?.id
-                      ? `Cabaña ID: ${editingLot.cabana.id}`
-                      : "Seleccionar Cabaña"
+                <Text style={styles.modalSectionLabel}>Remate</Text>
+                <RadioButton.Group
+                  onValueChange={(value) =>
+                    setEditingLot((prev) => ({
+                      ...prev,
+                      remate: { id: value },
+                    }))
                   }
-                  style={{ backgroundColor: "#fff", borderRadius: 8, marginBottom: 10 }}
+                  value={editingLot?.remate?.id || null}
                 >
-                  <RadioButton.Group
-                    onValueChange={(value) =>
-                      setEditingLot((prev) => ({
-                        ...prev,
-                        cabana: { id: value }, // ✅ solo guardamos el id
-                      }))
-                    }
-                    value={editingLot?.cabana?.id || null}
-                  >
-                    {Array.isArray(cabanas) && cabanas.length > 0 ? (
-                      cabanas.map((c) => (
-                        <List.Item
-                          key={c.id}
-                          title={c.nombre}
-                          right={() => <RadioButton value={c.id} />}
-                        />
-                      ))
-                    ) : (
-                      <List.Item title="No hay cabañas disponibles" />
-                    )}
-                  </RadioButton.Group>
-                </List.Accordion>
+                  {Array.isArray(auctions) && auctions.length > 0 ? (
+                    auctions.map((r) => (
+                      <List.Item
+                        key={r.id}
+                        title={r.nombre}
+                        onPress={() =>
+                          setEditingLot((prev) => ({
+                            ...prev,
+                            remate: { id: r.id, nombre: r.nombre },
+                          }))
+                        }
+                        right={() => <RadioButton value={r.id} />}
+                        style={styles.modalSelectItem}
+                      />
+                    ))
+                  ) : (
+                    <List.Item title="No hay remates disponibles" />
+                  )}
+                </RadioButton.Group>
+              </ScrollView>
 
-
-
-                <List.Accordion
-                  title={editingLot?.remate?.nombre || "Seleccionar Remate"}
-                  style={{ backgroundColor: "#fff", borderRadius: 8, marginBottom: 10 }}
-                >
-                  <RadioButton.Group
-                    onValueChange={(value) =>
-                      setEditingLot((prev) => ({
-                        ...prev,
-                        remate: { id: value },
-                      }))
-                    }
-                    value={editingLot?.remate?.id || null}
-                  >
-                    {Array.isArray(auctions) && auctions.length > 0 ? (
-                      auctions.map((r) => (
-                        <List.Item
-                          key={r.id}
-                          title={r.nombre}
-                          right={() => <RadioButton value={r.id} />}
-                        />
-                      ))
-                    ) : (
-                      <List.Item title="No hay remates disponibles" />
-                    )}
-                  </RadioButton.Group>
-                </List.Accordion>
-
-
+              <View style={styles.modalFooter}>
                 <Button
                   mode="contained"
                   onPress={async () => {
                     try {
                       if (editingLot?.id) {
-                        // 📝 Actualizar lote existente
                         await handleLotAction(editingLot.id, "update", editingLot);
                       } else {
-                        // 🆕 Crear nuevo lote
                         await handleLotAction(null, "create", editingLot);
                       }
 
                       setShowLotModal(false);
-                      setEditingLot(null); // limpia el estado
+                      setEditingLot(null);
                     } catch (error) {
                       console.error(error);
                       Alert.alert("Error", "No se pudo guardar el lote");
@@ -1391,53 +1404,62 @@ export default function AdminPanelScreen({ navigation }) {
                 >
                   Guardar
                 </Button>
-
-              </ScrollView>
-            </View>
-
+              </View>
+            </KeyboardAvoidingView>
           </Modal>
 
-          {/*Modal de cabanas*/}
+          {/* Modal de cabañas */}
           <Modal
             visible={showCabanaModal}
             onDismiss={() => setShowCabanaModal(false)}
             contentContainerStyle={styles.modalWrapper}
           >
-            <View style={styles.modal}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : undefined}
+              style={styles.modal}
+            >
+              <Title style={styles.modalTitle}>
+                {editingCabana ? "Editar Cabaña" : "Crear Cabaña"}
+              </Title>
+
               <ScrollView
+                style={styles.modalScrollView}
                 contentContainerStyle={styles.modalScroll}
                 keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={true} // iOS + Android
-                persistentScrollbar={true}          // Android (iOS lo ignora)
-                indicatorStyle="black"              // iOS (Android lo ignora)
+                nestedScrollEnabled
+                showsVerticalScrollIndicator
+                bounces={false}
               >
-                <Title>{editingCabana ? 'Editar Cabaña' : 'Crear Cabaña'}</Title>
-
                 <TextInput
                   label="Nombre de la cabaña"
                   style={styles.input}
-                  value={editingCabana?.nombre || ''}
-                  onChangeText={text =>
-                    setEditingCabana(prev => ({ ...prev, nombre: text }))
+                  value={editingCabana?.nombre || ""}
+                  onChangeText={(text) =>
+                    setEditingCabana((prev) => ({ ...prev, nombre: text }))
                   }
                 />
-
 
                 <TextInput
                   label="Teléfono"
                   style={styles.input}
-                  value={editingCabana?.telefono || ''}
-                  onChangeText={text =>
-                    setEditingCabana(prev => ({ ...prev, telefono: text }))
+                  value={editingCabana?.telefono || ""}
+                  onChangeText={(text) =>
+                    setEditingCabana((prev) => ({ ...prev, telefono: text }))
                   }
                 />
+              </ScrollView>
 
+              <View style={styles.modalFooter}>
                 <Button
                   mode="contained"
                   onPress={async () => {
                     try {
                       if (editingCabana?.id) {
-                        await handleCabanaAction(editingCabana.id, "update", editingCabana);
+                        await handleCabanaAction(
+                          editingCabana.id,
+                          "update",
+                          editingCabana
+                        );
                       } else {
                         await handleCabanaAction(null, "create", editingCabana);
                       }
@@ -1451,8 +1473,8 @@ export default function AdminPanelScreen({ navigation }) {
                 >
                   Guardar
                 </Button>
-              </ScrollView>
-            </View>
+              </View>
+            </KeyboardAvoidingView>
           </Modal>
           <BidCorrectionModal
             visible={correctionVisible}
@@ -1517,23 +1539,62 @@ const styles = StyleSheet.create({
   chipContainer: { flexDirection: 'row', flexWrap: 'wrap' },
   actionButtons: { flexDirection: 'column' },
   modal: {
-    width: '90%',
-    height: '70%', // ✅ solo 70% de la pantalla
+    width: "100%",
+    maxHeight: Dimensions.get("window").height * 0.85,
     backgroundColor: CattleColors.white,
     borderRadius: 12,
-    padding: 20,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    overflow: "hidden",
+  },
+  modalTitle: {
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+  modalScrollView: {
+    flexGrow: 0,
+    maxHeight: Dimensions.get("window").height * 0.62,
   },
   modalScroll: {
-    paddingBottom: 20,
+    paddingBottom: 16,
+  },
+  modalAccordion: {
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  modalSectionLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: CattleColors.primary,
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  modalSelectItem: {
+    paddingVertical: 0,
+    marginBottom: 2,
+  },
+  modalSwitchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 10,
+    gap: 8,
+  },
+  modalFooter: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: CattleColors.mediumLightGray || "#E3E7E5",
+    paddingTop: 12,
+    paddingBottom: 12,
   },
   input: {
     marginBottom: 15,
     backgroundColor: CattleColors.white,
   },
   modalWrapper: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginHorizontal: 16,
+    alignSelf: "center",
+    width: "92%",
+    maxHeight: Dimensions.get("window").height * 0.9,
   },
   loadingOverlay: {
     position: "absolute",

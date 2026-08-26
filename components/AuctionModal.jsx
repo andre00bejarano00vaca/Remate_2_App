@@ -307,6 +307,10 @@ import {
   Image,
   StyleSheet,
   Alert,
+  ScrollView,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 
 import {
@@ -609,248 +613,262 @@ export default function AuctionModal({
     <Modal
       visible={visible}
       onDismiss={onDismiss}
-      contentContainerStyle={styles.modal}
+      contentContainerStyle={styles.modalWrapper}
     >
-      <Text style={styles.title}>
-        {auction?.id ? 'Editar Remate' : 'Crear Remate'}
-      </Text>
-
-      {/* =======================
-          NOMBRE
-      ======================= */}
-
-      <TextInput
-        label="Nombre del remate"
-        value={auction?.nombre || ''}
-        onChangeText={(t) =>
-          setAuction((p) => ({
-            ...p,
-            nombre: t,
-          }))
-        }
-        style={styles.input}
-      />
-
-      {/* =======================
-          FECHA INICIO
-      ======================= */}
-
-      <Text style={styles.label}>
-        Fecha inicio
-      </Text>
-
-      <Button
-        mode="outlined"
-        onPress={() => setShowStartDate(true)}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.modal}
       >
-        {startDate
-          ? startDate.toLocaleString()
-          : 'Seleccionar fecha y hora'}
-      </Button>
+        <Text style={styles.title}>
+          {auction?.id ? 'Editar Remate' : 'Crear Remate'}
+        </Text>
 
-      <DatePickerModal
-        locale="es"
-        mode="single"
-        visible={showStartDate}
-        date={startDate}
-        onDismiss={() => setShowStartDate(false)}
-        onConfirm={({ date }) =>
-          confirmStartDate(date)
-        }
-      />
-
-      <TimePickerModal
-        locale="es"
-        visible={showStartTime}
-        onDismiss={() =>
-          setShowStartTime(false)
-        }
-        onConfirm={confirmStartTime}
-        hours={startDate?.getHours() ?? 0}
-        minutes={startDate?.getMinutes() ?? 0}
-      />
-
-      {/* =======================
-          FECHA FIN
-      ======================= */}
-
-      <Text style={styles.label}>
-        Fecha fin
-      </Text>
-
-      <Button
-        mode="outlined"
-        onPress={() => setShowEndDate(true)}
-      >
-        {endDate
-          ? endDate.toLocaleString()
-          : 'Seleccionar fecha y hora'}
-      </Button>
-
-      <DatePickerModal
-        locale="es"
-        mode="single"
-        visible={showEndDate}
-        date={endDate}
-        onDismiss={() => setShowEndDate(false)}
-        onConfirm={({ date }) =>
-          confirmEndDate(date)
-        }
-      />
-
-      <TimePickerModal
-        locale="es"
-        visible={showEndTime}
-        onDismiss={() =>
-          setShowEndTime(false)
-        }
-        onConfirm={confirmEndTime}
-        hours={endDate?.getHours() ?? 0}
-        minutes={endDate?.getMinutes() ?? 0}
-      />
-
-      {/* =======================
-          URL LOTES
-      ======================= */}
-
-      <TextInput
-        label="URL lista de lotes"
-        value={auction?.urlListaLotes || ''}
-        onChangeText={(t) =>
-          setAuction((p) => ({
-            ...p,
-            urlListaLotes: t,
-          }))
-        }
-        style={styles.input}
-      />
-
-      {/* =======================
-          ESTADO
-      ======================= */}
-
-      <TextInput
-        label="Estado"
-        value={auction?.estado || ''}
-        onChangeText={(t) =>
-          setAuction((p) => ({
-            ...p,
-            estado: t,
-          }))
-        }
-        style={styles.input}
-      />
-
-      {/* =======================
-          CABAÑA
-      ======================= */}
-
-      <List.Accordion
-        title={
-          auction?.cabana?.nombre ||
-          'Seleccionar Cabaña'
-        }
-        style={styles.accordion}
-      >
-        <RadioButton.Group
-          value={auction?.cabana?.id}
-          onValueChange={(value) => {
-            const c = cabanas.find(
-              (x) => x.id === value
-            );
-
-            setAuction((p) => ({
-              ...p,
-              cabana: c
-                ? {
-                    id: c.id,
-                    nombre: c.nombre,
-                  }
-                : {
-                    id: value,
-                  },
-            }));
-          }}
+        <ScrollView
+          style={styles.modalScrollView}
+          contentContainerStyle={styles.modalScroll}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled
+          showsVerticalScrollIndicator
+          bounces={false}
         >
-          {cabanas?.map((c) => (
-            <List.Item
-              key={c.id}
-              title={c.nombre}
-              right={() => (
-                <RadioButton value={c.id} />
-              )}
-            />
-          ))}
-        </RadioButton.Group>
-      </List.Accordion>
+          {/* =======================
+              NOMBRE
+          ======================= */}
 
-      {/* =======================
-          BANNER
-      ======================= */}
-
-      <Text style={styles.label}>
-        Banner del remate
-      </Text>
-
-      {/* Vista previa */}
-
-      {(banner || (bannerUrl && !bannerDeleted)) && (
-        <View style={styles.bannerContainer}>
-          <Image
-            source={{
-              uri: banner
-                ? banner.uri
-                : bannerUrl,
-            }}
-            style={styles.banner}
-            resizeMode="cover"
+          <TextInput
+            label="Nombre del remate"
+            value={auction?.nombre || ''}
+            onChangeText={(t) =>
+              setAuction((p) => ({
+                ...p,
+                nombre: t,
+              }))
+            }
+            style={styles.input}
           />
+
+          {/* =======================
+              FECHA INICIO
+          ======================= */}
+
+          <Text style={styles.label}>
+            Fecha inicio
+          </Text>
+
+          <Button
+            mode="outlined"
+            onPress={() => setShowStartDate(true)}
+          >
+            {startDate
+              ? startDate.toLocaleString()
+              : 'Seleccionar fecha y hora'}
+          </Button>
+
+          <DatePickerModal
+            locale="es"
+            mode="single"
+            visible={showStartDate}
+            date={startDate}
+            onDismiss={() => setShowStartDate(false)}
+            onConfirm={({ date }) =>
+              confirmStartDate(date)
+            }
+          />
+
+          <TimePickerModal
+            locale="es"
+            visible={showStartTime}
+            onDismiss={() =>
+              setShowStartTime(false)
+            }
+            onConfirm={confirmStartTime}
+            hours={startDate?.getHours() ?? 0}
+            minutes={startDate?.getMinutes() ?? 0}
+          />
+
+          {/* =======================
+              FECHA FIN
+          ======================= */}
+
+          <Text style={styles.label}>
+            Fecha fin
+          </Text>
+
+          <Button
+            mode="outlined"
+            onPress={() => setShowEndDate(true)}
+          >
+            {endDate
+              ? endDate.toLocaleString()
+              : 'Seleccionar fecha y hora'}
+          </Button>
+
+          <DatePickerModal
+            locale="es"
+            mode="single"
+            visible={showEndDate}
+            date={endDate}
+            onDismiss={() => setShowEndDate(false)}
+            onConfirm={({ date }) =>
+              confirmEndDate(date)
+            }
+          />
+
+          <TimePickerModal
+            locale="es"
+            visible={showEndTime}
+            onDismiss={() =>
+              setShowEndTime(false)
+            }
+            onConfirm={confirmEndTime}
+            hours={endDate?.getHours() ?? 0}
+            minutes={endDate?.getMinutes() ?? 0}
+          />
+
+          {/* =======================
+              URL LOTES
+          ======================= */}
+
+          <TextInput
+            label="URL lista de lotes"
+            value={auction?.urlListaLotes || ''}
+            onChangeText={(t) =>
+              setAuction((p) => ({
+                ...p,
+                urlListaLotes: t,
+              }))
+            }
+            style={styles.input}
+          />
+
+          {/* =======================
+              ESTADO
+          ======================= */}
+
+          <TextInput
+            label="Estado"
+            value={auction?.estado || ''}
+            onChangeText={(t) =>
+              setAuction((p) => ({
+                ...p,
+                estado: t,
+              }))
+            }
+            style={styles.input}
+          />
+
+          {/* =======================
+              CABAÑA
+          ======================= */}
+
+          <Text style={styles.sectionLabel}>Cabaña</Text>
+          <RadioButton.Group
+            value={auction?.cabana?.id}
+            onValueChange={(value) => {
+              const c = cabanas.find(
+                (x) => x.id === value
+              );
+
+              setAuction((p) => ({
+                ...p,
+                cabana: c
+                  ? {
+                      id: c.id,
+                      nombre: c.nombre,
+                    }
+                  : {
+                      id: value,
+                    },
+              }));
+            }}
+          >
+            {cabanas?.map((c) => (
+              <List.Item
+                key={c.id}
+                title={c.nombre}
+                onPress={() => {
+                  setAuction((p) => ({
+                    ...p,
+                    cabana: {
+                      id: c.id,
+                      nombre: c.nombre,
+                    },
+                  }));
+                }}
+                right={() => (
+                  <RadioButton value={c.id} />
+                )}
+                style={styles.selectItem}
+              />
+            ))}
+          </RadioButton.Group>
+
+          {/* =======================
+              BANNER
+          ======================= */}
+
+          <Text style={styles.label}>
+            Banner del remate
+          </Text>
+
+          {/* Vista previa */}
+
+          {(banner || (bannerUrl && !bannerDeleted)) && (
+            <View style={styles.bannerContainer}>
+              <Image
+                source={{
+                  uri: banner
+                    ? banner.uri
+                    : bannerUrl,
+                }}
+                style={styles.banner}
+                resizeMode="cover"
+              />
+            </View>
+          )}
+
+          {/* Seleccionar / Cambiar */}
+
+          <Button
+            mode="outlined"
+            icon="image"
+            onPress={seleccionarBanner}
+            style={styles.bannerButton}
+          >
+            {banner || bannerUrl
+              ? 'Cambiar banner'
+              : 'Seleccionar banner'}
+          </Button>
+
+          {/* Eliminar */}
+
+          {(banner || (bannerUrl && !bannerDeleted)) && (
+            <Button
+              mode="text"
+              icon="delete"
+              textColor="#d32f2f"
+              onPress={eliminarBanner}
+            >
+              Eliminar banner
+            </Button>
+          )}
+        </ScrollView>
+
+        <View style={styles.modalFooter}>
+          <Button
+            mode="contained"
+            onPress={guardar}
+            disabled={
+              !auction?.nombre ||
+              !auction?.fecha ||
+              !auction?.fechaFin ||
+              !auction?.cabana?.id
+            }
+          >
+            Guardar
+          </Button>
         </View>
-      )}
-
-      {/* Seleccionar / Cambiar */}
-
-      <Button
-        mode="outlined"
-        icon="image"
-        onPress={seleccionarBanner}
-        style={styles.bannerButton}
-      >
-        {banner || bannerUrl
-          ? 'Cambiar banner'
-          : 'Seleccionar banner'}
-      </Button>
-
-      {/* Eliminar */}
-
-      {(banner || (bannerUrl && !bannerDeleted)) && (
-        <Button
-          mode="text"
-          icon="delete"
-          textColor="#d32f2f"
-          onPress={eliminarBanner}
-        >
-          Eliminar banner
-        </Button>
-      )}
-
-      {/* =======================
-          GUARDAR
-      ======================= */}
-
-      <Button
-        mode="contained"
-        style={{ marginTop: 20 }}
-        onPress={guardar}
-        disabled={
-          !auction.nombre ||
-          !auction.fecha ||
-          !auction.fechaFin ||
-          !auction.cabana?.id
-        }
-      >
-        Guardar
-      </Button>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -860,17 +878,44 @@ export default function AuctionModal({
 ======================= */
 
 const styles = StyleSheet.create({
+  modalWrapper: {
+    marginHorizontal: 16,
+    alignSelf: 'center',
+    width: '92%',
+    maxHeight: Dimensions.get('window').height * 0.9,
+  },
+
   modal: {
+    width: '100%',
+    maxHeight: Dimensions.get('window').height * 0.85,
     backgroundColor: '#fff',
-    margin: 20,
-    padding: 20,
-    borderRadius: 8,
+    borderRadius: 12,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    overflow: 'hidden',
+  },
+
+  modalScrollView: {
+    flexGrow: 0,
+    maxHeight: Dimensions.get('window').height * 0.62,
+  },
+
+  modalScroll: {
+    paddingBottom: 16,
+  },
+
+  modalFooter: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E3E7E5',
+    paddingTop: 12,
+    paddingBottom: 12,
   },
 
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: 8,
+    paddingHorizontal: 4,
   },
 
   label: {
@@ -878,15 +923,21 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
 
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+
+  selectItem: {
+    paddingVertical: 0,
+    marginBottom: 2,
+  },
+
   input: {
     marginBottom: 10,
     backgroundColor: '#fff',
-  },
-
-  accordion: {
-    backgroundColor: '#fff',
-    marginTop: 10,
-    borderRadius: 6,
   },
 
   bannerContainer: {
