@@ -23,6 +23,17 @@ import SideMenu from "../components/SideMenu";
 
 const PAGE_SIZE = 20;
 
+const isRemateFinalizado = (estado) =>
+  String(estado ?? "")
+    .trim()
+    .toLowerCase() === "finalizado";
+
+/** Remates que ve el cliente: visibles y no finalizados */
+const rematesParaListado = (lista) =>
+  (Array.isArray(lista) ? lista : []).filter(
+    (remate) => remate?.visible === true && !isRemateFinalizado(remate?.estado)
+  );
+
 export default function RematesListScreen({ navigation }) {
   const [remates, setRemates] = useState([]);
   const [page, setPage] = useState(0);
@@ -190,7 +201,7 @@ export default function RematesListScreen({ navigation }) {
       />
 
       <FlatList
-        data={remates.filter((remate) => remate?.visible === true)}
+        data={rematesParaListado(remates)}
         renderItem={renderItem}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.list}

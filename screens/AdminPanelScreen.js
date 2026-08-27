@@ -45,8 +45,10 @@ import RematesScreen from "../components/RematesScreen";
 import AppHeader from "../components/AppHeader";
 import SideMenu from "../components/SideMenu";
 
-
-
+const isRemateFinalizado = (estado) =>
+  String(estado ?? "")
+    .trim()
+    .toLowerCase() === "finalizado";
 
 export default function AdminPanelScreen({ navigation }) {
 
@@ -353,6 +355,55 @@ export default function AdminPanelScreen({ navigation }) {
       console.error(error);
       Alert.alert("Error", "No se pudieron cargar los remates");
     }
+  };
+
+  const handleFinalizarRemate = (remate) => {
+    if (!remate?.id) return;
+
+    if (isRemateFinalizado(remate.estado)) {
+      Alert.alert("Remate finalizado", "Este remate ya está marcado como finalizado.");
+      return;
+    }
+
+    const loteParaFinalizar =
+      loteId ??
+      cattleLots.find(
+        (l) =>
+          String(l?.remate?.id ?? l?.remateId) === String(remate.id) && l?.visible !== false
+      )?.id;
+
+    if (!loteParaFinalizar) {
+      Alert.alert(
+        "Lote requerido",
+        "Abrí un lote de este remate en la app o andá a la pestaña Lotes para que el sistema identifique el lote activo, y volvé a intentar."
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Finalizar remate",
+      `¿Finalizar "${remate.nombre}"? Se notificará a los usuarios conectados y no podrán seguir pujando en vivo.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Finalizar",
+          style: "destructive",
+          onPress: async () => {
+            setLoading(true);
+            try {
+              await finalizarLote(remate.id, loteParaFinalizar);
+              await loadAuctions(auctionPage);
+              Alert.alert("Listo", "Remate finalizado correctamente.");
+            } catch (error) {
+              console.error(error);
+              Alert.alert("Error", "No se pudo finalizar el remate.");
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const loadLots = async (pageToLoad = lotPage) => {
@@ -693,30 +744,31 @@ export default function AdminPanelScreen({ navigation }) {
                 <Text style={stylesCardRemate.subtitle}>Fecha de Finalización : {fechaFin}</Text>
                 <Text style={stylesCardRemate.subtitle}>Hora de Finalización: {horaFin}</Text>
                 <Text style={stylesCardRemate.subtitle}>Cabaña: {a.cabana?.nombre}</Text>
+                <Text style={stylesCardRemate.subtitle}>
+                  Estado: {a.estado?.trim() || "Sin estado"}
+                </Text>
 
-                {/* Finalizar abajo */}
-                {a.estado != "Finalizado" ?
-                  <Button
-                    mode="contained"
-                    icon="play-circle"
-                    buttonColor="#0000FF"
-                    textColor="white"
-                    contentStyle={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}
-                    labelStyle={{ fontSize: 15 }} // ajusta el tamaño de la letra
-                    onPress={() => finalizarLote(a.id, loteId, "finish")}
+                {isRemateFinalizado(a.estado) ? (
+                  <Chip
+                    icon="check-circle"
+                    style={stylesCardRemate.finalizadoChip}
+                    textStyle={stylesCardRemate.finalizadoChipText}
                   >
-                    Comenzar remate
-                  </Button> : <Button
+                    Remate finalizado
+                  </Chip>
+                ) : (
+                  <Button
                     mode="contained"
                     icon="stop-circle"
                     buttonColor="#C62828"
                     textColor="white"
                     style={stylesCardRemate.finishButton}
                     contentStyle={stylesCardRemate.finishButtonContent}
-                    onPress={() => finalizarLote(a.id, loteId, "Finalizado")}
+                    onPress={() => handleFinalizarRemate(a)}
                   >
-                    Finalizar Remate
-                  </Button>}
+                    Finalizar remate
+                  </Button>
+                )}
 
 
               </Card.Content>
@@ -1694,6 +1746,16 @@ const stylesCardRemate = StyleSheet.create({
 
   finishButtonContent: {
     paddingVertical: 4,
+  },
+
+  finalizadoChip: {
+    marginTop: 12,
+    alignSelf: "flex-start",
+    backgroundColor: CattleColors.lightGray,
+  },
+
+  finalizadoChipText: {
+    color: CattleColors.darkGray,
   },
 });
 

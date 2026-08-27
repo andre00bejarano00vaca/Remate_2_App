@@ -1,31 +1,8 @@
-import { apiBaseUrl } from "../config/env";
+import apiClient from "../api/apiClient";
 
 export default async function finalizarLote(remateId, loteId) {
-  const url = `${apiBaseUrl}/api/remates/${remateId}/finalizar/${loteId}`;
-
-  try {
-    const response = await fetch(url, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      }
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Error en la petición: ${response.status} - ${errorText}`);
-    }
-
-    // Detectamos el tipo de respuesta
-    const contentType = response.headers.get("content-type");
-
-    if (contentType && contentType.includes("application/json")) {
-      return await response.json();
-    } else {
-      return await response.text();  // evita el error "Unexpected character"
-    }
-  } catch (error) {
-    console.error("Ocurrió un error al finalizar el lote:", error);
-    throw error;
-  }
+  const response = await apiClient.put(
+    `/remates/${remateId}/finalizar/${loteId}`
+  );
+  return response.data;
 }
