@@ -6,7 +6,8 @@ import { CattleColors, CattleShadows } from "../styles/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import AppHeader from "../components/AppHeader";
 import SideMenu from "../components/SideMenu";
-
+import useEventosWS from "../services/useEventosWS";
+import { procesarEvento } from "../services/procesarEvento";
 
 export default function LotesListScreen({ route, navigation }) {
 const remate = route?.params?.remate; 
@@ -48,7 +49,9 @@ if (!remate) {
     loadRole();
   }, []);
 
-
+  useEventosWS(remate?.id, (mensaje) => {
+    procesarEvento(mensaje, navigation);
+  });
 
 const loadLotes = async () => {
   setLoading(true);

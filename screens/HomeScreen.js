@@ -26,6 +26,15 @@ import {
     setCurrentViewedLote,
 } from "../services/pujaPersistence";
 import { notifyOutbid, registerExpoPushToken } from "../services/outbidNotifications";
+import apiClient from "../api/apiClient";
+
+const pickRemateCatalogUrl = (...candidates) => {
+    for (const value of candidates) {
+        const url = String(value ?? "").trim();
+        if (url) return url;
+    }
+    return "";
+};
 
 
 const { width, height } = Dimensions.get('window');
@@ -59,6 +68,9 @@ export default function HomeScreen({ navigation, route }) {
     })();
     const [remateid, setRemateid] = useState(remateIdFromRoute);
     const [remateResolved, setRemateResolved] = useState(Boolean(remateIdFromRoute));
+    const [remateCatalogUrl, setRemateCatalogUrl] = useState(() =>
+        pickRemateCatalogUrl(remateParam?.urlListaLotes, loteParam?.remate?.urlListaLotes)
+    );
     const baseInicial =
         Number(loteParam?.prelance ?? loteParam?.precio) || 0;
     const videoRef = useRef(null);
@@ -213,6 +225,43 @@ usePujaWebSocket({
             cancelled = true;
         };
     }, [remateIdFromRoute, loteid]);
+
+    // URL catálogo del remate (urlListaLotes), no confundir con lote.video
+    useEffect(() => {
+        const fromParams = pickRemateCatalogUrl(
+            remateParam?.urlListaLotes,
+            loteParam?.remate?.urlListaLotes
+        );
+        if (fromParams) {
+            setRemateCatalogUrl(fromParams);
+            return;
+        }
+        if (!remateid) {
+            setRemateCatalogUrl("");
+            return;
+        }
+
+        let cancelled = false;
+        (async () => {
+            try {
+                const response = await apiClient.get(`/remates/${remateid}`);
+                const url = pickRemateCatalogUrl(response.data?.urlListaLotes);
+                if (!cancelled) setRemateCatalogUrl(url);
+            } catch (error) {
+                console.log("[CATÁLOGO] no se pudo cargar urlListaLotes del remate:", error?.message || error);
+                if (!cancelled) setRemateCatalogUrl("");
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [
+        remateid,
+        remateParam?.urlListaLotes,
+        loteParam?.remate?.urlListaLotes,
+        loteParam?.remate?.id,
+    ]);
 
     useEffect(() => {
         if (!remateResolved) return;
@@ -526,12 +575,18 @@ usePujaWebSocket({
     // Datos de ejemplo para los lotes de ganado (primeros 4 lotes)
     const lotesData = cattleLots.slice(0, 4);
 
-    const openYouTube = async () => {
-        const url = "https://www.youtube.com/playlist?list=PL7dEzhx7AQdakwerQflhAhPYT9y-i_T2M";
+    const openRemateCatalog = async () => {
+        const url = remateCatalogUrl.trim();
+        if (!url) return;
         try {
+            const canOpen = await Linking.canOpenURL(url);
+            if (!canOpen) {
+                Alert.alert("Enlace no válido", "La URL del catálogo de este remate no es válida.");
+                return;
+            }
             await Linking.openURL(url);
         } catch (error) {
-            Alert.alert("No se pudo abrir el enlace:", error.message);
+            Alert.alert("Error", "No se pudo abrir el catálogo del remate.");
         }
     };
 
@@ -563,18 +618,19 @@ usePujaWebSocket({
                 />
 
 
-                {/* Botón para ver catálogo completo */}
-                <Button
-                    mode="contained"
-                    onPress={openYouTube}
-                    style={styles.navigationButton}
-                    labelStyle={styles.navigationButtonText}
-                    buttonColor={CattleColors.primary}
-                    textColor={CattleColors.white}
-                    icon="format-list-bulleted"
-                >
-                    VER CATÁLOGO COMPLETO CON VIDEOS
-                </Button>
+                {remateCatalogUrl ? (
+                    <Button
+                        mode="contained"
+                        onPress={openRemateCatalog}
+                        style={styles.navigationButton}
+                        labelStyle={styles.navigationButtonText}
+                        buttonColor={CattleColors.primary}
+                        textColor={CattleColors.white}
+                        icon="format-list-bulleted"
+                    >
+                        VER CATÁLOGO COMPLETO CON VIDEOS
+                    </Button>
+                ) : null}
             </ScrollView>
 
             <SideMenu
