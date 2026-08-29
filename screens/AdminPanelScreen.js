@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   ScrollView,
@@ -20,7 +20,8 @@ import {
   Chip,
   Portal,
   Modal,
-  Searchbar
+  Searchbar,
+  Snackbar,
 } from "react-native-paper";
 import { CattleColors } from "../styles/colors";
 import { List, RadioButton, Switch, DateTimePicker } from "react-native-paper";
@@ -58,9 +59,54 @@ export default function AdminPanelScreen({ navigation }) {
 
   const [activeTab, setActiveTab] = useState('remates');
   const [loading, setLoading] = useState(false);
+  const [modalSaving, setModalSaving] = useState(false);
+  const [savingCard, setSavingCard] = useState(null); // { type, id }
+  const [successCard, setSuccessCard] = useState(null);
+  const [snackbar, setSnackbar] = useState({ visible: false, message: "" });
+  const successTimerRef = useRef(null);
   const [currentRolId, setCurrentRolId] = useState(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  const showToast = useCallback((message) => {
+    setSnackbar({ visible: true, message });
+  }, []);
+
+  const clearCardFeedback = useCallback(() => {
+    setSavingCard(null);
+    setSuccessCard(null);
+    if (successTimerRef.current) {
+      clearTimeout(successTimerRef.current);
+      successTimerRef.current = null;
+    }
+  }, []);
+
+  const flashSuccessCard = useCallback((type, id) => {
+    setSavingCard(null);
+    if (id == null) return;
+    setSuccessCard({ type, id });
+    if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    successTimerRef.current = setTimeout(() => {
+      setSuccessCard(null);
+      successTimerRef.current = null;
+    }, 2200);
+  }, []);
+
+  const getCardStyle = useCallback(
+    (baseStyle, type, id) => {
+      const next = [baseStyle];
+      if (savingCard?.type === type && savingCard?.id === id) next.push(styles.cardSaving);
+      if (successCard?.type === type && successCard?.id === id) next.push(styles.cardSuccess);
+      return next;
+    },
+    [savingCard, successCard]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    };
+  }, []);
 
   const ROLE_PRIORITY = { 1: 1, 3: 2, 2: 3, 4: 4 }; // CLIENTE < COLABORADOR < ADMIN < SUPER_USUARIO
   const ROLE_OPTIONS = [
@@ -270,10 +316,10 @@ export default function AdminPanelScreen({ navigation }) {
 
   // Funciones de acción
   const handleUserAction = async (userId, action, data = null, newRole = null, rolId) => {
+    if (userId != null) setSavingCard({ type: "usuario", id: userId });
     setLoading(true);
     try {
       if (action === "approve") {
-        console.log(action)
         await updateUser(userId, { aprobado: true });
       } else if (action === "reject") {
         await updateUser(userId, { aprobado: false });
@@ -289,9 +335,27 @@ export default function AdminPanelScreen({ navigation }) {
         await createteUser(payload);
       }
       await loadUser(userPage);
+      if (action === "create") {
+        clearCardFeedback();
+        showToast("Usuario creado");
+      } else if (action === "approve") {
+        flashSuccessCard("usuario", userId);
+        showToast("Usuario aprobado");
+      } else if (action === "reject") {
+        flashSuccessCard("usuario", userId);
+        showToast("Usuario rechazado");
+      } else if (action === "delete" || data?.visible === false) {
+        clearCardFeedback();
+        showToast("Usuario eliminado");
+      } else {
+        flashSuccessCard("usuario", userId);
+        showToast("Usuario actualizado");
+      }
     } catch (error) {
+      clearCardFeedback();
       Alert.alert("Error", "No se pudo realizar la acción" + error.message);
       console.error(error);
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -299,6 +363,7 @@ export default function AdminPanelScreen({ navigation }) {
 
 
   const handleAuctionAction = async (auctionId, action, data = null) => {
+    if (auctionId != null) setSavingCard({ type: "remate", id: auctionId });
     setLoading(true);
     try {
       let saved = null;
@@ -310,10 +375,21 @@ export default function AdminPanelScreen({ navigation }) {
         await deleteAuction(auctionId);
       }
       await loadAuctions(auctionPage);
+      const softDelete = action === "update" && data?.visible === false;
+      if (action === "delete" || softDelete) {
+        clearCardFeedback();
+        showToast("Remate eliminado");
+      } else if (action === "create") {
+        flashSuccessCard("remate", saved?.id);
+        showToast("Remate creado");
+      } else {
+        flashSuccessCard("remate", auctionId);
+        showToast("Remate actualizado");
+      }
       return saved;
     } catch (error) {
+      clearCardFeedback();
       console.error(error);
-      Alert.alert("Error", "No se pudo procesar el remate");
       throw error;
     } finally {
       setLoading(false);
@@ -321,18 +397,34 @@ export default function AdminPanelScreen({ navigation }) {
   };
 
   const handleLotAction = async (lotId, action, data = null) => {
+    if (lotId != null) setSavingCard({ type: "lote", id: lotId });
     setLoading(true);
     try {
+      let saved = null;
       if (action === "create") {
-        await createLot(data);
+        saved = await createLot(data);
       } else if (action === "update") {
-        await updateLot(lotId, data);
+        saved = await updateLot(lotId, data);
       } else if (action === "delete") {
         await deleteLot(lotId);
       }
-      loadLots(lotPage);
+      await loadLots(lotPage);
+      const softDelete = action === "update" && data?.visible === false;
+      if (action === "delete" || softDelete) {
+        clearCardFeedback();
+        showToast("Lote eliminado");
+      } else if (action === "create") {
+        flashSuccessCard("lote", saved?.id);
+        showToast("Lote creado");
+      } else {
+        flashSuccessCard("lote", lotId);
+        showToast("Lote actualizado");
+      }
+      return saved;
     } catch (error) {
+      clearCardFeedback();
       Alert.alert("Error", "No se pudo procesar el lote");
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -471,18 +563,34 @@ export default function AdminPanelScreen({ navigation }) {
 
   //cabanas 
   const handleCabanaAction = async (cabanaId, action, data = null) => {
+    if (cabanaId != null) setSavingCard({ type: "cabana", id: cabanaId });
     setLoading(true);
     try {
+      let saved = null;
       if (action === "create") {
-        await createCabana(data);
+        saved = await createCabana(data);
       } else if (action === "update") {
-        await updateCabana(cabanaId, data);
+        saved = await updateCabana(cabanaId, data);
       } else if (action === "delete") {
         await deleteCabana(cabanaId);
       }
-      loadCabanas(cabanaPage);
+      await loadCabanas(cabanaPage);
+      const softDelete = action === "update" && data?.visible === false;
+      if (action === "delete" || softDelete) {
+        clearCardFeedback();
+        showToast("Cabaña eliminada");
+      } else if (action === "create") {
+        flashSuccessCard("cabana", saved?.id);
+        showToast("Cabaña creada");
+      } else {
+        flashSuccessCard("cabana", cabanaId);
+        showToast("Cabaña actualizada");
+      }
+      return saved;
     } catch (error) {
+      clearCardFeedback();
       Alert.alert("Error", "No se pudo procesar la cabaña");
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -496,6 +604,7 @@ export default function AdminPanelScreen({ navigation }) {
   };
 
   const handleBidAction = async (bidId, action, data = null) => {
+    if (bidId != null) setSavingCard({ type: "puja", id: bidId });
     setLoading(true);
     try {
       if (action === "create") {
@@ -505,9 +614,21 @@ export default function AdminPanelScreen({ navigation }) {
       } else if (action === "delete") {
         await deleteBid(bidId);
       }
-      loadPujas(bidPage);
+      await loadPujas(bidPage);
+      if (action === "delete") {
+        clearCardFeedback();
+        showToast("Puja eliminada");
+      } else if (action === "create") {
+        clearCardFeedback();
+        showToast("Puja creada");
+      } else {
+        flashSuccessCard("puja", bidId);
+        showToast("Puja actualizada");
+      }
     } catch (error) {
+      clearCardFeedback();
       Alert.alert("Error", "No se pudo procesar la puja");
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -626,7 +747,7 @@ export default function AdminPanelScreen({ navigation }) {
           const targetPriority = ROLE_PRIORITY[userRolId] || 0;
           const canEditRoles = currentPriority > targetPriority;
           return (
-            <Card key={user.id} style={styles.card}>
+            <Card key={user.id} style={getCardStyle(styles.card, "usuario", user.id)}>
               <Card.Content>
                 <View style={styles.cardHeader}>
                   <View style={styles.userInfo}>
@@ -710,7 +831,7 @@ export default function AdminPanelScreen({ navigation }) {
           const [fechaFin, horaFin] = (a.fechaFin || '').split('T');
 
           return (
-            <Card key={a.id} style={stylesCardRemate.card}>
+            <Card key={a.id} style={getCardStyle(stylesCardRemate.card, "remate", a.id)}>
               <Card.Content>
 
                 {/* Header con texto + iconos */}
@@ -793,7 +914,7 @@ export default function AdminPanelScreen({ navigation }) {
         // .filter(l => l.visible)
         .map(l => {
           return (
-            <Card key={l.id} style={styles.card}>
+            <Card key={l.id} style={getCardStyle(styles.card, "lote", l.id)}>
               <Card.Content>
                 <View style={styles.cardHeader}>
                   <View style={{ flex: 1 }}>
@@ -859,7 +980,7 @@ export default function AdminPanelScreen({ navigation }) {
         )
         .filter(c => c.visible)
         .map(c => (
-          <Card key={c.id} style={styles.card}>
+          <Card key={c.id} style={getCardStyle(styles.card, "cabana", c.id)}>
             <Card.Content>
               <View style={styles.cardHeader}>
                 <View style={{ flex: 1 }}>
@@ -907,7 +1028,7 @@ export default function AdminPanelScreen({ navigation }) {
         .map(b => {
         return (
 
-          <Card key={b.id} style={styles.card}>
+          <Card key={b.id} style={getCardStyle(styles.card, "puja", b.id)}>
             <Card.Content>
               <View style={styles.cardHeader}>
                 <View style={{ flex: 1 }}>
@@ -1010,7 +1131,10 @@ export default function AdminPanelScreen({ navigation }) {
           {/* 🧑 Modal de Usuario */}
           <Modal
             visible={showUserModal}
-            onDismiss={() => setShowUserModal(false)}
+            onDismiss={() => {
+              if (modalSaving) return;
+              setShowUserModal(false);
+            }}
             contentContainerStyle={styles.modalWrapper}
           >
             <KeyboardAvoidingView
@@ -1133,7 +1257,10 @@ export default function AdminPanelScreen({ navigation }) {
               <View style={styles.modalFooter}>
                 <Button
                   mode="contained"
+                  loading={modalSaving}
+                  disabled={modalSaving}
                   onPress={async () => {
+                    setModalSaving(true);
                     try {
                       if (editingUser?.id) {
                         await handleUserAction(editingUser.id, "update", editingUser);
@@ -1152,11 +1279,12 @@ export default function AdminPanelScreen({ navigation }) {
                       setEditingUser(null);
                     } catch (error) {
                       console.error(error);
-                      Alert.alert("Error", "No se pudo guardar el usuario");
+                    } finally {
+                      setModalSaving(false);
                     }
                   }}
                 >
-                  Guardar
+                  {modalSaving ? "Guardando…" : "Guardar"}
                 </Button>
               </View>
             </KeyboardAvoidingView>
@@ -1164,9 +1292,14 @@ export default function AdminPanelScreen({ navigation }) {
           {/* 📦 Modal de Remate */}
           <AuctionModal
             visible={showAuctionModal}
-            onDismiss={() => setShowAuctionModal(false)}
+            onDismiss={() => {
+              if (modalSaving) return;
+              setShowAuctionModal(false);
+            }}
+            saving={modalSaving}
 
             onSave={async (auctionData) => {
+              setModalSaving(true);
               try {
                 /*
                  * Guardamos los datos especiales del banner
@@ -1285,6 +1418,8 @@ export default function AdminPanelScreen({ navigation }) {
                   error.message ||
                   'No se pudo guardar el remate.'
                 );
+              } finally {
+                setModalSaving(false);
               }
             }}
 
@@ -1297,7 +1432,10 @@ export default function AdminPanelScreen({ navigation }) {
           {/* 🐂 Modal de Lote */}
           <Modal
             visible={showLotModal}
-            onDismiss={() => setShowLotModal(false)}
+            onDismiss={() => {
+              if (modalSaving) return;
+              setShowLotModal(false);
+            }}
             contentContainerStyle={styles.modalWrapper}
           >
             <KeyboardAvoidingView
@@ -1436,7 +1574,10 @@ export default function AdminPanelScreen({ navigation }) {
               <View style={styles.modalFooter}>
                 <Button
                   mode="contained"
+                  loading={modalSaving}
+                  disabled={modalSaving}
                   onPress={async () => {
+                    setModalSaving(true);
                     try {
                       if (editingLot?.id) {
                         await handleLotAction(editingLot.id, "update", editingLot);
@@ -1448,11 +1589,12 @@ export default function AdminPanelScreen({ navigation }) {
                       setEditingLot(null);
                     } catch (error) {
                       console.error(error);
-                      Alert.alert("Error", "No se pudo guardar el lote");
+                    } finally {
+                      setModalSaving(false);
                     }
                   }}
                 >
-                  Guardar
+                  {modalSaving ? "Guardando…" : "Guardar"}
                 </Button>
               </View>
             </KeyboardAvoidingView>
@@ -1461,7 +1603,10 @@ export default function AdminPanelScreen({ navigation }) {
           {/* Modal de cabañas */}
           <Modal
             visible={showCabanaModal}
-            onDismiss={() => setShowCabanaModal(false)}
+            onDismiss={() => {
+              if (modalSaving) return;
+              setShowCabanaModal(false);
+            }}
             contentContainerStyle={styles.modalWrapper}
           >
             <KeyboardAvoidingView
@@ -1502,7 +1647,10 @@ export default function AdminPanelScreen({ navigation }) {
               <View style={styles.modalFooter}>
                 <Button
                   mode="contained"
+                  loading={modalSaving}
+                  disabled={modalSaving}
                   onPress={async () => {
+                    setModalSaving(true);
                     try {
                       if (editingCabana?.id) {
                         await handleCabanaAction(
@@ -1517,11 +1665,12 @@ export default function AdminPanelScreen({ navigation }) {
                       setEditingCabana(null);
                     } catch (error) {
                       console.error(error);
-                      Alert.alert("Error", "No se pudo guardar la cabaña");
+                    } finally {
+                      setModalSaving(false);
                     }
                   }}
                 >
-                  Guardar
+                  {modalSaving ? "Guardando…" : "Guardar"}
                 </Button>
               </View>
             </KeyboardAvoidingView>
@@ -1529,7 +1678,10 @@ export default function AdminPanelScreen({ navigation }) {
           <BidCorrectionModal
             visible={correctionVisible}
             onDismiss={() => setCorrectionVisible(false)}
-            onCorrect={() => loadPujas(bidPage)}
+            onCorrect={() => {
+              loadPujas(bidPage);
+              showToast("Puja actualizada");
+            }}
             id={selectedBid?.id}
             remateId={selectedBid?.lote?.remate?.id ?? selectedBid?.lote?.remateId}
             loteId={selectedBid?.lote?.id}
@@ -1548,6 +1700,14 @@ export default function AdminPanelScreen({ navigation }) {
             <ActivityIndicator size="large" color={CattleColors.primary} />
           </View>
         )}
+        <Snackbar
+          visible={snackbar.visible}
+          onDismiss={() => setSnackbar({ visible: false, message: "" })}
+          duration={3200}
+          style={styles.snackbar}
+        >
+          {snackbar.message}
+        </Snackbar>
       </View>
   );
 }
@@ -1581,6 +1741,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   card: { marginBottom: 15, backgroundColor: CattleColors.white, ...CattleColors.cardShadow },
+  cardSaving: {
+    opacity: 0.55,
+    borderWidth: 2,
+    borderColor: CattleColors.primary || "#3b82f6",
+    backgroundColor: "#E8F1FF",
+  },
+  cardSuccess: {
+    borderWidth: 2,
+    borderColor: CattleColors.success || "#22c55e",
+    backgroundColor: "#E8F8EE",
+  },
+  snackbar: {
+    backgroundColor: "#14532d",
+  },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   userInfo: { flex: 1 },
   userName: { fontSize: 18, fontWeight: 'bold', color: CattleColors.primary, marginBottom: 4 },

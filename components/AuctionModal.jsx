@@ -386,6 +386,7 @@ export default function AuctionModal({
   onSave,
   editingAuction,
   cabanas,
+  saving = false,
 }) {
   const [auction, setAuction] = useState({});
 
@@ -612,7 +613,8 @@ export default function AuctionModal({
   return (
     <Modal
       visible={visible}
-      onDismiss={onDismiss}
+      onDismiss={saving ? undefined : onDismiss}
+      dismissable={!saving}
       contentContainerStyle={styles.modalWrapper}
     >
       <KeyboardAvoidingView
@@ -858,14 +860,16 @@ export default function AuctionModal({
           <Button
             mode="contained"
             onPress={guardar}
+            loading={saving}
             disabled={
+              saving ||
               !auction?.nombre ||
               !auction?.fecha ||
               !auction?.fechaFin ||
               !auction?.cabana?.id
             }
           >
-            Guardar
+            {saving ? 'Guardando…' : 'Guardar'}
           </Button>
         </View>
       </KeyboardAvoidingView>
