@@ -56,6 +56,8 @@ export default function HomeScreen({ navigation, route }) {
     const videoLote = loteParam?.video;
     const loteid = loteParam?.id ?? null;
     const numeroLote = loteParam?.numLote;
+    const nombreLote = loteParam?.nombre || loteParam?.name || "";
+    const razaLote = loteParam?.raza || "";
     const cabanaid = loteParam?.cabana?.id;
     const remateIdFromRoute = (() => {
         const raw =
@@ -605,7 +607,33 @@ usePujaWebSocket({
             >
                 {/* Video promocional */}
                 <VideoScreen videoUri={videoLote} />
-                <Text style={styles.tituloLote}>Lote Número: {numeroLote}</Text>
+
+                <View style={styles.loteInfoBlock}>
+                    <View style={styles.loteInfoRow}>
+                        <Text style={styles.loteInfoLabel}>Número de lote</Text>
+                        <Text style={styles.loteInfoValorDestacado}>
+                            {numeroLote ?? "—"}
+                        </Text>
+                    </View>
+
+                    <View style={styles.loteInfoDivider} />
+
+                    <View style={styles.loteInfoRow}>
+                        <Text style={styles.loteInfoLabel}>Nombre</Text>
+                        <Text style={styles.loteInfoValor} numberOfLines={2}>
+                            {nombreLote || "Sin nombre"}
+                        </Text>
+                    </View>
+
+                    <View style={styles.loteInfoDivider} />
+
+                    <View style={styles.loteInfoRow}>
+                        <Text style={styles.loteInfoLabel}>Raza</Text>
+                        <Text style={styles.loteInfoValor} numberOfLines={1}>
+                            {razaLote || "No indicada"}
+                        </Text>
+                    </View>
+                </View>
 
                 <PujaPanel
                     counter={displayCounter}
@@ -1092,14 +1120,51 @@ const styles = StyleSheet.create({
         color: CattleColors.primary,
         flex: 1,
     },
-    tituloLote: {
-        fontSize: 26,
-        fontWeight: "800",
-        textAlign: "center",
+    loteInfoBlock: {
+        marginHorizontal: 16,
+        marginTop: 16,
+        marginBottom: 12,
+        paddingVertical: 8,
+        paddingHorizontal: 18,
+        backgroundColor: CattleColors.white,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: CattleColors.mediumLightGray,
+        borderLeftWidth: 4,
+        borderLeftColor: CattleColors.accent,
+        ...CattleShadows.card,
+    },
+    loteInfoRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingVertical: 12,
+        gap: 12,
+    },
+    loteInfoDivider: {
+        height: 1,
+        backgroundColor: CattleColors.mediumLightGray,
+    },
+    loteInfoLabel: {
+        fontSize: 13,
+        fontWeight: "600",
+        color: CattleColors.mediumGray,
+        flexShrink: 0,
+        minWidth: 110,
+    },
+    loteInfoValor: {
+        flex: 1,
+        fontSize: 16,
+        fontWeight: "600",
         color: CattleColors.primary,
-        marginVertical: 20,
-        letterSpacing: 1,
-        textTransform: "uppercase",
+        textAlign: "right",
+    },
+    loteInfoValorDestacado: {
+        flex: 1,
+        fontSize: 22,
+        fontWeight: "800",
+        color: CattleColors.primary,
+        textAlign: "right",
     },
 
 });

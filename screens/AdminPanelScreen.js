@@ -906,6 +906,7 @@ export default function AdminPanelScreen({ navigation }) {
                     textColor="white"
                     style={stylesCardRemate.finishButton}
                     contentStyle={stylesCardRemate.finishButtonContent}
+                    labelStyle={stylesCardRemate.finishButtonLabel}
                     onPress={() => handleFinalizarRemate(a)}
                   >
                     Finalizar remate
@@ -1935,12 +1936,21 @@ const stylesCardRemate = StyleSheet.create({
 
   finishButton: {
     marginTop: 12,
-    height: 40,
-    justifyContent: "center",
+    borderRadius: 10,
+    overflow: "visible",
   },
 
   finishButtonContent: {
-    paddingVertical: 4,
+    minHeight: 48,
+    paddingHorizontal: 12,
+    justifyContent: "center",
+  },
+
+  finishButtonLabel: {
+    fontSize: 14,
+    lineHeight: 22,
+    includeFontPadding: true,
+    paddingVertical: 2,
   },
 
   finalizadoChip: {
