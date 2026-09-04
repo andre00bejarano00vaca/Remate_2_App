@@ -33,7 +33,7 @@ import { getLotsPaginado, createLot, updateLot, deleteLot } from "../services/lo
 import { getBidsPaginado, createBid, updateBid, deleteBid } from "../services/bidService";
 
 import { updateUser, deleteUser } from "../services/userService";
-import { getCabanasPaginado, createCabana, updateCabana, deleteCabana } from "../services/cabanaService";
+import { getCabanas, getCabanasPaginado, createCabana, updateCabana, deleteCabana } from "../services/cabanaService";
 import PDFGenerator from "../components/PDFGenerator";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ReporteScreen from "../components/Reporte";
@@ -202,6 +202,7 @@ export default function AdminPanelScreen({ navigation }) {
 
   //cabanas
   const [cabanas, setCabanas] = useState([]);
+  const [cabanasForSelect, setCabanasForSelect] = useState([]);
   const [cabanaPage, setCabanaPage] = useState(0);
   const [cabanaTotalPages, setCabanaTotalPages] = useState(0);
   const [cabanaTotalElements, setCabanaTotalElements] = useState(0);
@@ -273,6 +274,13 @@ export default function AdminPanelScreen({ navigation }) {
     else if (activeTab === "cabanas") loadCabanas(cabanaPage);
     else if (activeTab === "pujas") loadPujas(bidPage);
   }, [activeTab]);
+
+  // Cabañas para selects de remate/lote (lista completa, no depende del tab)
+  useEffect(() => {
+    if (showAuctionModal || showLotModal) {
+      loadCabanasForSelect();
+    }
+  }, [showAuctionModal, showLotModal]);
 
   const applyPage = (data, setters) => {
     const content = data?.content ?? [];
@@ -532,6 +540,18 @@ export default function AdminPanelScreen({ navigation }) {
       Alert.alert("Error", "No se pudieron cargar las cabañas");
     }
   };
+
+  const loadCabanasForSelect = async () => {
+    try {
+      const data = await getCabanas();
+      const list = Array.isArray(data) ? data : data?.content ?? [];
+      setCabanasForSelect(list);
+    } catch (error) {
+      console.error("Error cargando cabañas para select:", error);
+      setCabanasForSelect([]);
+    }
+  };
+
   const loadPujas = async (pageToLoad = bidPage) => {
     try {
       const remateId = await AsyncStorage.getItem("remate");
@@ -575,6 +595,7 @@ export default function AdminPanelScreen({ navigation }) {
         await deleteCabana(cabanaId);
       }
       await loadCabanas(cabanaPage);
+      await loadCabanasForSelect();
       const softDelete = action === "update" && data?.visible === false;
       if (action === "delete" || softDelete) {
         clearCardFeedback();
@@ -1424,7 +1445,7 @@ export default function AdminPanelScreen({ navigation }) {
             }}
 
             editingAuction={editingAuction}
-            cabanas={cabanas}
+            cabanas={cabanasForSelect}
           />
 
 
@@ -1520,8 +1541,8 @@ export default function AdminPanelScreen({ navigation }) {
                   }
                   value={editingLot?.cabana?.id || null}
                 >
-                  {Array.isArray(cabanas) && cabanas.length > 0 ? (
-                    cabanas.map((c) => (
+                  {Array.isArray(cabanasForSelect) && cabanasForSelect.length > 0 ? (
+                    cabanasForSelect.map((c) => (
                       <List.Item
                         key={c.id}
                         title={c.nombre}

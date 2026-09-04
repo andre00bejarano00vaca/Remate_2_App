@@ -226,7 +226,7 @@ export default function LoginScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.logoContainer}>
           <Image
-            source={require("../assets/PerfilELITE.png")}
+            source={require("../assets/FERCOGAN PRELANCE LOGO.png")}
             style={styles.logoImage}
           />
           <View style={styles.accentLine} />
