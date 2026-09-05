@@ -367,6 +367,20 @@ const styles = StyleSheet.create({
   segmentedButtons: { marginBottom: 20 },
   input: { marginBottom: 20, backgroundColor: CattleColors.lightGray },
   loginButton: { marginTop: 10, paddingVertical: 12, borderRadius: 8, ...CattleShadows.button },
+  helperText: {
+    fontSize: 12,
+    color: CattleColors.mediumGray,
+    marginTop: -12,
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  errorText: {
+    color: CattleColors.error,
+    textAlign: "center",
+    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: "500",
+  },
   helpText: {
     fontSize: 12,
     textAlign: "center",
