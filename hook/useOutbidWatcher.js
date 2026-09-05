@@ -9,6 +9,7 @@ import {
   markPujaOutbid,
 } from "../services/pujaPersistence";
 import { ensureNotificationPermission, notifyOutbid } from "../services/outbidNotifications";
+import { parseContadorResponse } from "./usePujaWebSocket";
 
 const POLL_MS = 6000;
 
@@ -45,8 +46,19 @@ export default function useOutbidWatcher() {
             );
             if (!response.ok) return;
 
-            const valor = Number(await response.json());
-            if (Number.isNaN(valor) || valor <= Number(item.monto)) return;
+            const estado = parseContadorResponse(await response.json());
+            if (!estado) return;
+
+            const valor = estado.valor;
+            const lider = estado.usuarioIdLider;
+            const soyLider =
+              lider != null && Number(lider) === Number(userId);
+
+            if (estado.hasLiderField && lider != null) {
+              if (soyLider || valor <= Number(item.monto)) return;
+            } else if (Number.isNaN(valor) || valor <= Number(item.monto)) {
+              return;
+            }
 
             await markPujaOutbid({
               userId,

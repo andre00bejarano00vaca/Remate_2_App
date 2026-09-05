@@ -48,6 +48,7 @@ export default function HomeScreen({ navigation, route }) {
     const [isAdmin, setIsAdmin] = useState(false);
     const [menuVisible, setMenuVisible] = useState(false);
     const [isWinning, setIsWinning] = useState(false);
+    const [leaderUserId, setLeaderUserId] = useState(null);
     const [statusMessage, setStatusMessage] = useState("");
     const [showStatus, setShowStatus] = useState(false);
 
@@ -168,9 +169,11 @@ usePujaWebSocket({
     setIsWinning,
     setStatusMessage,
     setShowStatus,
+    setLeaderUserId,
 
     pendingUserBidRef,
     lastUserBidValueRef,
+    userIdRef,
     isWinning,
     onOutbid: async (valor) => {
         const userId = userIdRef.current;
@@ -368,7 +371,7 @@ usePujaWebSocket({
                             loteId: loteid,
                         });
                         console.log("[PUJA] restaurando api", apiMonto);
-                        if (apiMonto != null && (!myPuja || apiMonto > Number(myPuja.monto))) {
+                        if (apiMonto != null && (!myPuja || apiMonto !== Number(myPuja.monto))) {
                             myPuja = await saveMyPuja({
                                 userId,
                                 loteId: loteid,
@@ -401,6 +404,18 @@ usePujaWebSocket({
         if (myBidMonto == null || counter == null) return;
 
         lastUserBidValueRef.current = myBidMonto;
+
+        // Preferir líder del servidor cuando esté disponible
+        if (leaderUserId != null && userId != null) {
+            const winning = Number(leaderUserId) === Number(userId);
+            setIsWinning(winning);
+            setShowStatus(true);
+            setStatusMessage(
+                winning ? "¡Vas ganando el lote!" : "Te superaron, pujá de nuevo"
+            );
+            return;
+        }
+
         if (Number(counter) > Number(myBidMonto)) {
             setIsWinning(false);
             setShowStatus(true);
@@ -410,7 +425,7 @@ usePujaWebSocket({
             setShowStatus(true);
             setStatusMessage("¡Vas ganando el lote!");
         }
-    }, [counter, myBidMonto]);
+    }, [counter, myBidMonto, leaderUserId, userId]);
 
     useEffect(() => {
         let interval;
@@ -459,6 +474,9 @@ usePujaWebSocket({
     pendingUserBidRef.current = true;
     setMyBidMonto(safeNext);
     setCounter(safeNext);
+    if (userIdRef.current != null) {
+        setLeaderUserId(Number(userIdRef.current));
+    }
     setIsWinning(true);
     setStatusMessage("¡Vas ganando el lote!");
     setShowStatus(true);
@@ -499,8 +517,10 @@ usePujaWebSocket({
             console.log(`[PUJA] 3. userId cache ${elapsed()}`, userId);
         }
 
-        console.log(`[PUJA] 4. POST /contador/incrementar ${elapsed()}`);
-        const incRes = await fetch(`${apiBaseUrl}/contador/incrementar/${remateid}/${loteid}`, {
+        const incrementUrl =
+            `${apiBaseUrl}/contador/incrementar/${remateid}/${loteid}?userId=${encodeURIComponent(userId)}`;
+        console.log(`[PUJA] 4. POST /contador/incrementar ${elapsed()}`, { userId });
+        const incRes = await fetch(incrementUrl, {
             method: "POST",
         });
         const incBody = await incRes.text();
@@ -510,6 +530,7 @@ usePujaWebSocket({
             setCounter(incCounter);
             lastUserBidValueRef.current = incCounter;
             setMyBidMonto(incCounter);
+            setLeaderUserId(Number(userId));
         }
         console.log(`[PUJA] 5. contador incrementado ${elapsed()}`, incRes.status, incBody);
 
