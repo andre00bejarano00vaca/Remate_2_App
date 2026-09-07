@@ -28,8 +28,8 @@ import { List, RadioButton, Switch, DateTimePicker } from "react-native-paper";
 import AuctionModal from "../components/AuctionModal";
 
 import { getUsersPaginado, createteUser } from "../services/userService";
-import { getAuctionsPaginado, createAuction, updateAuction, deleteAuction } from "../services/auctionService";
-import { getLotsPaginado, createLot, updateLot, deleteLot } from "../services/lotService";
+import { getAuctions, getAuctionsPaginado, createAuction, updateAuction, deleteAuction } from "../services/auctionService";
+import { getLots, getLotsPaginado, createLot, updateLot, deleteLot } from "../services/lotService";
 import { getBidsPaginado, createBid, updateBid, deleteBid } from "../services/bidService";
 
 import { updateUser, deleteUser } from "../services/userService";
@@ -197,6 +197,9 @@ export default function AdminPanelScreen({ navigation }) {
   const [lotTotalPages, setLotTotalPages] = useState(0);
   const [lotTotalElements, setLotTotalElements] = useState(0);
   const [lotSearchQuery, setLotSearchQuery] = useState('');
+  /** 'all' | remateId — filtro de lotes por prelance/remate */
+  const [lotRemateFilter, setLotRemateFilter] = useState('all');
+  const [rematesForLotFilter, setRematesForLotFilter] = useState([]);
   const [showLotModal, setShowLotModal] = useState(false);
   const [editingLot, setEditingLot] = useState(null);
 
@@ -270,7 +273,10 @@ export default function AdminPanelScreen({ navigation }) {
   useEffect(() => {
     if (activeTab === "usuarios") loadUser(userPage);
     else if (activeTab === "remates") loadAuctions(auctionPage);
-    else if (activeTab === "lotes") loadLots(lotPage);
+    else if (activeTab === "lotes") {
+      loadRematesForLotFilter();
+      loadLots(lotPage, lotRemateFilter);
+    }
     else if (activeTab === "cabanas") loadCabanas(cabanaPage);
     else if (activeTab === "pujas") loadPujas(bidPage);
   }, [activeTab]);
@@ -506,8 +512,36 @@ export default function AdminPanelScreen({ navigation }) {
     );
   };
 
-  const loadLots = async (pageToLoad = lotPage) => {
+  const loadRematesForLotFilter = async () => {
     try {
+      const data = await getAuctions();
+      const list = Array.isArray(data) ? data : data?.content ?? [];
+      setRematesForLotFilter(list.filter((r) => r.visible !== false));
+    } catch (error) {
+      console.error("Error cargando remates para filtro de lotes:", error);
+    }
+  };
+
+  const loadLots = async (pageToLoad = lotPage, remateFilter = lotRemateFilter) => {
+    try {
+      if (remateFilter !== "all") {
+        const data = await getLots();
+        const list = Array.isArray(data) ? data : data?.content ?? [];
+        const filtered = list.filter(
+          (l) => String(l.remate?.id ?? l.remateId) === String(remateFilter)
+        );
+        setCattleLots(filtered);
+        setLotPage(0);
+        setLotTotalPages(1);
+        setLotTotalElements(filtered.length);
+        setReports((prev) => ({
+          ...prev,
+          totalLots: filtered.length,
+          totalSales: filtered.reduce((sum, l) => sum + (l.puja || 0), 0),
+        }));
+        return;
+      }
+
       const data = await getLotsPaginado({ page: pageToLoad, size: PAGE_SIZE });
       const content = applyPage(data, {
         setItems: setCattleLots,
@@ -524,6 +558,11 @@ export default function AdminPanelScreen({ navigation }) {
       console.error(error);
       Alert.alert("Error", "No se pudieron cargar los lotes");
     }
+  };
+
+  const handleLotRemateFilter = (remateIdOrAll) => {
+    setLotRemateFilter(remateIdOrAll);
+    loadLots(0, remateIdOrAll);
   };
 
   const loadCabanas = async (pageToLoad = cabanaPage) => {
@@ -924,6 +963,10 @@ export default function AdminPanelScreen({ navigation }) {
     </ScrollView>
   );
   //---------------------Lotes ----------------------------------
+  const filteredLots = cattleLots.filter((l) =>
+    (l.nombre || "").toLowerCase().includes(lotSearchQuery.toLowerCase())
+  );
+
   const renderLotsTab = () => (
     <ScrollView contentContainerStyle={{ paddingVertical: 10 }}
       refreshControl={
@@ -931,10 +974,41 @@ export default function AdminPanelScreen({ navigation }) {
       }>
       {renderSearchRow("Buscar lotes...", lotSearchQuery, setLotSearchQuery, true)}
 
-      {cattleLots
-        .filter(l => l.nombre.toLowerCase().includes(lotSearchQuery.toLowerCase()))
-        // .filter(l => l.visible)
-        .map(l => {
+      <Text style={styles.filterLabel}>Filtrar por prelance</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filterChipsRow}
+        style={styles.filterChipsScroll}
+      >
+        <Chip
+          selected={lotRemateFilter === "all"}
+          onPress={() => handleLotRemateFilter("all")}
+          style={styles.filterChip}
+          showSelectedOverlay
+        >
+          Todos
+        </Chip>
+        {rematesForLotFilter.map((r) => (
+          <Chip
+            key={r.id}
+            selected={String(lotRemateFilter) === String(r.id)}
+            onPress={() => handleLotRemateFilter(r.id)}
+            style={styles.filterChip}
+            showSelectedOverlay
+          >
+            {r.nombre}
+          </Chip>
+        ))}
+      </ScrollView>
+
+      {filteredLots.length === 0 && (
+        <Text style={styles.emptyFilterText}>
+          No hay lotes para este filtro
+        </Text>
+      )}
+
+      {filteredLots.map(l => {
           return (
             <Card key={l.id} style={getCardStyle(styles.card, "lote", l.id)}>
               <Card.Content>
@@ -985,7 +1059,13 @@ export default function AdminPanelScreen({ navigation }) {
             </Card>
           )
         })}
-      {renderPagination(lotPage, lotTotalPages, lotTotalElements, loadLots, "lotes")}
+      {lotRemateFilter === "all" &&
+        renderPagination(lotPage, lotTotalPages, lotTotalElements, loadLots, "lotes")}
+      {lotRemateFilter !== "all" && lotTotalElements > 0 && (
+        <Text style={styles.filterCountText}>
+          {filteredLots.length} lote{filteredLots.length === 1 ? "" : "s"} en este prelance
+        </Text>
+      )}
     </ScrollView>
   );
 
@@ -1752,6 +1832,37 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   searchbar: { flex: 1, backgroundColor: CattleColors.white },
+  filterLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: CattleColors.mediumGray,
+    marginBottom: 8,
+  },
+  filterChipsScroll: {
+    marginBottom: 12,
+    maxHeight: 44,
+  },
+  filterChipsRow: {
+    alignItems: "center",
+    paddingRight: 8,
+    gap: 8,
+  },
+  filterChip: {
+    marginRight: 4,
+    backgroundColor: CattleColors.white,
+  },
+  emptyFilterText: {
+    textAlign: "center",
+    color: CattleColors.mediumGray,
+    marginVertical: 24,
+  },
+  filterCountText: {
+    textAlign: "center",
+    color: CattleColors.mediumGray,
+    marginTop: 8,
+    marginBottom: 16,
+    fontSize: 13,
+  },
   addButton: {
     backgroundColor: CattleColors.primary,
     borderRadius: 8,
