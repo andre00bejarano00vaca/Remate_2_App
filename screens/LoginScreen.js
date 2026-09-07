@@ -226,10 +226,10 @@ export default function LoginScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.logoContainer}>
           <Image
-            source={require("../assets/FERCOGAN PRELANCE LOGO.png")}
+            source={require("../assets/logo-login.png")}
             style={styles.logoImage}
+            accessibilityLabel="FERCOGAN Eventos Élite Prelance"
           />
-          <View style={styles.accentLine} />
         </View>
 
         <Card style={styles.loginCard}>
@@ -353,17 +353,52 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: CattleColors.lightGray },
   backgroundGradient: {
     position: "absolute",
-    top: 0, left: 0, right: 0, bottom: 0,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: CattleColors.primary,
     opacity: 0.1,
   },
-  scrollContent: { flexGrow: 1, justifyContent: "center", padding: 20 },
-  logoContainer: { alignItems: "center", marginBottom: 40 },
-  logoImage: { height: 200, resizeMode: "contain" },
-  accentLine: { width: 60, height: 3, backgroundColor: CattleColors.accent, borderRadius: 2 },
-  loginCard: { backgroundColor: CattleColors.white, borderRadius: 16, ...CattleShadows.card },
-  loginTitle: { fontSize: 26, fontWeight: "600", textAlign: "center", marginBottom: 8, color: CattleColors.primary },
-  loginSubtitle: { fontSize: 15, textAlign: "center", marginBottom: 20, color: CattleColors.secondary },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 32,
+  },
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: 28,
+    backgroundColor: CattleColors.primary,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    overflow: "hidden",
+  },
+  logoImage: {
+    width: "100%",
+    maxWidth: 340,
+    height: 200,
+    resizeMode: "contain",
+  },
+  loginCard: {
+    backgroundColor: CattleColors.white,
+    borderRadius: 16,
+    ...CattleShadows.card,
+  },
+  loginTitle: {
+    fontSize: 26,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 8,
+    color: CattleColors.primary,
+  },
+  loginSubtitle: {
+    fontSize: 15,
+    textAlign: "center",
+    marginBottom: 20,
+    color: CattleColors.secondary,
+  },
   segmentedButtons: { marginBottom: 20 },
   input: { marginBottom: 20, backgroundColor: CattleColors.lightGray },
   loginButton: { marginTop: 10, paddingVertical: 12, borderRadius: 8, ...CattleShadows.button },
@@ -386,6 +421,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 15,
     color: CattleColors.mediumGray,
-    fontStyle: "italic"
+    fontStyle: "italic",
   },
 });

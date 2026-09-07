@@ -40,10 +40,10 @@ const RemateModal = ({ visible, onDismiss, editingAuction, onSave }) => {
   return (
     <Portal>
       <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={{ backgroundColor: "white", padding: 20, margin: 20, borderRadius: 12 }}>
-        <Title>{editingAuction ? "Editar Remate" : "Crear Remate"}</Title>
+        <Title>{editingAuction ? "Editar Prelance" : "Crear Prelance"}</Title>
 
         <TextInput
-          label="Nombre del remate"
+          label="Nombre del prelance"
           style={{ marginBottom: 10 }}
           value={nombre}
           onChangeText={setNombre}

@@ -622,7 +622,7 @@ export default function AuctionModal({
         style={styles.modal}
       >
         <Text style={styles.title}>
-          {auction?.id ? 'Editar Remate' : 'Crear Remate'}
+          {auction?.id ? 'Editar Prelance' : 'Crear Prelance'}
         </Text>
 
         <ScrollView
@@ -638,7 +638,7 @@ export default function AuctionModal({
           ======================= */}
 
           <TextInput
-            label="Nombre del remate"
+            label="Nombre del prelance"
             value={auction?.nombre || ''}
             onChangeText={(t) =>
               setAuction((p) => ({
@@ -810,7 +810,7 @@ export default function AuctionModal({
           ======================= */}
 
           <Text style={styles.label}>
-            Banner del remate
+            Banner del prelance
           </Text>
 
           {/* Vista previa */}

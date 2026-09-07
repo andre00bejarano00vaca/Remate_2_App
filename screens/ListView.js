@@ -68,9 +68,11 @@ export default function ListView({ navigation }) {
             <View style={styles.header}>
                 <View style={styles.headerContent}>
                     <View style={styles.logoContainer}>
-                        <View style={styles.logoCircle}>
-                            <Text style={styles.logoIcon}>🐄</Text>
-                        </View>
+                        <Image
+                            source={require("../assets/logo.png")}
+                            style={styles.logoImage}
+                            accessibilityLabel="FERCOGAN Eventos Élite Prelance"
+                        />
                         <Title style={styles.headerTitle}>CATÁLOGO GANADERO</Title>
                     </View>
                     <IconButton 
@@ -202,26 +204,20 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     logoContainer: {
-        flexDirection: "row",
-        alignItems: "center",
+        flex: 1,
+        marginRight: 8,
     },
-    logoCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: CattleColors.accent,
-        justifyContent: "center",
-        alignItems: "center",
-        marginRight: 12,
-        ...CattleShadows.button,
-    },
-    logoIcon: {
-        fontSize: 20,
+    logoImage: {
+        width: "100%",
+        maxWidth: 200,
+        height: 48,
+        resizeMode: "contain",
+        marginBottom: 6,
     },
     headerTitle: {
-        fontSize: 24,
+        fontSize: 16,
         fontWeight: "600",
-        color: CattleColors.white,
+        color: CattleColors.accent,
         letterSpacing: 0.5,
     },
     backButton: {

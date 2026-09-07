@@ -42,7 +42,7 @@ export default function BidCorrectionModal({
       if (!remateId || !loteId) {
         Alert.alert(
           "Error",
-          "No se pudo obtener el remate o el lote de esta puja. Abrí un remate/lote o elegí otra puja."
+          "No se pudo obtener el prelance o el lote de esta puja. Abrí un prelance/lote o elegí otra puja."
         );
         return;
       }

@@ -8,7 +8,7 @@ import {
   markNotifiedOutbid,
   markPujaOutbid,
 } from "../services/pujaPersistence";
-import { ensureNotificationPermission, notifyOutbid } from "../services/outbidNotifications";
+import { notifyOutbid } from "../services/outbidAlert";
 import { parseContadorResponse } from "./usePujaWebSocket";
 
 const POLL_MS = 6000;
@@ -80,12 +80,11 @@ export default function useOutbidWatcher() {
           })
         );
       } catch (error) {
-        console.log("[PUJA PUSH] watcher error:", error?.message || error);
+        console.log("[OUTBID] watcher error:", error?.message || error);
       }
     };
 
     const start = () => {
-      ensureNotificationPermission();
       tick();
       clearInterval(timer);
       timer = setInterval(tick, POLL_MS);

@@ -40,9 +40,9 @@ const LoteModal = ({ visible, onDismiss, editingLot, onSave }) => {
         <TextInput label="Raza" value={raza} onChangeText={setRaza} style={{ marginBottom: 10 }} />
 
         {/* 🔽 Selector de Remate */}
-        <List.Section title="Seleccionar Remate">
+        <List.Section title="Seleccionar Prelance">
           <List.Accordion
-            title={remateSeleccionado ? `Remate: ${remateSeleccionado.nombre}` : "Elegir un remate"}
+            title={remateSeleccionado ? `Prelance: ${remateSeleccionado.nombre}` : "Elegir un prelance"}
             expanded={expanded}
             onPress={() => setExpanded(!expanded)}
           >

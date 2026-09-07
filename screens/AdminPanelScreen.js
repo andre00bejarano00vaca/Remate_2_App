@@ -161,7 +161,7 @@ export default function AdminPanelScreen({ navigation }) {
 
   const [editingUser, setEditingUser] = useState(null);
   const reportes = {
-    remate: "Remate Primavera 2025",
+    remate: "Prelance Primavera 2025",
     fecha: "30/10/2025",
     lugar: "Centro Ganadero Santa Cruz",
     lote: {
@@ -386,13 +386,13 @@ export default function AdminPanelScreen({ navigation }) {
       const softDelete = action === "update" && data?.visible === false;
       if (action === "delete" || softDelete) {
         clearCardFeedback();
-        showToast("Remate eliminado");
+        showToast("Prelance eliminado");
       } else if (action === "create") {
         flashSuccessCard("remate", saved?.id);
-        showToast("Remate creado");
+        showToast("Prelance creado");
       } else {
         flashSuccessCard("remate", auctionId);
-        showToast("Remate actualizado");
+        showToast("Prelance actualizado");
       }
       return saved;
     } catch (error) {
@@ -453,7 +453,7 @@ export default function AdminPanelScreen({ navigation }) {
       }));
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "No se pudieron cargar los remates");
+      Alert.alert("Error", "No se pudieron cargar los prelances");
     }
   };
 
@@ -461,7 +461,7 @@ export default function AdminPanelScreen({ navigation }) {
     if (!remate?.id) return;
 
     if (isRemateFinalizado(remate.estado)) {
-      Alert.alert("Remate finalizado", "Este remate ya está marcado como finalizado.");
+      Alert.alert("Prelance finalizado", "Este prelance ya está marcado como finalizado.");
       return;
     }
 
@@ -475,13 +475,13 @@ export default function AdminPanelScreen({ navigation }) {
     if (!loteParaFinalizar) {
       Alert.alert(
         "Lote requerido",
-        "Abrí un lote de este remate en la app o andá a la pestaña Lotes para que el sistema identifique el lote activo, y volvé a intentar."
+        "Abrí un lote de este prelance en la app o andá a la pestaña Lotes para que el sistema identifique el lote activo, y volvé a intentar."
       );
       return;
     }
 
     Alert.alert(
-      "Finalizar remate",
+      "Finalizar prelance",
       `¿Finalizar "${remate.nombre}"? Se notificará a los usuarios conectados y no podrán seguir pujando en vivo.`,
       [
         { text: "Cancelar", style: "cancel" },
@@ -493,10 +493,10 @@ export default function AdminPanelScreen({ navigation }) {
             try {
               await finalizarLote(remate.id, loteParaFinalizar);
               await loadAuctions(auctionPage);
-              Alert.alert("Listo", "Remate finalizado correctamente.");
+              Alert.alert("Listo", "Prelance finalizado correctamente.");
             } catch (error) {
               console.error(error);
-              Alert.alert("Error", "No se pudo finalizar el remate.");
+              Alert.alert("Error", "No se pudo finalizar el prelance.");
             } finally {
               setLoading(false);
             }
@@ -842,7 +842,7 @@ export default function AdminPanelScreen({ navigation }) {
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }>
-      {renderSearchRow("Buscar remates...", auctionSearchQuery, setAuctionSearchQuery, true)}
+      {renderSearchRow("Buscar prelances...", auctionSearchQuery, setAuctionSearchQuery, true)}
       {auctions
         .filter(a =>
           a.nombre.toLowerCase().includes(auctionSearchQuery.toLowerCase())
@@ -896,7 +896,7 @@ export default function AdminPanelScreen({ navigation }) {
                     style={stylesCardRemate.finalizadoChip}
                     textStyle={stylesCardRemate.finalizadoChipText}
                   >
-                    Remate finalizado
+                    Prelance finalizado
                   </Chip>
                 ) : (
                   <Button
@@ -909,7 +909,7 @@ export default function AdminPanelScreen({ navigation }) {
                     labelStyle={stylesCardRemate.finishButtonLabel}
                     onPress={() => handleFinalizarRemate(a)}
                   >
-                    Finalizar remate
+                    Finalizar prelance
                   </Button>
                 )}
 
@@ -920,7 +920,7 @@ export default function AdminPanelScreen({ navigation }) {
 
           )
         })}
-      {renderPagination(auctionPage, auctionTotalPages, auctionTotalElements, loadAuctions, "remates")}
+      {renderPagination(auctionPage, auctionTotalPages, auctionTotalElements, loadAuctions, "prelances")}
     </ScrollView>
   );
   //---------------------Lotes ----------------------------------
@@ -956,7 +956,7 @@ export default function AdminPanelScreen({ navigation }) {
 
                     {/* Información de cabana/remate */}
                     <View style={{ marginTop: 10 }}>
-                      <Text style={{ fontWeight: "bold" }}>Remate:</Text>
+                      <Text style={{ fontWeight: "bold" }}>Prelance:</Text>
                       <Text>{l.remate?.nombre}</Text>
                       <Text style={{ color: CattleColors.mediumGray }}>
                         Cabaña: {l.cabana?.nombre}
@@ -1131,7 +1131,7 @@ export default function AdminPanelScreen({ navigation }) {
         <Title style={styles.title}>PANEL ADMINISTADOR</Title>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsContainer} contentContainerStyle={styles.tabsContent}>
           {renderTabButton('usuarios', 'Usuarios', 'account')}
-          {renderTabButton('remates', 'Remates', 'calendar')}
+          {renderTabButton('remates', 'Prelances', 'calendar')}
           {renderTabButton('lotes', 'Lotes', 'cow')}
           {renderTabButton('cabanas', 'Cabañas', 'home')}
           {renderTabButton('pujas', 'Pujas', 'gavel')}
@@ -1356,7 +1356,7 @@ export default function AdminPanelScreen({ navigation }) {
 
                 if (!remateId) {
                   throw new Error(
-                    'No se obtuvo el ID del remate.'
+                    'No se obtuvo el ID del prelance.'
                   );
                 }
 
@@ -1438,7 +1438,7 @@ export default function AdminPanelScreen({ navigation }) {
                 Alert.alert(
                   'Error',
                   error.message ||
-                  'No se pudo guardar el remate.'
+                  'No se pudo guardar el prelance.'
                 );
               } finally {
                 setModalSaving(false);
@@ -1562,7 +1562,7 @@ export default function AdminPanelScreen({ navigation }) {
                   )}
                 </RadioButton.Group>
 
-                <Text style={styles.modalSectionLabel}>Remate</Text>
+                <Text style={styles.modalSectionLabel}>Prelance</Text>
                 <RadioButton.Group
                   onValueChange={(value) =>
                     setEditingLot((prev) => ({
@@ -1588,7 +1588,7 @@ export default function AdminPanelScreen({ navigation }) {
                       />
                     ))
                   ) : (
-                    <List.Item title="No hay remates disponibles" />
+                    <List.Item title="No hay prelances disponibles" />
                   )}
                 </RadioButton.Group>
               </ScrollView>
@@ -1881,7 +1881,7 @@ const styles = StyleSheet.create({
   },
 });
 const reporte = {
-  remate: "Remate Primavera 2025",
+  remate: "Prelance Primavera 2025",
   fecha: "30/10/2025",
   lugar: "Centro Ganadero Santa Cruz",
   lote: {

@@ -13,8 +13,8 @@ export function procesarEvento(mensaje, navigation) {
   finRemateEnCurso = true;
 
   Alert.alert(
-    "Remate finalizado",
-    "Este remate ha finalizado. Ya no podés participar en sus lotes.",
+    "Prelance finalizado",
+    "Este prelance ha finalizado. Ya no podés participar en sus lotes.",
     [
       {
         text: "Entendido",

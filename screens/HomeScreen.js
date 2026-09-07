@@ -25,7 +25,7 @@ import {
     saveMyPuja,
     setCurrentViewedLote,
 } from "../services/pujaPersistence";
-import { notifyOutbid, registerExpoPushToken } from "../services/outbidNotifications";
+import { notifyOutbid } from "../services/outbidAlert";
 import apiClient from "../api/apiClient";
 
 const pickRemateCatalogUrl = (...candidates) => {
@@ -279,7 +279,7 @@ usePujaWebSocket({
         if (!remateid) {
             Alert.alert(
                 "Error",
-                "No se pudo identificar el remate de este lote.",
+                "No se pudo identificar el prelance de este lote.",
                 [{ text: "OK", onPress: () => navigation.goBack() }]
             );
         }
@@ -342,7 +342,6 @@ usePujaWebSocket({
                 userIdRef.current = loadedUserId;
                 setUserId(loadedUserId);
                 await AsyncStorage.setItem("userId", String(loadedUserId));
-                registerExpoPushToken(loadedUserId, authHeaderRef.current);
             } catch (e) {
                 console.log("Error precargando usuario:", e);
             }
@@ -604,12 +603,12 @@ usePujaWebSocket({
         try {
             const canOpen = await Linking.canOpenURL(url);
             if (!canOpen) {
-                Alert.alert("Enlace no válido", "La URL del catálogo de este remate no es válida.");
+                Alert.alert("Enlace no válido", "La URL del catálogo de este prelance no es válida.");
                 return;
             }
             await Linking.openURL(url);
         } catch (error) {
-            Alert.alert("Error", "No se pudo abrir el catálogo del remate.");
+            Alert.alert("Error", "No se pudo abrir el catálogo del prelance.");
         }
     };
 

@@ -19,7 +19,7 @@ export default function RemateDetailScreen({ route, navigation }) {
   return (
     <View style={{ flex: 1, padding: 10 }}>
       <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
-        Remate: {remate.nombre}
+        Prelance: {remate.nombre}
       </Text>
       <FlatList
         data={lotes}

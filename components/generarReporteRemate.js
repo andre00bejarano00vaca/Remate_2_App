@@ -45,7 +45,7 @@ export const generarReporteRemate = async (remateNombre, pujas) => {
       </head>
       <body>
           <h1>Reporte de Adjudicación</h1>
-          <h2>Remate: ${remateNombre}</h2>
+          <h2>Prelance: ${remateNombre}</h2>
 
           <table>
             <thead>
@@ -89,7 +89,7 @@ export const generarReporteRemate = async (remateNombre, pujas) => {
     await FileSystem.moveAsync({ from: uri, to: pdfName });
     await Sharing.shareAsync(pdfName, {
       mimeType: "application/pdf",
-      dialogTitle: "Enviar Reporte de Remate",
+      dialogTitle: "Enviar Reporte de Prelance",
     });
 
     return pdfName;

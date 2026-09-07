@@ -147,7 +147,7 @@ export default function RematesListScreen({ navigation }) {
         <TouchableOpacity
           activeOpacity={0.9}
           accessibilityRole="button"
-          accessibilityLabel={item?.nombre || "Remate"}
+          accessibilityLabel={item?.nombre || "Prelance"}
           onPress={async () => {
            await AsyncStorage.setItem('remate', `${item.id}`);
            navigation.navigate('LotesList', { remate: item });
@@ -170,7 +170,7 @@ export default function RematesListScreen({ navigation }) {
     return (
       <SafeAreaView style={styles.container}>
         <AppHeader
-          title="Remates"
+          title="Prelances"
           onMenu={() => setMenuVisible(true)}
           onLogout={logout}
         />
@@ -195,7 +195,7 @@ export default function RematesListScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <AppHeader
-        title="Remates"
+        title="Prelances"
         onMenu={() => setMenuVisible(true)}
         onLogout={logout}
       />
@@ -228,11 +228,11 @@ export default function RematesListScreen({ navigation }) {
         ListEmptyComponent={() => (
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>
-              Sin remates
+              Sin prelances
             </Text>
 
             <Text style={styles.emptyText}>
-              Aún no hay remates disponibles.
+              Aún no hay prelances disponibles.
             </Text>
           </View>
         )}

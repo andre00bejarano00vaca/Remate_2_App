@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, View, StyleSheet, TouchableOpacity } from "react-native";
+import { Modal, View, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { IconButton, Text, Divider } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -35,14 +35,20 @@ export default function SideMenu({
         <SafeAreaView style={styles.menuSafe}>
           <View style={styles.menu}>
             <View style={styles.header}>
-              <Text style={styles.title}>Menú</Text>
-              <IconButton icon="close" size={20} onPress={onClose} />
+              <View style={styles.brandRow}>
+                <Image
+                  source={require("../assets/logo.png")}
+                  style={styles.brandLogo}
+                  accessibilityLabel="FERCOGAN Eventos Élite Prelance"
+                />
+                <IconButton icon="close" size={20} onPress={onClose} iconColor={CattleColors.white} />
+              </View>
             </View>
             <Divider style={styles.divider} />
 
             <TouchableOpacity style={styles.item} onPress={() => navigateTo("RematesList")}>
               <IconButton icon="home" size={20} iconColor={CattleColors.primary} />
-              <Text style={styles.itemText}>Remates</Text>
+              <Text style={styles.itemText}>Prelances</Text>
             </TouchableOpacity>
 
             {remate && (
@@ -94,14 +100,21 @@ const styles = StyleSheet.create({
     ...CattleShadows.card,
   },
   header: {
+    backgroundColor: CattleColors.primary,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    marginBottom: 4,
+  },
+  brandRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: CattleColors.primary,
+  brandLogo: {
+    flex: 1,
+    height: 56,
+    resizeMode: "contain",
   },
   divider: {
     marginVertical: 12,

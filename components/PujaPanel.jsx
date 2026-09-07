@@ -158,7 +158,7 @@ export default function PujaPanel({
           <View>
             <Text style={styles.liveLabel}>LOTE EN VIVO</Text>
             <Text style={styles.liveHint}>
-              {winning ? "Estás al frente" : losing ? "Recuperá la delantera" : "Oferta actual del remate"}
+              {winning ? "Estás al frente" : losing ? "Recuperá la delantera" : "Oferta actual del prelance"}
             </Text>
           </View>
           <View

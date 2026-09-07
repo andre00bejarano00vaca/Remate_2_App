@@ -1,40 +1,38 @@
 import React, { useEffect } from "react";
 import { View, ScrollView, StyleSheet, Dimensions } from "react-native";
 import { Card, Text, Button } from "react-native-paper";
-import { Video } from "expo-av";
+import { useVideoPlayer, VideoView } from "expo-video";
 
 const { width } = Dimensions.get("window");
 
 export default function LoteDetailScreen({ route, navigation }) {
   const { lote, remate } = route.params || {};
+  const videoUri =
+    lote?.videoUrl || "https://www.w3schools.com/html/mov_bbb.mp4";
+
+  const player = useVideoPlayer(videoUri, (p) => {
+    p.loop = true;
+    p.play();
+  });
 
   useEffect(() => {
     if (!lote) {
       navigation.goBack();
     }
-  }, [lote]);
+  }, [lote, navigation]);
 
   return (
     <ScrollView style={styles.container}>
-      {/* 🎥 Video del Lote */}
       <View style={styles.videoContainer}>
-        <Video
-          source={{
-            uri:
-              lote?.videoUrl ||
-              "https://www.w3schools.com/html/mov_bbb.mp4", // Fallback
-          }}
-          rate={1.0}
-          volume={1.0}
-          resizeMode="cover"
-          shouldPlay
-          isLooping
-          useNativeControls
+        <VideoView
+          player={player}
           style={styles.video}
+          contentFit="cover"
+          nativeControls
+          fullscreenOptions={{ enable: true }}
         />
       </View>
 
-      {/* 🐄 Detalles del Lote */}
       <Card style={styles.detailCard}>
         <Card.Content>
           <Text style={styles.sectionTitle}>🐄 Detalles del Lote</Text>
@@ -57,7 +55,6 @@ export default function LoteDetailScreen({ route, navigation }) {
         </Card.Content>
       </Card>
 
-      {/* 📍 Información del Remate */}
       <Card style={styles.detailCard}>
         <Card.Content>
           <Text style={styles.sectionTitle}>📍 Información del Remate</Text>
@@ -76,7 +73,6 @@ export default function LoteDetailScreen({ route, navigation }) {
         </Card.Content>
       </Card>
 
-      {/* 🛒 Botones de acción */}
       <View style={styles.actions}>
         <Button
           mode="contained"
@@ -103,7 +99,7 @@ export default function LoteDetailScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F4F4F4", // gris claro de fondo
+    backgroundColor: "#F4F4F4",
     padding: 16,
   },
   videoContainer: {
@@ -112,7 +108,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: "hidden",
     marginBottom: 20,
-    backgroundColor: "#000", // fondo negro por si el video no carga
+    backgroundColor: "#000",
   },
   video: {
     width: "100%",

@@ -114,7 +114,7 @@ export default function LotesListScreen({ route, navigation }) {
 
     if (!remateId) {
 
-      Alert.alert("Error", "Remate no especificado");
+      Alert.alert("Error", "Prelance no especificado");
 
       navigation.goBack();
 
@@ -192,7 +192,7 @@ export default function LotesListScreen({ route, navigation }) {
 
       <View style={styles.center}>
 
-        <Text>No se recibieron datos del remate.</Text>
+        <Text>No se recibieron datos del prelance.</Text>
 
       </View>
 
@@ -262,7 +262,7 @@ export default function LotesListScreen({ route, navigation }) {
 
         <View style={styles.sectionHeader}>
 
-          <Text style={styles.sectionLabel}>Remate</Text>
+          <Text style={styles.sectionLabel}>Prelance</Text>
 
           <Text style={styles.sectionTitle}>{remate?.nombre || remate?.name}</Text>
 
@@ -302,7 +302,7 @@ export default function LotesListScreen({ route, navigation }) {
 
                 <Text style={styles.emptyTitle}>Sin lotes</Text>
 
-                <Text style={styles.emptyText}>No hay lotes para este remate.</Text>
+                <Text style={styles.emptyText}>No hay lotes para este prelance.</Text>
 
               </View>
 

@@ -44,7 +44,7 @@ export default function LoteInfoScreen() {
       {/* Remate */}
       {lote.remate && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Remate</Text>
+          <Text style={styles.sectionTitle}>Prelance</Text>
           <Text style={styles.info}><Text style={styles.label}>Nombre:</Text> {lote.remate.nombre}</Text>
           <Text style={styles.info}><Text style={styles.label}>Fecha:</Text> {lote.remate.fecha}</Text>
           <Text style={styles.info}><Text style={styles.label}>URL Lista Lotes:</Text> {lote.remate.urlListaLotes}</Text>

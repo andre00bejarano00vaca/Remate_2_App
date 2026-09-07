@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { IconButton, Text } from "react-native-paper";
 import { CattleColors } from "../styles/colors";
@@ -15,9 +15,18 @@ export default function AppHeader({ title, onMenu, onLogout }) {
           onPress={onMenu}
           style={styles.iconButton}
         />
-        <Text style={styles.title} numberOfLines={1}>
-          {title}
-        </Text>
+        <View style={styles.center}>
+          <Image
+            source={require("../assets/logo.png")}
+            style={styles.logo}
+            accessibilityLabel="FERCOGAN Eventos Élite Prelance"
+          />
+          {title ? (
+            <Text style={styles.title} numberOfLines={1}>
+              {title}
+            </Text>
+          ) : null}
+        </View>
         <IconButton
           icon="logout"
           size={20}
@@ -37,14 +46,26 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    backgroundColor: CattleColors.primary,
+  },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logo: {
+    width: "100%",
+    maxWidth: 220,
+    height: 44,
+    resizeMode: "contain",
   },
   title: {
-    flex: 1,
-    fontSize: 17,
-    fontWeight: "700",
-    color: CattleColors.white,
+    marginTop: 2,
+    fontSize: 13,
+    fontWeight: "600",
+    color: CattleColors.accent,
     textAlign: "center",
   },
   iconButton: {
