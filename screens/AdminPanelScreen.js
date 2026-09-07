@@ -45,6 +45,9 @@ import { DatePickerModal } from 'react-native-paper-dates';
 import RematesScreen from "../components/RematesScreen";
 import AppHeader from "../components/AppHeader";
 import SideMenu from "../components/SideMenu";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const TAB_SCROLL_EXTRA_BOTTOM = 32;
 
 const isRemateFinalizado = (estado) =>
   String(estado ?? "")
@@ -54,6 +57,11 @@ const isRemateFinalizado = (estado) =>
 export default function AdminPanelScreen({ navigation }) {
 
   const PAGE_SIZE = 20;
+  const insets = useSafeAreaInsets();
+  const tabScrollContentStyle = {
+    paddingTop: 10,
+    paddingBottom: Math.max(insets.bottom, 0) + TAB_SCROLL_EXTRA_BOTTOM,
+  };
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -787,7 +795,7 @@ export default function AdminPanelScreen({ navigation }) {
 
   // Render Users Tabs
   const renderUsersTab = () => (
-    <ScrollView contentContainerStyle={{ paddingVertical: 10 }}
+    <ScrollView contentContainerStyle={tabScrollContentStyle}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }>
@@ -877,7 +885,7 @@ export default function AdminPanelScreen({ navigation }) {
 
   //-------------remates---------------
   const renderAuctionsTab = () => (
-    <ScrollView contentContainerStyle={{ paddingVertical: 10 }}
+    <ScrollView contentContainerStyle={tabScrollContentStyle}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }>
@@ -968,7 +976,7 @@ export default function AdminPanelScreen({ navigation }) {
   );
 
   const renderLotsTab = () => (
-    <ScrollView contentContainerStyle={{ paddingVertical: 10 }}
+    <ScrollView contentContainerStyle={tabScrollContentStyle}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }>
@@ -1071,7 +1079,7 @@ export default function AdminPanelScreen({ navigation }) {
 
   //--------------------cabanas -------------------------
   const renderCabanasTab = () => (
-    <ScrollView contentContainerStyle={{ paddingVertical: 10 }}
+    <ScrollView contentContainerStyle={tabScrollContentStyle}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }>
@@ -1119,7 +1127,7 @@ export default function AdminPanelScreen({ navigation }) {
   // -------------------pujas-----------------------------
   // ------------------- RENDER TAB PUJAS -----------------------------
   const renderBidsTab = () => (
-    <ScrollView contentContainerStyle={{ paddingVertical: 10 }}
+    <ScrollView contentContainerStyle={tabScrollContentStyle}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }>

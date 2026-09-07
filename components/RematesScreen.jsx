@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { apiBaseUrl } from "../config/env";
-import { View, FlatList, ActivityIndicator } from "react-native";
+import { View, FlatList, ActivityIndicator, StyleSheet } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CardRemate from "./CardRemate";
+
+const EXTRA_BOTTOM = 32;
 
 export default function RematesScreen() {
   const [remates, setRemates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     const fetchRemates = async () => {
@@ -39,12 +43,22 @@ export default function RematesScreen() {
   }
 
   return (
-    <View>
+    <View style={styles.container}>
       <FlatList
         data={remates}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => <CardRemate remate={item} />}
+        contentContainerStyle={{
+          paddingTop: 10,
+          paddingBottom: Math.max(insets.bottom, 0) + EXTRA_BOTTOM,
+        }}
       />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});

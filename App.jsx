@@ -6,6 +6,7 @@ import { ActivityIndicator, View } from "react-native";
 import { useFonts, Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
 import { CattleColors } from "./styles/colors";
 import { cattlePaperTheme } from "./styles/paperTheme";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import LoginScreen from "./screens/LoginScreen";
 import VerifyUserScreen from "./screens/VerifyUserScreen";
 import RematesListScreen from "./screens/RematesListScreen";
@@ -75,21 +76,23 @@ export default function App() {
   }
 
   return (
-    <PaperProvider theme={paperTheme}>
-      <NavigationContainer ref={navigationRef} theme={navTheme}>
-        <OutbidWatcherHost />
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="VerifyUser" component={VerifyUserScreen} />
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="RematesList" component={RematesListScreen} />
-          <Stack.Screen name="RemateDetail" component={RemateDetailScreen} />
-          <Stack.Screen name="LotesList" component={LoteListScreen} />
-          <Stack.Screen name="LoteDetail" component={LoteDetailScreenWrapper} />
-          <Stack.Screen name="PendingApproval" component={PendingApprovalScreen} />
-          <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </PaperProvider>
+    <SafeAreaProvider>
+      <PaperProvider theme={paperTheme}>
+        <NavigationContainer ref={navigationRef} theme={navTheme}>
+          <OutbidWatcherHost />
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="VerifyUser" component={VerifyUserScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="RematesList" component={RematesListScreen} />
+            <Stack.Screen name="RemateDetail" component={RemateDetailScreen} />
+            <Stack.Screen name="LotesList" component={LoteListScreen} />
+            <Stack.Screen name="LoteDetail" component={LoteDetailScreenWrapper} />
+            <Stack.Screen name="PendingApproval" component={PendingApprovalScreen} />
+            <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </PaperProvider>
+    </SafeAreaProvider>
   );
 }
 
