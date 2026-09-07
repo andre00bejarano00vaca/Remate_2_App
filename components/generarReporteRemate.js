@@ -7,7 +7,6 @@ const formatearFechaPuja = (fecha) => {
 
   const date = new Date(fecha);
   if (Number.isNaN(date.getTime())) {
-    // Fallback para strings tipo "2026-09-07T14:27:00"
     const [dia, hora] = String(fecha).split("T");
     if (!dia) return String(fecha);
     const [y, m, d] = dia.split("-");
@@ -28,34 +27,40 @@ const formatearFechaPuja = (fecha) => {
 
 export const generarReporteRemate = async (remateNombre, pujas) => {
   try {
+    if (!Array.isArray(pujas) || pujas.length === 0) {
+      console.log("No hay pujas para el reporte");
+      return;
+    }
+
     const lotesMap = {};
 
-    // 1. Agrupar y extraer datos según tu JSON
     pujas.forEach((p) => {
-      const loteId = p.lote.id;
-      const user = p.usuario; // Objeto usuario del JSON
+      const loteId = p.lote?.id;
+      if (loteId == null) return;
+
+      const user = p.usuario || {};
 
       if (!lotesMap[loteId]) {
         lotesMap[loteId] = {
-          nombreLote: p.lote.nombre,
-          pujas: [] 
+          nombreLote: p.lote?.nombre || `Lote ${loteId}`,
+          pujas: [],
         };
       }
-      
+
       lotesMap[loteId].pujas.push({
         nombre: user.nombre || "Sin Nombre",
         ci: user.ci || "S/CI",
         correo: user.username || "S/D",
         celular: user.celular || "S/C",
-        monto: p.monto,
+        monto: Number(p.monto) || 0,
         fecha: formatearFechaPuja(p.fecha),
       });
     });
 
-    // 2. Construcción del HTML
     const html = `
       <html>
       <head>
+        <meta charset="utf-8" />
         <style>
           body { font-family: Arial, sans-serif; padding: 15px; }
           h1 { text-align: center; color: #2c3e50; font-size: 22px; }
@@ -71,7 +76,7 @@ export const generarReporteRemate = async (remateNombre, pujas) => {
       </head>
       <body>
           <h1>Reporte de Adjudicación</h1>
-          <h2>Prelance: ${remateNombre}</h2>
+          <h2>Prelance: ${remateNombre || ""}</h2>
 
           <table>
             <thead>
@@ -87,12 +92,16 @@ export const generarReporteRemate = async (remateNombre, pujas) => {
               </tr>
             </thead>
             <tbody>
-              ${Object.values(lotesMap).map((lote) => 
-                lote.pujas.map((p, index) => `
+              ${Object.values(lotesMap)
+                .map((lote) =>
+                  lote.pujas
+                    .map(
+                      (p, index) => `
                   <tr>
-                    ${index === 0 
-                      ? `<td rowspan="${lote.pujas.length}" class="lote-header">${lote.nombreLote}</td>` 
-                      : "" 
+                    ${
+                      index === 0
+                        ? `<td rowspan="${lote.pujas.length}" class="lote-header">${lote.nombreLote}</td>`
+                        : ""
                     }
                     <td class="posicion">${index + 1}º</td>
                     <td>${p.nombre}</td>
@@ -102,25 +111,45 @@ export const generarReporteRemate = async (remateNombre, pujas) => {
                     <td class="fecha">${p.fecha}</td>
                     <td class="monto">$${p.monto.toLocaleString()}</td>
                   </tr>
-                `).join("")
-              ).join("")}
+                `
+                    )
+                    .join("")
+                )
+                .join("")}
             </tbody>
           </table>
       </body>
       </html>
     `;
 
-    // 3. Generación y Envío del PDF
-    const { uri } = await Print.printToFileAsync({ html });
-    const pdfName = FileSystem.documentDirectory + `Reporte_${remateNombre.replace(/\s+/g, '_')}.pdf`;
+    // En Expo Go el archivo de Print no es legible. Pedimos el PDF en base64
+    // y lo escribimos nosotros en cache de la app para poder compartirlo.
+    const { base64 } = await Print.printToFileAsync({ html, base64: true });
+    if (!base64) {
+      throw new Error("No se recibió el PDF en base64");
+    }
 
-    await FileSystem.moveAsync({ from: uri, to: pdfName });
-    await Sharing.shareAsync(pdfName, {
-      mimeType: "application/pdf",
-      dialogTitle: "Enviar Reporte de Prelance",
+    const safeName = `Reporte_${String(remateNombre || "remate").replace(/[^\w\-]+/g, "_")}.pdf`;
+    const localUri = `${FileSystem.cacheDirectory}${safeName}`;
+
+    await FileSystem.writeAsStringAsync(localUri, base64, {
+      encoding: FileSystem.EncodingType.Base64,
     });
 
-    return pdfName;
+    const canShare = await Sharing.isAvailableAsync();
+    if (!canShare) {
+      await Print.printAsync({ html });
+      return localUri;
+    }
+
+    // expo-sharing espera file:// (no content://)
+    await Sharing.shareAsync(localUri, {
+      mimeType: "application/pdf",
+      dialogTitle: "Enviar Reporte de Prelance",
+      UTI: "com.adobe.pdf",
+    });
+
+    return localUri;
   } catch (error) {
     console.error("Error al generar PDF:", error);
   }
