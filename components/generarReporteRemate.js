@@ -2,6 +2,30 @@ import * as Print from "expo-print";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 
+const formatearFechaPuja = (fecha) => {
+  if (!fecha) return "—";
+
+  const date = new Date(fecha);
+  if (Number.isNaN(date.getTime())) {
+    // Fallback para strings tipo "2026-09-07T14:27:00"
+    const [dia, hora] = String(fecha).split("T");
+    if (!dia) return String(fecha);
+    const [y, m, d] = dia.split("-");
+    const horaCorta = (hora || "").slice(0, 8);
+    return horaCorta ? `${d}/${m}/${y} ${horaCorta}` : `${d}/${m}/${y}`;
+  }
+
+  return date.toLocaleString("es-BO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+};
+
 export const generarReporteRemate = async (remateNombre, pujas) => {
   try {
     const lotesMap = {};
@@ -23,7 +47,8 @@ export const generarReporteRemate = async (remateNombre, pujas) => {
         ci: user.ci || "S/CI",
         correo: user.username || "S/D",
         celular: user.celular || "S/C",
-        monto: p.monto
+        monto: p.monto,
+        fecha: formatearFechaPuja(p.fecha),
       });
     });
 
@@ -37,10 +62,11 @@ export const generarReporteRemate = async (remateNombre, pujas) => {
           h2 { color: #7f8c8d; font-size: 16px; margin-bottom: 20px; }
           table { width: 100%; border-collapse: collapse; }
           th { background-color: #f8f9fa; color: #333; font-weight: bold; text-transform: uppercase; font-size: 10px; }
-          th, td { border: 1px solid #dee2e6; padding: 8px; text-align: left; }
-          .lote-header { background-color: #ffffff; font-weight: bold; vertical-align: middle; width: 15%; }
-          .posicion { text-align: center; width: 40px; }
-          .monto { font-weight: bold; color: #27ae60; }
+          th, td { border: 1px solid #dee2e6; padding: 8px; text-align: left; font-size: 11px; }
+          .lote-header { background-color: #ffffff; font-weight: bold; vertical-align: middle; width: 12%; }
+          .posicion { text-align: center; width: 36px; }
+          .fecha { white-space: nowrap; font-size: 10px; color: #555; }
+          .monto { font-weight: bold; color: #27ae60; white-space: nowrap; }
         </style>
       </head>
       <body>
@@ -56,6 +82,7 @@ export const generarReporteRemate = async (remateNombre, pujas) => {
                 <th>C.I.</th>
                 <th>Correo / User</th>
                 <th>Celular</th>
+                <th>Fecha / Hora</th>
                 <th>Monto Puja</th>
               </tr>
             </thead>
@@ -72,6 +99,7 @@ export const generarReporteRemate = async (remateNombre, pujas) => {
                     <td>${p.ci}</td>
                     <td>${p.correo}</td>
                     <td>${p.celular}</td>
+                    <td class="fecha">${p.fecha}</td>
                     <td class="monto">$${p.monto.toLocaleString()}</td>
                   </tr>
                 `).join("")
