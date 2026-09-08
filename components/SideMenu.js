@@ -37,7 +37,7 @@ export default function SideMenu({
             <View style={styles.header}>
               <View style={styles.brandRow}>
                 <Image
-                  source={require("../assets/logo.png")}
+                  source={require("../assets/header.png")}
                   style={styles.brandLogo}
                   accessibilityLabel="FERCOGAN Eventos Élite Prelance"
                 />

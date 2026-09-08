@@ -8,7 +8,7 @@ import {
   markNotifiedOutbid,
   markPujaOutbid,
 } from "../services/pujaPersistence";
-import { notifyOutbid } from "../services/outbidAlert";
+import { notifyOutbid } from "../services/auctionAlerts";
 import { parseContadorResponse } from "./usePujaWebSocket";
 
 const POLL_MS = 6000;
@@ -30,7 +30,9 @@ export default function useOutbidWatcher() {
 
         const watched = await getWatchedPujas(userId);
         const pending = watched.filter(
-          (item) => item.status !== "outbid" || !item.notifiedOutbid
+          (item) =>
+            item.status !== "won" &&
+            (item.status !== "outbid" || !item.notifiedOutbid)
         );
         if (!pending.length) return;
 

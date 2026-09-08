@@ -170,7 +170,7 @@ export default function RematesListScreen({ navigation }) {
     return (
       <SafeAreaView style={styles.container}>
         <AppHeader
-          title="Prelances"
+          title="PRELANCES"
           onMenu={() => setMenuVisible(true)}
           onLogout={logout}
         />
@@ -195,7 +195,7 @@ export default function RematesListScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <AppHeader
-        title="Prelances"
+        title="PRELANCES"
         onMenu={() => setMenuVisible(true)}
         onLogout={logout}
       />

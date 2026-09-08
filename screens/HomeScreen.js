@@ -25,7 +25,7 @@ import {
     saveMyPuja,
     setCurrentViewedLote,
 } from "../services/pujaPersistence";
-import { notifyOutbid } from "../services/outbidAlert";
+import { notifyOutbid } from "../services/auctionAlerts";
 import apiClient from "../api/apiClient";
 
 const pickRemateCatalogUrl = (...candidates) => {
@@ -96,7 +96,7 @@ export default function HomeScreen({ navigation, route }) {
     const authHeaderRef = useRef({});
     ///esta funcion es para sacar a las personas del remate
     useEventosWS(remateid, (mensaje) => {
-        procesarEvento(mensaje, navigation);
+        procesarEvento(mensaje, navigation, remateid);
     });
 
 
@@ -194,6 +194,12 @@ usePujaWebSocket({
             remateId: remateid,
         });
         await markNotifiedOutbid(userId, loteid);
+    },
+    onFinalizado: () => {
+        // Victoria se confirma en FIN_REMATE (procesarEvento) para un solo Alert
+        setIsWinning(false);
+        setStatusMessage("Prelance finalizado");
+        setShowStatus(true);
     },
 });
 

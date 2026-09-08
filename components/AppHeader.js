@@ -6,7 +6,7 @@ import { CattleColors } from "../styles/colors";
 
 export default function AppHeader({ title, onMenu, onLogout }) {
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <View style={styles.container}>
         <IconButton
           icon="menu"
@@ -17,7 +17,7 @@ export default function AppHeader({ title, onMenu, onLogout }) {
         />
         <View style={styles.center}>
           <Image
-            source={require("../assets/logo.png")}
+            source={require("../assets/header.png")}
             style={styles.logo}
             accessibilityLabel="FERCOGAN Eventos Élite Prelance"
           />
@@ -47,7 +47,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 8,
-    paddingVertical: 6,
+    paddingTop: 4,
+    paddingBottom: 6,
     backgroundColor: CattleColors.primary,
   },
   center: {
@@ -57,14 +58,14 @@ const styles = StyleSheet.create({
   },
   logo: {
     width: "100%",
-    maxWidth: 220,
-    height: 44,
+    maxWidth: 340,
+    height: 52,
     resizeMode: "contain",
   },
   title: {
     marginTop: 2,
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: 20,
+    fontWeight: "700",
     color: CattleColors.accent,
     textAlign: "center",
   },

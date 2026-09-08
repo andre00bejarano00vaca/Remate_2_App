@@ -86,6 +86,7 @@ export default function usePujaWebSocket({
     userIdRef,
     isWinning,
     onOutbid,
+    onFinalizado,
 }) {
     const ws = useRef(null);
     const reconnectTimeout = useRef(null);
@@ -97,6 +98,8 @@ export default function usePujaWebSocket({
     isWinningRef.current = isWinning;
     const onOutbidRef = useRef(onOutbid);
     onOutbidRef.current = onOutbid;
+    const onFinalizadoRef = useRef(onFinalizado);
+    onFinalizadoRef.current = onFinalizado;
 
     const applyEstado = (estado) => {
         if (!estado || estado.finalizado) return;
@@ -233,6 +236,7 @@ export default function usePujaWebSocket({
                 }
                 if (estado.finalizado) {
                     console.log('[PUJA WS] lote/remate finalizado');
+                    onFinalizadoRef.current?.();
                     return;
                 }
 

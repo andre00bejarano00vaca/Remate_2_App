@@ -180,7 +180,7 @@ export default function LotesListScreen({ route, navigation }) {
 
   useEventosWS(remateId, (mensaje) => {
 
-    procesarEvento(mensaje, navigation);
+    procesarEvento(mensaje, navigation, remateId);
 
   });
 
@@ -222,7 +222,7 @@ export default function LotesListScreen({ route, navigation }) {
 
       <AppHeader
 
-        title="Lotes"
+        title="LOTES"
 
         onMenu={() => setMenuVisible(true)}
 

@@ -55,6 +55,7 @@ export async function saveMyPuja({
     numeroLote: numeroLote ?? null,
     status: "winning",
     notifiedOutbid: false,
+    notifiedWon: false,
     updatedAt: Date.now(),
   };
 
@@ -105,6 +106,55 @@ export async function markNotifiedOutbid(userId, loteId) {
   const updated = {
     ...existing,
     notifiedOutbid: true,
+    updatedAt: Date.now(),
+  };
+
+  await AsyncStorage.setItem(pujaKey(userId, loteId), JSON.stringify(updated));
+
+  const watched = await getWatchedPujas(userId);
+  await writeWatched(
+    userId,
+    watched.map((item) =>
+      Number(item.loteId) === Number(loteId) ? updated : item
+    )
+  );
+
+  return updated;
+}
+
+export async function markPujaWon({ userId, loteId, montoFinal }) {
+  const existing = await getMyPuja(userId, loteId);
+  if (!existing) return null;
+
+  const updated = {
+    ...existing,
+    status: "won",
+    montoFinal:
+      montoFinal != null ? Number(montoFinal) : existing.montoFinal ?? existing.monto,
+    updatedAt: Date.now(),
+  };
+
+  await AsyncStorage.setItem(pujaKey(userId, loteId), JSON.stringify(updated));
+
+  const watched = await getWatchedPujas(userId);
+  await writeWatched(
+    userId,
+    watched.map((item) =>
+      Number(item.loteId) === Number(loteId) ? updated : item
+    )
+  );
+
+  return updated;
+}
+
+export async function markNotifiedWon(userId, loteId) {
+  const existing = await getMyPuja(userId, loteId);
+  if (!existing) return null;
+
+  const updated = {
+    ...existing,
+    notifiedWon: true,
+    status: existing.status === "winning" ? "won" : existing.status,
     updatedAt: Date.now(),
   };
 
