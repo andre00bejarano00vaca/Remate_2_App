@@ -33,5 +33,9 @@ yarn-error.*
 # local env files
 .env*.local
 
+# Firebase / FCM secrets (nunca subir la private key)
+*-firebase-adminsdk-*.json
+**/firebase-adminsdk*.json
+
 # typescript
 *.tsbuildinfo

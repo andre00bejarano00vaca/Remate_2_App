@@ -24,7 +24,8 @@
         "android.permission.INTERNET",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
-      "package": "com.andre_bejarano.remateganadero"
+      "package": "com.andre_bejarano.remateganadero",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
