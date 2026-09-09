@@ -46,6 +46,7 @@ import RematesScreen from "../components/RematesScreen";
 import AppHeader from "../components/AppHeader";
 import SideMenu from "../components/SideMenu";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { File } from "expo-file-system";
 
 const TAB_SCROLL_EXTRA_BOTTOM = 32;
 
@@ -1473,12 +1474,13 @@ export default function AdminPanelScreen({ navigation }) {
 
                 if (bannerFile) {
                   const formData = new FormData();
+                  // Expo 57+ (winter fetch) no acepta { uri, name, type };
+                  // hay que enviar un File/Blob real.
+                  const file = new File(bannerFile.uri);
+                  const fileName =
+                    bannerFile.name || file.name || `banner-${Date.now()}.jpg`;
 
-                  formData.append('file', {
-                    uri: bannerFile.uri,
-                    name: bannerFile.name,
-                    type: bannerFile.type,
-                  });
+                  formData.append('file', file, fileName);
 
                   /*
                    * Si el remate es nuevo usamos POST.

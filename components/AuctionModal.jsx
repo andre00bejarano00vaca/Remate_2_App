@@ -456,7 +456,7 @@ export default function AuctionModal({
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: true,
-        aspect: [16, 9],
+        aspect: [3, 2], // 1536×1024
         quality: 0.8,
       });
 
@@ -946,7 +946,7 @@ const styles = StyleSheet.create({
 
   bannerContainer: {
     width: '100%',
-    height: 180,
+    aspectRatio: 3 / 2, // 1536×1024
     marginTop: 8,
     marginBottom: 10,
     borderRadius: 8,

@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
 
   banner: {
     width: "100%",
-    height: 250,
+    aspectRatio: 3 / 2, // 1536×1024
     backgroundColor: CattleColors.lightGray,
   },
 
