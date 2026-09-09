@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { View, ActivityIndicator, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiBaseUrl } from "../config/env";
+import { setupPushForUser } from "../services/pushNotifications";
 
 const SESSION_KEYS = ["authToken", "isLoggedIn", "usuario", "rol", "userId"];
 
@@ -42,6 +43,14 @@ export default function VerifyUserScreen({ navigation }) {
 
         const data = await response.json();
         if (data.confirmed) {
+          const userId =
+            data.userId ?? data.id ?? (await AsyncStorage.getItem("userId"));
+          if (userId != null) {
+            await AsyncStorage.setItem("userId", String(userId));
+          }
+          setupPushForUser(userId).catch((err) =>
+            console.log("[PUSH] post-verify:", err?.message || err)
+          );
           navigation.replace("RematesList");
           return;
         }

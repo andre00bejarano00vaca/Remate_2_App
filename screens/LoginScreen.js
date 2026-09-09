@@ -12,6 +12,7 @@ import { TextInput, Button, Title, Text, Card, SegmentedButtons } from "react-na
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CattleColors, CattleShadows } from "../styles/colors";
 import { apiBaseUrl } from "../config/env";
+import { setupPushForUser } from "../services/pushNotifications";
 
 const SESSION_KEYS = ["authToken", "usuario", "isLoggedIn", "rol", "userId"];
 
@@ -94,6 +95,10 @@ export default function LoginScreen({ navigation }) {
       if (data.userId) {
         await AsyncStorage.setItem("userId", String(data.userId));
       }
+
+      setupPushForUser(data.userId).catch((err) =>
+        console.log("[PUSH] post-login:", err?.message || err)
+      );
 
       navigation.replace("RematesList");
     } catch (err) {

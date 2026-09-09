@@ -16,6 +16,7 @@ import HomeScreen from "./screens/HomeScreen";
 import PendingApprovalScreen from "./screens/PendingApprovalScreen";
 import AdminPanelScreen from "./screens/AdminPanelScreen";
 import useOutbidWatcher from "./hook/useOutbidWatcher";
+import usePushNotifications from "./hook/usePushNotifications";
 import { navigationRef } from "./services/navigationRef";
 
 const Stack = createNativeStackNavigator();
@@ -55,8 +56,9 @@ const navTheme = {
   },
 };
 
-function OutbidWatcherHost() {
+function AppServicesHost() {
   useOutbidWatcher();
+  usePushNotifications();
   return null;
 }
 
@@ -79,7 +81,7 @@ export default function App() {
     <SafeAreaProvider>
       <PaperProvider theme={paperTheme}>
         <NavigationContainer ref={navigationRef} theme={navTheme}>
-          <OutbidWatcherHost />
+          <AppServicesHost />
           <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="VerifyUser" component={VerifyUserScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />

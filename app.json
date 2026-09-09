@@ -22,7 +22,10 @@
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.INTERNET",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE"
       ],
       "package": "com.andre_bejarano.remateganadero",
       "googleServicesFile": "./google-services.json"
@@ -43,6 +46,14 @@
           "backgroundColor": "#000000",
           "resizeMode": "contain",
           "imageWidth": 200
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#000000",
+          "defaultChannel": "pujas"
         }
       ]
     ],
