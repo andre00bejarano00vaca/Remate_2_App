@@ -480,21 +480,6 @@ export default function AdminPanelScreen({ navigation }) {
       return;
     }
 
-    const loteParaFinalizar =
-      loteId ??
-      cattleLots.find(
-        (l) =>
-          String(l?.remate?.id ?? l?.remateId) === String(remate.id) && l?.visible !== false
-      )?.id;
-
-    if (!loteParaFinalizar) {
-      Alert.alert(
-        "Lote requerido",
-        "Abrí un lote de este prelance en la app o andá a la pestaña Lotes para que el sistema identifique el lote activo, y volvé a intentar."
-      );
-      return;
-    }
-
     Alert.alert(
       "Finalizar prelance",
       `¿Finalizar "${remate.nombre}"? Se notificará a los usuarios conectados y no podrán seguir pujando en vivo.`,
@@ -506,7 +491,7 @@ export default function AdminPanelScreen({ navigation }) {
           onPress: async () => {
             setLoading(true);
             try {
-              await finalizarLote(remate.id, loteParaFinalizar);
+              await finalizarLote(remate.id);
               await loadAuctions(auctionPage);
               Alert.alert("Listo", "Prelance finalizado correctamente.");
             } catch (error) {

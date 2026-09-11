@@ -1,8 +1,7 @@
 import apiClient from "../api/apiClient";
 
-export default async function finalizarLote(remateId, loteId) {
-  const response = await apiClient.put(
-    `/remates/${remateId}/finalizar/${loteId}`
-  );
+/** Finaliza el prelance completo (ya no requiere loteId). */
+export default async function finalizarLote(remateId) {
+  const response = await apiClient.put(`/remates/${remateId}/finalizar`);
   return response.data;
 }

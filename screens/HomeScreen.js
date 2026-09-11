@@ -27,6 +27,10 @@ import {
 } from "../services/pujaPersistence";
 import { notifyOutbid } from "../services/auctionAlerts";
 import apiClient from "../api/apiClient";
+import {
+    formatWallClockDisplay,
+    isFechaFinVencida,
+} from "../utils/businessDateTime";
 
 const pickRemateCatalogUrl = (...candidates) => {
     for (const value of candidates) {
@@ -43,18 +47,10 @@ const pickRemateFechaFin = (...candidates) => {
     return null;
 };
 
-const formatRemateFechaFin = (value) => {
-    if (value == null || value === "") return "";
-    const date = value instanceof Date ? value : new Date(value);
-    if (Number.isNaN(date.getTime())) return "";
-    return date.toLocaleString("es-PY", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
-};
+const formatRemateFechaFin = (value) => formatWallClockDisplay(value);
+
+const isRemateFinalizado = (estado) =>
+    String(estado ?? "").trim().toLowerCase() === "finalizado";
 
 
 const { width, height } = Dimensions.get('window');
@@ -105,6 +101,12 @@ export default function HomeScreen({ navigation, route }) {
             loteParam?.remate?.fechaFin
         )
     );
+    const [remateFinalizado, setRemateFinalizado] = useState(() =>
+        isRemateFinalizado(
+            remateParam?.estado ?? loteParam?.remate?.estado
+        )
+    );
+    const [cierreTick, setCierreTick] = useState(0);
     const [remateCatalogUrl, setRemateCatalogUrl] = useState(() =>
         pickRemateCatalogUrl(remateParam?.urlListaLotes, loteParam?.remate?.urlListaLotes)
     );
@@ -130,6 +132,9 @@ export default function HomeScreen({ navigation, route }) {
     const authHeaderRef = useRef({});
     ///esta funcion es para sacar a las personas del remate
     useEventosWS(remateid, (mensaje) => {
+        if (mensaje === "FIN_REMATE") {
+            setRemateFinalizado(true);
+        }
         procesarEvento(mensaje, navigation, remateid, remateNombre);
     });
 
@@ -232,6 +237,7 @@ usePujaWebSocket({
     },
     onFinalizado: () => {
         // Victoria se confirma en FIN_REMATE (procesarEvento) para un solo Alert
+        setRemateFinalizado(true);
         setIsWinning(false);
         setStatusMessage("Prelance finalizado");
         setShowStatus(true);
@@ -300,9 +306,19 @@ usePujaWebSocket({
             setRemateCatalogUrl(fromParams);
         }
 
+        const estadoFromParams =
+            remateParam?.estado ?? loteParam?.remate?.estado;
+        if (isRemateFinalizado(estadoFromParams)) {
+            setRemateFinalizado(true);
+        }
+
         const needsFetch =
             Boolean(remateid) &&
-            (!nombreFromParams || !fechaFromParams || !fromParams);
+            (!nombreFromParams ||
+                !fechaFromParams ||
+                !fromParams ||
+                estadoFromParams == null ||
+                String(estadoFromParams).trim() === "");
         if (!needsFetch) {
             if (!remateid && !fromParams) setRemateCatalogUrl("");
             return;
@@ -321,6 +337,9 @@ usePujaWebSocket({
                     else if (!fromParams) setRemateCatalogUrl("");
                     if (nombre) setRemateNombre(nombre);
                     if (fechaFin) setRemateFechaFin(fechaFin);
+                    if (isRemateFinalizado(data?.estado)) {
+                        setRemateFinalizado(true);
+                    }
                 }
             } catch (error) {
                 console.log("[CATÁLOGO] no se pudo cargar remate:", error?.message || error);
@@ -336,13 +355,31 @@ usePujaWebSocket({
         remateParam?.nombre,
         remateParam?.name,
         remateParam?.fechaFin,
+        remateParam?.estado,
         remateParam?.urlListaLotes,
         loteParam?.remate?.nombre,
         loteParam?.remate?.name,
         loteParam?.remate?.fechaFin,
+        loteParam?.remate?.estado,
         loteParam?.remate?.urlListaLotes,
         loteParam?.remate?.id,
     ]);
+
+    // Etapa 4: si pasó fechaFin y aún no llegó FIN_REMATE, mostrar "Cerrando…"
+    useEffect(() => {
+        if (!remateFechaFin || remateFinalizado) return undefined;
+        setCierreTick((t) => t + 1);
+        const id = setInterval(() => {
+            setCierreTick((t) => t + 1);
+        }, 15000);
+        return () => clearInterval(id);
+    }, [remateFechaFin, remateFinalizado]);
+
+    const mostrandoCierre =
+        cierreTick >= 0 &&
+        !remateFinalizado &&
+        Boolean(remateFechaFin) &&
+        isFechaFinVencida(remateFechaFin);
 
     useEffect(() => {
         if (!remateResolved) return;
@@ -716,8 +753,16 @@ usePujaWebSocket({
 
                     <View style={styles.loteInfoRow}>
                         <Text style={styles.loteInfoLabel}>Finaliza</Text>
-                        <Text style={styles.loteInfoValor} numberOfLines={1}>
-                            {formatRemateFechaFin(remateFechaFin) || "—"}
+                        <Text
+                            style={[
+                                styles.loteInfoValor,
+                                mostrandoCierre && styles.loteInfoValorCerrando,
+                            ]}
+                            numberOfLines={1}
+                        >
+                            {mostrandoCierre
+                                ? "Cerrando…"
+                                : formatRemateFechaFin(remateFechaFin) || "—"}
                         </Text>
                     </View>
 
@@ -1272,6 +1317,10 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: CattleColors.primary,
         textAlign: "right",
+    },
+    loteInfoValorCerrando: {
+        color: CattleColors.accent,
+        fontStyle: "italic",
     },
     loteInfoValorDestacado: {
         flex: 1,

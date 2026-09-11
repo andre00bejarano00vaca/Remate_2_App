@@ -327,6 +327,10 @@ import {
   TimePickerModal,
   registerTranslation,
 } from 'react-native-paper-dates';
+import {
+  formatLocalDateTime,
+  parseLocalDate,
+} from '../utils/businessDateTime';
 
 import * as ImagePicker from 'expo-image-picker';
 
@@ -351,30 +355,8 @@ registerTranslation('es', {
 });
 
 /* =======================
-   Helpers Fecha Local
+   Fecha local = reloj de pared America/La_Paz (utils/businessDateTime).
 ======================= */
-
-const parseLocalDate = (iso) => {
-  if (!iso) return undefined;
-
-  const [d, t] = iso.split('T');
-  const [y, m, day] = d.split('-').map(Number);
-  const [h, min] = (t || '00:00').split(':').map(Number);
-
-  return new Date(y, m - 1, day, h, min);
-};
-
-const formatLocalDateTime = (date) => {
-  if (!date) return null;
-
-  const pad = (n) => n.toString().padStart(2, '0');
-
-  return `${date.getFullYear()}-${pad(
-    date.getMonth() + 1
-  )}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(
-    date.getMinutes()
-  )}`;
-};
 
 /* =======================
    Componente
