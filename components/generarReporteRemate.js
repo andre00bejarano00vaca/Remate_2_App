@@ -41,8 +41,12 @@ export const generarReporteRemate = async (remateNombre, pujas) => {
       const user = p.usuario || {};
 
       if (!lotesMap[loteId]) {
+        const numero =
+          p.lote?.numLote != null && String(p.lote.numLote).trim() !== ""
+            ? String(p.lote.numLote)
+            : String(loteId);
         lotesMap[loteId] = {
-          nombreLote: p.lote?.nombre || `Lote ${loteId}`,
+          numeroLote: numero,
           pujas: [],
         };
       }
@@ -100,7 +104,7 @@ export const generarReporteRemate = async (remateNombre, pujas) => {
                   <tr>
                     ${
                       index === 0
-                        ? `<td rowspan="${lote.pujas.length}" class="lote-header">${lote.nombreLote}</td>`
+                        ? `<td rowspan="${lote.pujas.length}" class="lote-header">${lote.numeroLote}</td>`
                         : ""
                     }
                     <td class="posicion">${index + 1}º</td>

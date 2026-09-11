@@ -36,6 +36,26 @@ const pickRemateCatalogUrl = (...candidates) => {
     return "";
 };
 
+const pickRemateFechaFin = (...candidates) => {
+    for (const value of candidates) {
+        if (value != null && String(value).trim() !== "") return value;
+    }
+    return null;
+};
+
+const formatRemateFechaFin = (value) => {
+    if (value == null || value === "") return "";
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString("es-PY", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+};
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -71,6 +91,20 @@ export default function HomeScreen({ navigation, route }) {
     })();
     const [remateid, setRemateid] = useState(remateIdFromRoute);
     const [remateResolved, setRemateResolved] = useState(Boolean(remateIdFromRoute));
+    const [remateNombre, setRemateNombre] = useState(
+        () =>
+            remateParam?.nombre ||
+            remateParam?.name ||
+            loteParam?.remate?.nombre ||
+            loteParam?.remate?.name ||
+            ""
+    );
+    const [remateFechaFin, setRemateFechaFin] = useState(() =>
+        pickRemateFechaFin(
+            remateParam?.fechaFin,
+            loteParam?.remate?.fechaFin
+        )
+    );
     const [remateCatalogUrl, setRemateCatalogUrl] = useState(() =>
         pickRemateCatalogUrl(remateParam?.urlListaLotes, loteParam?.remate?.urlListaLotes)
     );
@@ -96,7 +130,7 @@ export default function HomeScreen({ navigation, route }) {
     const authHeaderRef = useRef({});
     ///esta funcion es para sacar a las personas del remate
     useEventosWS(remateid, (mensaje) => {
-        procesarEvento(mensaje, navigation, remateid);
+        procesarEvento(mensaje, navigation, remateid, remateNombre);
     });
 
 
@@ -192,6 +226,7 @@ usePujaWebSocket({
             montoActual: valor,
             loteId: loteid,
             remateId: remateid,
+            nombreRemate: remateNombre,
         });
         await markNotifiedOutbid(userId, loteid);
     },
@@ -237,18 +272,39 @@ usePujaWebSocket({
         };
     }, [remateIdFromRoute, loteid]);
 
-    // URL catálogo del remate (urlListaLotes), no confundir con lote.video
+    // Nombre, fecha fin + URL catálogo del remate
     useEffect(() => {
+        const nombreFromParams =
+            remateParam?.nombre ||
+            remateParam?.name ||
+            loteParam?.remate?.nombre ||
+            loteParam?.remate?.name ||
+            "";
+        if (nombreFromParams) {
+            setRemateNombre(nombreFromParams);
+        }
+
+        const fechaFromParams = pickRemateFechaFin(
+            remateParam?.fechaFin,
+            loteParam?.remate?.fechaFin
+        );
+        if (fechaFromParams) {
+            setRemateFechaFin(fechaFromParams);
+        }
+
         const fromParams = pickRemateCatalogUrl(
             remateParam?.urlListaLotes,
             loteParam?.remate?.urlListaLotes
         );
         if (fromParams) {
             setRemateCatalogUrl(fromParams);
-            return;
         }
-        if (!remateid) {
-            setRemateCatalogUrl("");
+
+        const needsFetch =
+            Boolean(remateid) &&
+            (!nombreFromParams || !fechaFromParams || !fromParams);
+        if (!needsFetch) {
+            if (!remateid && !fromParams) setRemateCatalogUrl("");
             return;
         }
 
@@ -256,11 +312,19 @@ usePujaWebSocket({
         (async () => {
             try {
                 const response = await apiClient.get(`/remates/${remateid}`);
-                const url = pickRemateCatalogUrl(response.data?.urlListaLotes);
-                if (!cancelled) setRemateCatalogUrl(url);
+                const data = response.data;
+                const url = pickRemateCatalogUrl(data?.urlListaLotes);
+                const nombre = data?.nombre || data?.name || "";
+                const fechaFin = pickRemateFechaFin(data?.fechaFin);
+                if (!cancelled) {
+                    if (url) setRemateCatalogUrl(url);
+                    else if (!fromParams) setRemateCatalogUrl("");
+                    if (nombre) setRemateNombre(nombre);
+                    if (fechaFin) setRemateFechaFin(fechaFin);
+                }
             } catch (error) {
-                console.log("[CATÁLOGO] no se pudo cargar urlListaLotes del remate:", error?.message || error);
-                if (!cancelled) setRemateCatalogUrl("");
+                console.log("[CATÁLOGO] no se pudo cargar remate:", error?.message || error);
+                if (!cancelled && !fromParams) setRemateCatalogUrl("");
             }
         })();
 
@@ -269,7 +333,13 @@ usePujaWebSocket({
         };
     }, [
         remateid,
+        remateParam?.nombre,
+        remateParam?.name,
+        remateParam?.fechaFin,
         remateParam?.urlListaLotes,
+        loteParam?.remate?.nombre,
+        loteParam?.remate?.name,
+        loteParam?.remate?.fechaFin,
         loteParam?.remate?.urlListaLotes,
         loteParam?.remate?.id,
     ]);
@@ -635,6 +705,24 @@ usePujaWebSocket({
                 <VideoScreen videoUri={videoLote} />
 
                 <View style={styles.loteInfoBlock}>
+                    <View style={styles.loteInfoRow}>
+                        <Text style={styles.loteInfoLabel}>Prelance</Text>
+                        <Text style={styles.loteInfoValor} numberOfLines={2}>
+                            {remateNombre || "—"}
+                        </Text>
+                    </View>
+
+                    <View style={styles.loteInfoDivider} />
+
+                    <View style={styles.loteInfoRow}>
+                        <Text style={styles.loteInfoLabel}>Finaliza</Text>
+                        <Text style={styles.loteInfoValor} numberOfLines={1}>
+                            {formatRemateFechaFin(remateFechaFin) || "—"}
+                        </Text>
+                    </View>
+
+                    <View style={styles.loteInfoDivider} />
+
                     <View style={styles.loteInfoRow}>
                         <Text style={styles.loteInfoLabel}>Número de lote</Text>
                         <Text style={styles.loteInfoValorDestacado}>

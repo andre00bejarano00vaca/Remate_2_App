@@ -18,6 +18,11 @@ export const getAuctionsPaginado = async ({ page = 0, size = 20 } = {}) => {
   return response.data;
 };
 
+export const getAuctionById = async (id) => {
+  const response = await apiClient.get(`/remates/${id}`);
+  return response.data;
+};
+
 export const createAuction = async (payload) => {
   const response = await apiClient.post("/remates", payload);
   return response.data;

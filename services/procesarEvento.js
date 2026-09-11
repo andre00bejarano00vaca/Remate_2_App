@@ -1,11 +1,19 @@
 import { Alert } from "react-native";
 import { checkWonLotsForRemate } from "./auctionAlerts/checkWonLots";
+import { getAuctionById } from "./auctionService";
 
 let finRemateEnCurso = false;
 
-function formatWinnersBody(winners) {
+function remateLabel(nombreRemate) {
+  const name = String(nombreRemate ?? "").trim();
+  return name ? `"${name}"` : "este prelance";
+}
+
+function formatWinnersBody(winners, nombreRemate) {
+  const prelance = remateLabel(nombreRemate);
+
   if (!winners?.length) {
-    return "Este prelance ha finalizado. Ya no podés participar en sus lotes.";
+    return `El prelance ${prelance} ha finalizado. Ya no podés participar en sus lotes.`;
   }
 
   if (winners.length === 1) {
@@ -16,7 +24,7 @@ function formatWinnersBody(winners) {
       w.montoFinal != null
         ? ` Monto final: $${Number(w.montoFinal).toLocaleString()}.`
         : "";
-    return `Quedaste como ganador del ${lote}.${monto} Ya no podés seguir pujando en este prelance.`;
+    return `Quedaste como ganador del ${lote} en el prelance ${prelance}.${monto} Ya no podés seguir pujando.`;
   }
 
   const list = winners
@@ -24,18 +32,39 @@ function formatWinnersBody(winners) {
       w.numeroLote != null ? `lote ${w.numeroLote}` : `lote #${w.loteId}`
     )
     .join(", ");
-  return `Quedaste como ganador de: ${list}. Ya no podés seguir pujando en este prelance.`;
+  return `En el prelance ${prelance} quedaste como ganador de: ${list}. Ya no podés seguir pujando.`;
+}
+
+async function resolveRemateNombre(remateId, nombreRemate) {
+  const fromArg = String(nombreRemate ?? "").trim();
+  if (fromArg) return fromArg;
+  if (remateId == null) return "";
+
+  try {
+    const data = await getAuctionById(remateId);
+    return String(data?.nombre || data?.name || "").trim();
+  } catch (error) {
+    console.log("[EVENTO] no se pudo cargar nombre remate:", error?.message || error);
+    return "";
+  }
 }
 
 /**
  * Reacciona a eventos del remate vía /ws/eventos/{remateId}.
- * FIN_REMATE: chequea si ganaste lotes, avisa y vuelve a la lista.
+ * FIN_REMATE: chequea si ganaste lotes, avisa (con nombre del prelance) y vuelve a la lista.
  */
-export async function procesarEvento(mensaje, navigation, remateId) {
+export async function procesarEvento(
+  mensaje,
+  navigation,
+  remateId,
+  nombreRemate
+) {
   if (mensaje !== "FIN_REMATE") return;
   if (finRemateEnCurso) return;
 
   finRemateEnCurso = true;
+
+  const nombre = await resolveRemateNombre(remateId, nombreRemate);
 
   let winners = [];
   try {
@@ -46,10 +75,13 @@ export async function procesarEvento(mensaje, navigation, remateId) {
   }
 
   const won = winners.length > 0;
+  const prelance = remateLabel(nombre);
 
   Alert.alert(
     won ? "¡Ganaste!" : "Prelance finalizado",
-    formatWinnersBody(winners),
+    won
+      ? formatWinnersBody(winners, nombre)
+      : `El prelance ${prelance} ha finalizado. Ya no podés participar en sus lotes.`,
     [
       {
         text: "Entendido",

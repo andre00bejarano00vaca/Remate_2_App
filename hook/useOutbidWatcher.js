@@ -9,9 +9,26 @@ import {
   markPujaOutbid,
 } from "../services/pujaPersistence";
 import { notifyOutbid } from "../services/auctionAlerts";
+import { getAuctionById } from "../services/auctionService";
 import { parseContadorResponse } from "./usePujaWebSocket";
 
 const POLL_MS = 6000;
+const remateNombreCache = {};
+
+async function resolveRemateNombre(remateId) {
+  if (remateId == null) return "";
+  const key = String(remateId);
+  if (Object.prototype.hasOwnProperty.call(remateNombreCache, key)) {
+    return remateNombreCache[key];
+  }
+  try {
+    const data = await getAuctionById(remateId);
+    remateNombreCache[key] = data?.nombre || data?.name || "";
+  } catch {
+    remateNombreCache[key] = "";
+  }
+  return remateNombreCache[key];
+}
 
 export default function useOutbidWatcher() {
   useEffect(() => {
@@ -77,6 +94,7 @@ export default function useOutbidWatcher() {
               montoActual: valor,
               loteId: item.loteId,
               remateId: item.remateId,
+              nombreRemate: await resolveRemateNombre(item.remateId),
             });
             await markNotifiedOutbid(userId, item.loteId);
           })

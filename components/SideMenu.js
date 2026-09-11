@@ -1,13 +1,9 @@
 import React from "react";
-import { Modal, View, StyleSheet, TouchableOpacity, Image, Alert, Share } from "react-native";
+import { Modal, View, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { IconButton, Text, Divider } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CattleColors, CattleShadows } from "../styles/colors";
-import {
-  getStoredPushToken,
-  setupPushForUser,
-} from "../services/pushNotifications";
 
 export default function SideMenu({
   visible,
@@ -30,36 +26,6 @@ export default function SideMenu({
         index: 0,
         routes: [{ name: "Login" }],
       });
-    }
-  };
-
-  const showPushToken = async () => {
-    try {
-      let token = await getStoredPushToken();
-      if (!token) {
-        const userId = await AsyncStorage.getItem("userId");
-        token = await setupPushForUser(userId);
-      }
-
-      if (!token) {
-        Alert.alert(
-          "Token push",
-          "No hay token todavía. Usá el APK de EAS (no Expo Go), aceptá el permiso de notificaciones e intentá de nuevo."
-        );
-        return;
-      }
-
-      Alert.alert("Expo Push Token", token, [
-        { text: "Cerrar", style: "cancel" },
-        {
-          text: "Compartir / copiar",
-          onPress: () => {
-            Share.share({ message: token }).catch(() => {});
-          },
-        },
-      ]);
-    } catch (error) {
-      Alert.alert("Token push", error?.message || "No se pudo obtener el token");
     }
   };
 
@@ -101,11 +67,6 @@ export default function SideMenu({
                 <Text style={styles.itemText}>Panel Admin</Text>
               </TouchableOpacity>
             )}
-
-            <TouchableOpacity style={styles.item} onPress={showPushToken}>
-              <IconButton icon="bell-badge" size={20} iconColor={CattleColors.primary} />
-              <Text style={styles.itemText}>Ver token push</Text>
-            </TouchableOpacity>
 
             <View style={styles.footer}>
               <TouchableOpacity style={styles.item} onPress={logout}>
