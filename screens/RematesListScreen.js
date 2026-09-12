@@ -56,7 +56,8 @@ export default function RematesListScreen({ navigation }) {
 
       const rolId = parseInt(stored, 10);
 
-      setIsAdmin(rolId === 2 || rolId === 4);
+      // ADMIN (2), COLABORADOR (3), SUPER_USUARIO (4)
+      setIsAdmin(rolId === 2 || rolId === 3 || rolId === 4);
     } catch {
       setIsAdmin(false);
     }

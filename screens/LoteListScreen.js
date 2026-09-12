@@ -83,7 +83,8 @@ export default function LotesListScreen({ route, navigation }) {
         if (!stored) return setIsAdmin(false);
         const rolId = parseInt(stored, 10);
         if (Number.isNaN(rolId)) return setIsAdmin(false);
-        setIsAdmin(rolId === 2 || rolId === 4);
+        // ADMIN (2), COLABORADOR (3), SUPER_USUARIO (4)
+        setIsAdmin(rolId === 2 || rolId === 3 || rolId === 4);
       } catch {
         setIsAdmin(false);
       }

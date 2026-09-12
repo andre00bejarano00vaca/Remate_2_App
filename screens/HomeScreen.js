@@ -414,8 +414,8 @@ usePujaWebSocket({
                 return;
             }
 
-            const ADMIN_ROLE_ID = 2;
-            setIsAdmin(rolId === ADMIN_ROLE_ID);
+            // ADMIN (2), COLABORADOR (3), SUPER_USUARIO (4)
+            setIsAdmin(rolId === 2 || rolId === 3 || rolId === 4);
         } catch (e) {
             console.log("Error leyendo rol del almacenamiento:", e);
             setIsAdmin(false);

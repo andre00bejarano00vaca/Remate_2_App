@@ -257,7 +257,8 @@ export default function AdminPanelScreen({ navigation }) {
           return;
         }
         setCurrentRolId(asNumber);
-        setIsAdmin(asNumber === 2 || asNumber === 4);
+        // ADMIN (2), COLABORADOR (3), SUPER_USUARIO (4)
+        setIsAdmin(asNumber === 2 || asNumber === 3 || asNumber === 4);
       } catch (error) {
         console.error("Error leyendo rol actual:", error);
         setCurrentRolId(null);
