@@ -17,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getAuctionsPaginado } from "../services/auctionService";
 import { apiBaseUrl } from "../config/env";
 import { CattleColors, CattleShadows } from "../styles/colors";
+import { isFechaInicioAlcanzada } from "../utils/businessDateTime";
 
 import AppHeader from "../components/AppHeader";
 import SideMenu from "../components/SideMenu";
@@ -28,10 +29,13 @@ const isRemateFinalizado = (estado) =>
     .trim()
     .toLowerCase() === "finalizado";
 
-/** Remates que ve el cliente: visibles y no finalizados */
+/** Remates que ve el cliente: visibles, iniciados y no finalizados */
 const rematesParaListado = (lista) =>
   (Array.isArray(lista) ? lista : []).filter(
-    (remate) => remate?.visible === true && !isRemateFinalizado(remate?.estado)
+    (remate) =>
+      remate?.visible === true &&
+      !isRemateFinalizado(remate?.estado) &&
+      isFechaInicioAlcanzada(remate?.fecha)
   );
 
 export default function RematesListScreen({ navigation }) {
@@ -43,7 +47,10 @@ export default function RematesListScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [inicioTick, setInicioTick] = useState(0);
   const hasLoadedRef = useRef(false);
+  const rematesRef = useRef(remates);
+  rematesRef.current = remates;
 
   const loadRole = useCallback(async () => {
     try {
@@ -97,6 +104,20 @@ export default function RematesListScreen({ navigation }) {
     useCallback(() => {
       loadRole();
       loadRemates({ showLoader: !hasLoadedRef.current, pageToLoad: 0, append: false });
+
+      // Si hay prelances futuros en memoria, re-filtrar cada 15s al llegar la hora de inicio
+      const id = setInterval(() => {
+        const lista = rematesRef.current;
+        const hayFuturos = (Array.isArray(lista) ? lista : []).some(
+          (r) =>
+            r?.visible === true &&
+            !isRemateFinalizado(r?.estado) &&
+            !isFechaInicioAlcanzada(r?.fecha)
+        );
+        if (hayFuturos) setInicioTick((t) => t + 1);
+      }, 15000);
+
+      return () => clearInterval(id);
     }, [loadRole, loadRemates])
   );
 
@@ -203,6 +224,7 @@ export default function RematesListScreen({ navigation }) {
 
       <FlatList
         data={rematesParaListado(remates)}
+        extraData={inicioTick}
         renderItem={renderItem}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.list}

@@ -90,3 +90,12 @@ export function isFechaFinVencida(fechaFin, now = new Date()) {
   if (fin == null) return false;
   return nowBusinessComparable(now) >= fin;
 }
+
+/**
+ * true si la fecha de inicio ya llegó (o no hay fecha → se muestra, datos viejos).
+ */
+export function isFechaInicioAlcanzada(fecha, now = new Date()) {
+  const inicio = wallClockToComparable(fecha);
+  if (inicio == null) return true;
+  return nowBusinessComparable(now) >= inicio;
+}
