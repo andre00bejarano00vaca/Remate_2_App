@@ -10,7 +10,13 @@ export function parseContadorMessage(raw) {
     if (!text) return null;
 
     if (/^-?\d+$/.test(text)) {
-        return { valor: parseInt(text, 10), usuarioIdLider: null, hasLiderField: false };
+        return {
+            valor: parseInt(text, 10),
+            usuarioIdLider: null,
+            hasLiderField: false,
+            incrementoSiguiente: null,
+            siguienteValor: null,
+        };
     }
 
     try {
@@ -31,14 +37,25 @@ export function parseContadorMessage(raw) {
             if (!Number.isNaN(parsed)) usuarioIdLider = parsed;
         }
 
+        const incrementoSiguiente = parseOptionalInt(data.incrementoSiguiente);
+        const siguienteValor = parseOptionalInt(data.siguienteValor);
+
         return {
             valor,
             usuarioIdLider,
             hasLiderField: Object.prototype.hasOwnProperty.call(data, 'usuarioIdLider'),
+            incrementoSiguiente,
+            siguienteValor,
         };
     } catch {
         return null;
     }
+}
+
+function parseOptionalInt(value) {
+    if (value == null || value === '') return null;
+    const n = Number(value);
+    return Number.isNaN(n) ? null : n;
 }
 
 export function parseContadorResponse(data) {
@@ -48,7 +65,7 @@ export function parseContadorResponse(data) {
         const valor = Number(data);
         return Number.isNaN(valor)
             ? null
-            : { valor, usuarioIdLider: null, hasLiderField: false };
+            : { valor, usuarioIdLider: null, hasLiderField: false, incrementoSiguiente: null, siguienteValor: null };
     }
 
     if (typeof data === 'object') {
@@ -63,6 +80,8 @@ export function parseContadorResponse(data) {
             valor,
             usuarioIdLider,
             hasLiderField: Object.prototype.hasOwnProperty.call(data, 'usuarioIdLider'),
+            incrementoSiguiente: parseOptionalInt(data.incrementoSiguiente),
+            siguienteValor: parseOptionalInt(data.siguienteValor),
         };
     }
 
@@ -80,6 +99,7 @@ export default function usePujaWebSocket({
     setStatusMessage,
     setShowStatus,
     setLeaderUserId,
+    setIncrementoSiguiente,
 
     pendingUserBidRef,
     lastUserBidValueRef,
@@ -104,8 +124,12 @@ export default function usePujaWebSocket({
     const applyEstado = (estado) => {
         if (!estado || estado.finalizado) return;
 
-        const { valor, usuarioIdLider, hasLiderField } = estado;
+        const { valor, usuarioIdLider, hasLiderField, incrementoSiguiente } = estado;
         setCounter(valor);
+
+        if (typeof setIncrementoSiguiente === 'function' && incrementoSiguiente != null) {
+            setIncrementoSiguiente(incrementoSiguiente);
+        }
 
         if (typeof setLeaderUserId === 'function' && hasLiderField) {
             setLeaderUserId(usuarioIdLider);

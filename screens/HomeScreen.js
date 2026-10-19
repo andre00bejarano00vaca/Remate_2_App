@@ -116,8 +116,19 @@ export default function HomeScreen({ navigation, route }) {
     const [counter, setCounter] = useState(null);
     const [myBidMonto, setMyBidMonto] = useState(null);
     const [userId, setUserId] = useState(null);
+    /** Preferido: viene del backend (contador/WS). Fallback local si aún no llegó. */
+    const [incrementoServidor, setIncrementoServidor] = useState(null);
     const displayCounter = Number(counter) || 0;
-    const { siguientePuja, incremento } = usePuja(displayCounter, baseInicial);
+    const { siguientePuja: siguientePujaLocal, incremento: incrementoLocal } = usePuja(
+        displayCounter,
+        baseInicial
+    );
+    const incremento =
+        incrementoServidor != null ? Number(incrementoServidor) : incrementoLocal;
+    const siguientePuja =
+        incrementoServidor != null
+            ? displayCounter + Number(incrementoServidor)
+            : siguientePujaLocal;
 
     const [source, setSource] = useState({
         uri: videoLote,
@@ -209,6 +220,7 @@ usePujaWebSocket({
     setStatusMessage,
     setShowStatus,
     setLeaderUserId,
+    setIncrementoSiguiente: setIncrementoServidor,
 
     pendingUserBidRef,
     lastUserBidValueRef,
