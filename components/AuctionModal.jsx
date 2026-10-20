@@ -320,8 +320,12 @@ import {
   Button,
   RadioButton,
   List,
-  Switch,
 } from 'react-native-paper';
+import IncrementosReglaEditor, {
+  defaultTramosUI,
+  reglaToUI,
+  uiToRegla,
+} from './IncrementosReglaEditor';
 
 import {
   DatePickerModal,
@@ -358,32 +362,6 @@ registerTranslation('es', {
 /* =======================
    Fecha local = reloj de pared America/La_Paz (utils/businessDateTime).
 ======================= */
-
-const defaultTramosUI = () => [
-  { hasta: '500', pasosText: '20,30', sinLimite: false },
-  { hasta: '', pasosText: '50', sinLimite: true },
-];
-
-const reglaToUI = (regla) => {
-  if (!regla?.tramos?.length) return defaultTramosUI();
-  return regla.tramos.map((t) => ({
-    hasta: t.hasta == null ? '' : String(t.hasta),
-    pasosText: Array.isArray(t.pasos) ? t.pasos.join(',') : '',
-    sinLimite: t.hasta == null,
-  }));
-};
-
-const uiToRegla = (tramosUI) => ({
-  version: 1,
-  tramos: tramosUI.map((t) => ({
-    hasta: t.sinLimite ? null : Number(String(t.hasta).trim()),
-    pasos: String(t.pasosText || '')
-      .split(/[,\s]+/)
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .map((s) => Number(s)),
-  })),
-});
 
 /* =======================
    Componente
@@ -615,43 +593,22 @@ export default function AuctionModal({
      Guardar
   ======================= */
 
-  const updateTramo = (index, patch) => {
-    setTramosUI((prev) =>
-      prev.map((t, i) => (i === index ? { ...t, ...patch } : t))
-    );
-  };
-
-  const addTramo = () => {
-    setTramosUI((prev) => [
-      ...prev.filter((t) => !t.sinLimite),
-      { hasta: '', pasosText: '50', sinLimite: false },
-      { hasta: '', pasosText: '50', sinLimite: true },
-    ]);
-  };
-
-  const removeTramo = (index) => {
-    setTramosUI((prev) => {
-      if (prev.length <= 1) return prev;
-      const next = prev.filter((_, i) => i !== index);
-      if (!next.some((t) => t.sinLimite)) {
-        next.push({ hasta: '', pasosText: '50', sinLimite: true });
-      }
-      return next;
-    });
-  };
-
   const guardar = () => {
     let reglaIncremento = null;
     if (useCustomRegla) {
       const regla = uiToRegla(tramosUI);
       for (let i = 0; i < regla.tramos.length; i++) {
         const t = regla.tramos[i];
+        const isLast = i === regla.tramos.length - 1;
         if (!t.pasos.length || t.pasos.some((p) => !Number.isFinite(p) || p <= 0)) {
-          Alert.alert('Incrementos', `El tramo #${i + 1} tiene pasos inválidos.`);
+          Alert.alert('Incrementos', `El tramo #${i + 1} necesita al menos un paso válido.`);
           return;
         }
-        if (!tramosUI[i].sinLimite && (!Number.isFinite(t.hasta) || t.hasta <= 0)) {
-          Alert.alert('Incrementos', `El tramo #${i + 1} necesita un "hasta" válido.`);
+        if (!isLast && (!Number.isFinite(t.hasta) || t.hasta <= 0)) {
+          Alert.alert(
+            'Incrementos',
+            `El tramo #${i + 1} necesita un monto “menor a” válido.`
+          );
           return;
         }
       }
@@ -921,76 +878,12 @@ export default function AuctionModal({
             </Button>
           )}
 
-          {/* =======================
-              INCREMENTOS DE PUJA
-          ======================= */}
-
-          <Text style={styles.sectionLabel}>Incrementos de puja</Text>
-          <View style={styles.switchRow}>
-            <Text style={styles.switchLabel}>Usar regla personalizada</Text>
-            <Switch
-              value={useCustomRegla}
-              onValueChange={setUseCustomRegla}
-            />
-          </View>
-          <Text style={styles.hintText}>
-            Si está apagado, se usa la regla por defecto del sistema (20/30, 50, 100, 500).
-            Con regla activa: cada tramo aplica mientras el monto sea menor a “Hasta”.
-            Pasos: lista separada por comas (ej. 20,30). Un solo número = fijo.
-          </Text>
-
-          {useCustomRegla &&
-            tramosUI.map((tramo, index) => (
-              <View key={`tramo-${index}`} style={styles.tramoCard}>
-                <Text style={styles.tramoTitle}>Tramo {index + 1}</Text>
-                <View style={styles.switchRow}>
-                  <Text style={styles.switchLabel}>Sin límite (último tramo)</Text>
-                  <Switch
-                    value={!!tramo.sinLimite}
-                    onValueChange={(v) => {
-                      setTramosUI((prev) =>
-                        prev.map((t, i) => {
-                          if (i === index) {
-                            return { ...t, sinLimite: v, hasta: v ? '' : t.hasta || '1000' };
-                          }
-                          if (v) return { ...t, sinLimite: false };
-                          return t;
-                        })
-                      );
-                    }}
-                  />
-                </View>
-                {!tramo.sinLimite && (
-                  <TextInput
-                    label="Hasta monto (exclusivo)"
-                    value={tramo.hasta}
-                    keyboardType="numeric"
-                    onChangeText={(text) => updateTramo(index, { hasta: text })}
-                    style={styles.input}
-                  />
-                )}
-                <TextInput
-                  label="Pasos (ej. 20,30 o 50)"
-                  value={tramo.pasosText}
-                  onChangeText={(text) => updateTramo(index, { pasosText: text })}
-                  style={styles.input}
-                />
-                <Button
-                  mode="text"
-                  textColor="#d32f2f"
-                  onPress={() => removeTramo(index)}
-                  disabled={tramosUI.length <= 1}
-                >
-                  Quitar tramo
-                </Button>
-              </View>
-            ))}
-
-          {useCustomRegla && (
-            <Button mode="outlined" icon="plus" onPress={addTramo} style={styles.bannerButton}>
-              Agregar tramo
-            </Button>
-          )}
+          <IncrementosReglaEditor
+            useCustomRegla={useCustomRegla}
+            onChangeUseCustom={setUseCustomRegla}
+            tramosUI={tramosUI}
+            onChangeTramos={setTramosUI}
+          />
         </ScrollView>
 
         <View style={styles.modalFooter}>
@@ -1068,40 +961,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginTop: 12,
-    marginBottom: 6,
-  },
-
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-
-  switchLabel: {
-    flex: 1,
-    marginRight: 12,
-    fontSize: 14,
-  },
-
-  hintText: {
-    fontSize: 12,
-    color: '#667070',
-    marginBottom: 10,
-    lineHeight: 16,
-  },
-
-  tramoCard: {
-    borderWidth: 1,
-    borderColor: '#E3E7E5',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 10,
-    backgroundColor: '#FAFBFA',
-  },
-
-  tramoTitle: {
-    fontWeight: '600',
     marginBottom: 6,
   },
 
