@@ -218,13 +218,28 @@ export default function IncrementosReglaEditor({
   };
 
   const addTramo = () => {
-    const body = tramosUI.filter((_, i) => i < tramosUI.length - 1);
+    // El último siempre es "hasta infinito". Al agregar:
+    // el que era ∞ pasa a "menor a X", y el NUEVO queda como ∞ al final.
+    const last = tramosUI[tramosUI.length - 1] || { hasta: null, pasos: [50] };
+    const before = tramosUI.slice(0, -1);
+    const prevHasta = before.length
+      ? Number(before[before.length - 1].hasta) || 500
+      : 0;
+    const suggestedHasta =
+      last.hasta != null && String(last.hasta).trim() !== ''
+        ? String(last.hasta)
+        : String(prevHasta > 0 ? prevHasta * 2 : 500);
+
     onChangeTramos([
-      ...body,
-      { hasta: '1000', pasos: [50] },
-      { hasta: null, pasos: tramosUI[tramosUI.length - 1]?.pasos?.length
-        ? [...tramosUI[tramosUI.length - 1].pasos]
-        : [50] },
+      ...before,
+      {
+        hasta: suggestedHasta,
+        pasos: [...(last.pasos || [50])],
+      },
+      {
+        hasta: null,
+        pasos: [50],
+      },
     ]);
   };
 
@@ -261,7 +276,13 @@ export default function IncrementosReglaEditor({
           selected={useCustomRegla}
           title="Personalizada"
           subtitle="Plantillas o tramos a medida"
-          onPress={() => onChangeUseCustom(true)}
+          onPress={() => {
+            onChangeUseCustom(true);
+            // Si aún no hay tramos útiles, empezar con menor-a y luego ∞
+            if (!tramosUI?.length) {
+              onChangeTramos(defaultTramosUI());
+            }
+          }}
         />
       </View>
 
@@ -343,7 +364,7 @@ export default function IncrementosReglaEditor({
           })}
 
           <Button mode="outlined" icon="plus" onPress={addTramo} style={styles.addBtn}>
-            Agregar tramo
+            Agregar tramo (nuevo = en adelante)
           </Button>
         </>
       )}
