@@ -23,15 +23,37 @@ export const getAuctionById = async (id) => {
   return response.data;
 };
 
+function apiError(error, fallback) {
+  const data = error?.response?.data;
+  if (typeof data === "string" && data.trim()) return data;
+  if (data?.error) return String(data.error);
+  if (data?.message) return String(data.message);
+  if (error?.response?.status === 403) {
+    return "Acceso denegado (403). Si personalizaste incrementos, redeployá el backend o revisá el proxy.";
+  }
+  if (error?.response?.status === 401) {
+    return "Sesión expirada. Volvé a iniciar sesión.";
+  }
+  return error?.message || fallback;
+}
+
 export const createAuction = async (payload) => {
-  const response = await apiClient.post("/remates", payload);
-  return response.data;
+  try {
+    const response = await apiClient.post("/remates", payload);
+    return response.data;
+  } catch (error) {
+    throw new Error(apiError(error, "No se pudo crear el prelance"));
+  }
 };
 
 export const updateAuction = async (id, payload) => {
-  console.log(payload)
-  const response = await apiClient.put(`/remates/${id}`, payload);
-  return response.data;
+  try {
+    console.log("[REMATE] PUT", id, payload);
+    const response = await apiClient.put(`/remates/${id}`, payload);
+    return response.data;
+  } catch (error) {
+    throw new Error(apiError(error, "No se pudo actualizar el prelance"));
+  }
 };
 
 export const deleteAuction = async (id) => {

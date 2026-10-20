@@ -1408,8 +1408,27 @@ export default function AdminPanelScreen({ navigation }) {
                  * Quitamos estas propiedades antes de enviar
                  * el remate al backend.
                  */
-                const { bannerFile: _, bannerDeleted: __, ...remateData } =
-                  auctionData;
+                const { bannerFile: _, bannerDeleted: __, ...rest } = auctionData;
+
+                // Payload limpio: evita campos basura del listado y manda la regla
+                // como string JSON (algunos proxies/WAF responden 403 a JSON anidado).
+                const remateData = {
+                  id: rest.id,
+                  nombre: rest.nombre,
+                  estado: rest.estado,
+                  fecha: rest.fecha,
+                  fechaFin: rest.fechaFin,
+                  urlListaLotes: rest.urlListaLotes || null,
+                  visible: rest.visible !== false,
+                  bannerUrl: rest.bannerUrl || null,
+                  cabana: rest.cabana?.id ? { id: rest.cabana.id } : null,
+                  reglaIncremento:
+                    rest.reglaIncremento == null
+                      ? null
+                      : typeof rest.reglaIncremento === "string"
+                        ? rest.reglaIncremento
+                        : JSON.stringify(rest.reglaIncremento),
+                };
 
                 /*
                  * ==========================
