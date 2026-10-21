@@ -43,9 +43,23 @@ export const defaultTramosUI = () => [
   { hasta: null, pasos: [50] },
 ];
 
+export const normalizeRegla = (raw) => {
+  if (!raw) return null;
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+  return raw;
+};
+
 export const reglaToUI = (regla) => {
-  if (!regla?.tramos?.length) return defaultTramosUI();
-  return regla.tramos.map((t, i, arr) => {
+  const parsed = normalizeRegla(regla);
+  if (!parsed?.tramos?.length) return defaultTramosUI();
+  return parsed.tramos.map((t, i, arr) => {
     const isLast = i === arr.length - 1;
     return {
       hasta: t.hasta == null || isLast ? null : String(t.hasta),

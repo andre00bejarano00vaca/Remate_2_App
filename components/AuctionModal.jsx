@@ -323,6 +323,7 @@ import {
 } from 'react-native-paper';
 import IncrementosReglaEditor, {
   defaultTramosUI,
+  normalizeRegla,
   reglaToUI,
   uiToRegla,
 } from './IncrementosReglaEditor';
@@ -418,9 +419,10 @@ export default function AuctionModal({
       setBanner(null);
       setBannerDeleted(false);
 
-      const hasRegla = !!editingAuction.reglaIncremento?.tramos?.length;
+      const regla = normalizeRegla(editingAuction.reglaIncremento);
+      const hasRegla = !!regla?.tramos?.length;
       setUseCustomRegla(hasRegla);
-      setTramosUI(reglaToUI(editingAuction.reglaIncremento));
+      setTramosUI(reglaToUI(regla));
     } else {
       setAuction({});
 

@@ -28,7 +28,7 @@ import { List, RadioButton, Switch, DateTimePicker } from "react-native-paper";
 import AuctionModal from "../components/AuctionModal";
 
 import { getUsersPaginado, createteUser } from "../services/userService";
-import { getAuctions, getAuctionsPaginado, createAuction, updateAuction, deleteAuction } from "../services/auctionService";
+import { getAuctions, getAuctionsPaginado, getAuctionById, createAuction, updateAuction, updateAuctionRegla, deleteAuction } from "../services/auctionService";
 import { getLots, getLotsPaginado, createLot, updateLot, deleteLot } from "../services/lotService";
 import { getBidsPaginado, createBid, updateBid, deleteBid } from "../services/bidService";
 
@@ -898,8 +898,13 @@ export default function AdminPanelScreen({ navigation }) {
                       icon="pencil"
                       iconColor={CattleColors.info}
                       size={22}
-                      onPress={() => {
-                        setEditingAuction(a);
+                      onPress={async () => {
+                        try {
+                          const full = await getAuctionById(a.id);
+                          setEditingAuction(full || a);
+                        } catch (e) {
+                          setEditingAuction(a);
+                        }
                         setShowAuctionModal(true);
                       }}
                     />
@@ -1408,10 +1413,10 @@ export default function AdminPanelScreen({ navigation }) {
                  * Quitamos estas propiedades antes de enviar
                  * el remate al backend.
                  */
-                const { bannerFile: _, bannerDeleted: __, ...rest } = auctionData;
+                const { bannerFile: _, bannerDeleted: __, reglaIncremento, ...rest } = auctionData;
 
-                // Payload limpio: evita campos basura del listado y manda la regla
-                // como string JSON (algunos proxies/WAF responden 403 a JSON anidado).
+                // El prelance se guarda sin la regla. La regla va en un endpoint aparte
+                // para no perderla ni disparar 403 del proxy con JSON anidado.
                 const remateData = {
                   id: rest.id,
                   nombre: rest.nombre,
@@ -1422,12 +1427,6 @@ export default function AdminPanelScreen({ navigation }) {
                   visible: rest.visible !== false,
                   bannerUrl: rest.bannerUrl || null,
                   cabana: rest.cabana?.id ? { id: rest.cabana.id } : null,
-                  reglaIncremento:
-                    rest.reglaIncremento == null
-                      ? null
-                      : typeof rest.reglaIncremento === "string"
-                        ? rest.reglaIncremento
-                        : JSON.stringify(rest.reglaIncremento),
                 };
 
                 /*
@@ -1449,8 +1448,16 @@ export default function AdminPanelScreen({ navigation }) {
                   savedAuction?.id || remateData.id;
 
                 if (!remateId) {
+                  throw new Error('No se obtuvo el ID del prelance.');
+                }
+
+                const savedWithRegla = await updateAuctionRegla(
+                  remateId,
+                  reglaIncremento ?? null
+                );
+                if (reglaIncremento && !savedWithRegla?.reglaIncremento) {
                   throw new Error(
-                    'No se obtuvo el ID del prelance.'
+                    'El servidor no guardó la regla de incrementos. Redeployá el backend actualizado.'
                   );
                 }
 

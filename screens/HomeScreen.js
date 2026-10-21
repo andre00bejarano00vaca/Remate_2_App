@@ -590,21 +590,7 @@ usePujaWebSocket({
 
     isBiddingRef.current = true;
     setIsBidding(true);
-
-    const nextValue = Number(siguientePuja);
-    const safeNext = Number.isNaN(nextValue) ? Number(counter) : nextValue;
-
-    lastUserBidValueRef.current = safeNext;
-    pendingUserBidRef.current = true;
-    setMyBidMonto(safeNext);
-    setCounter(safeNext);
-    if (userIdRef.current != null) {
-        setLeaderUserId(Number(userIdRef.current));
-    }
-    setIsWinning(true);
-    setStatusMessage("¡Vas ganando el lote!");
-    setShowStatus(true);
-    console.log(`[PUJA] 2. UI optimista ${elapsed()}`, { monto: safeNext });
+    const counterAntes = Number(counter);
 
     try {
         let userId = userIdRef.current;
@@ -648,15 +634,40 @@ usePujaWebSocket({
             method: "POST",
         });
         const incBody = await incRes.text();
-        const incCounter = Number(incBody);
-        const finalMonto = !Number.isNaN(incCounter) ? incCounter : safeNext;
-        if (!Number.isNaN(incCounter)) {
-            setCounter(incCounter);
-            lastUserBidValueRef.current = incCounter;
-            setMyBidMonto(incCounter);
-            setLeaderUserId(Number(userId));
+        if (!incRes.ok) {
+            throw new Error(incBody || `No se pudo pujar (${incRes.status})`);
         }
-        console.log(`[PUJA] 5. contador incrementado ${elapsed()}`, incRes.status, incBody);
+        let finalMonto = null;
+        let incrementoSrv = null;
+        const asNumber = Number(incBody);
+        if (incBody && /^-?\d+$/.test(incBody.trim())) {
+            finalMonto = asNumber;
+        } else {
+            try {
+                const data = JSON.parse(incBody);
+                finalMonto = Number(data.valor);
+                if (data.incrementoSiguiente != null) {
+                    incrementoSrv = Number(data.incrementoSiguiente);
+                }
+            } catch {
+                finalMonto = Number.NaN;
+            }
+        }
+        if (!Number.isFinite(finalMonto)) {
+            throw new Error("Respuesta de puja inválida");
+        }
+        setCounter(finalMonto);
+        if (incrementoSrv != null && Number.isFinite(incrementoSrv)) {
+            setIncrementoServidor(incrementoSrv);
+        }
+        lastUserBidValueRef.current = finalMonto;
+        pendingUserBidRef.current = true;
+        setMyBidMonto(finalMonto);
+        setLeaderUserId(Number(userId));
+        setIsWinning(true);
+        setStatusMessage("¡Vas ganando el lote!");
+        setShowStatus(true);
+        console.log(`[PUJA] 5. contador incrementado ${elapsed()}`, incRes.status, finalMonto);
 
         saveMyPuja({
             userId,
@@ -687,6 +698,9 @@ usePujaWebSocket({
 
     } catch (err) {
         console.log(`[PUJA] ERROR incrementCounter ${elapsed()}`, err);
+        setCounter(Number.isFinite(counterAntes) ? counterAntes : counter);
+        pendingUserBidRef.current = false;
+        Alert.alert("Puja", err?.message || "No se pudo registrar la puja");
     } finally {
         console.log(`[PUJA] 8. botón desbloqueado ${elapsed()}`);
         isBiddingRef.current = false;

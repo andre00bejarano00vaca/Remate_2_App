@@ -48,11 +48,23 @@ export const createAuction = async (payload) => {
 
 export const updateAuction = async (id, payload) => {
   try {
-    console.log("[REMATE] PUT", id, payload);
     const response = await apiClient.put(`/remates/${id}`, payload);
     return response.data;
   } catch (error) {
     throw new Error(apiError(error, "No se pudo actualizar el prelance"));
+  }
+};
+
+/** Guarda solo la regla. null = incremento por defecto. */
+export const updateAuctionRegla = async (id, reglaIncremento) => {
+  try {
+    const response = await apiClient.put(`/remates/${id}/regla-incremento`, {
+      reglaIncremento:
+        reglaIncremento == null ? null : JSON.stringify(reglaIncremento),
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(apiError(error, "No se pudo guardar la regla de incrementos"));
   }
 };
 
