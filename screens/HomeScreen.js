@@ -677,25 +677,6 @@ usePujaWebSocket({
             numeroLote,
         }).catch((err) => console.log("[PUJA] error persistiendo", err));
 
-        console.log(`[PUJA] 6. POST /api/pujas ${elapsed()}`, { monto: finalMonto, userId });
-        fetch(`${apiBaseUrl}/api/pujas`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...authHeaderRef.current,
-            },
-            body: JSON.stringify({
-                fecha: new Date().toISOString().slice(0, 19),
-                monto: finalMonto,
-                visible: true,
-                usuario: { id: userId },
-                cabana: { id: cabanaid },
-                lote: { id: loteid }
-            })
-        }).then((res) => {
-            console.log(`[PUJA] 7. puja creada ${elapsed()}`, res.status);
-        }).catch((err) => console.log(`[PUJA] ERROR creando puja ${elapsed()}`, err));
-
     } catch (err) {
         console.log(`[PUJA] ERROR incrementCounter ${elapsed()}`, err);
         setCounter(Number.isFinite(counterAntes) ? counterAntes : counter);
