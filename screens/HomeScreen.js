@@ -573,6 +573,11 @@ usePujaWebSocket({
     );
 
     const incrementCounter = async () => {
+    if (remateFinalizado) {
+        setStatusMessage("Prelance finalizado");
+        setShowStatus(true);
+        return;
+    }
     if (isBiddingRef.current) {
         console.log("[PUJA] tap ignorado: ya hay una puja en curso");
         return;
@@ -635,6 +640,9 @@ usePujaWebSocket({
         });
         const incBody = await incRes.text();
         if (!incRes.ok) {
+            if (incRes.status === 409) {
+                setRemateFinalizado(true);
+            }
             throw new Error(incBody || `No se pudo pujar (${incRes.status})`);
         }
         let finalMonto = null;
@@ -808,6 +816,7 @@ usePujaWebSocket({
                     isBidding={isBidding}
                     isWinning={isWinning}
                     showStatus={showStatus}
+                    finalizado={remateFinalizado}
                     onPujar={incrementCounter}
                 />
 

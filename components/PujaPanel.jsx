@@ -10,6 +10,7 @@ export default function PujaPanel({
   isBidding,
   isWinning,
   showStatus,
+  finalizado = false,
   onPujar,
 }) {
   const cardScale = useRef(new Animated.Value(1)).current;
@@ -217,17 +218,19 @@ export default function PujaPanel({
           <Button
             mode="contained"
             onPress={onPujar}
-            disabled={isBidding}
+            disabled={isBidding || finalizado}
             style={[
               styles.button,
-              winning && styles.buttonWin,
-              losing && styles.buttonLose,
+              !finalizado && winning && styles.buttonWin,
+              !finalizado && losing && styles.buttonLose,
             ]}
             labelStyle={styles.buttonLabel}
             contentStyle={styles.buttonContent}
-            icon={isBidding ? "timer-sand" : losing ? "restore" : "gavel"}
+            icon={finalizado ? "stop-circle" : isBidding ? "timer-sand" : losing ? "restore" : "gavel"}
           >
-            {isBidding
+            {finalizado
+              ? "PRELANCE FINALIZADO"
+              : isBidding
               ? "ENVIANDO PUJA..."
               : losing
                 ? `RECUPERAR LOTE  $${Number(siguientePuja || 0).toLocaleString()}`
